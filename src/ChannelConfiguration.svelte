@@ -7,7 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
- import {configurationRevision,configurationCurrent} from './configuration-state';
+ import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
  import {tick} from 'svelte';
  import {readChannels,savedChannels,choosePreset,channelPatch,presets,type Channel} from './channels';
@@ -16,17 +16,18 @@ Third-party material retains its own terms.
  import DraftBar from './ui/DraftBar.svelte';
  import ChannelIdentity from './ui/ChannelIdentity.svelte';
  let {active,busy,firmware,perform,onedit,onsaved,feedback}:{feedback:string;active:boolean;busy:boolean;firmware:Firmware;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>;onedit:()=>void;onsaved:(channels:Channel[])=>void}=$props();
- let loading=$state(false);
+ let loading=$state(false),attempted=$state(false),loadFailed=$state(false);
  let draft=$state<Channel[]>(),baseline=$state<Channel[]>([]);
  const patch=$derived(draft?channelPatch(draft,baseline):{});
  const dirty=$derived(Object.keys(patch).length>0);
- export async function show(){if(!draft)await load();await tick();const heading=document.getElementById('channel-configuration-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start'});}
- async function load(refresh=false){loading=true;try{await perform(async()=>{const c=await readChannels(firmware.pwm_count,refresh);baseline=structuredClone(c);draft=c;snapshotRevision=configurationRevision();savedChannels.set(structuredClone(c));},'Channel configuration loaded','Could not load channel configuration. Existing draft kept.','Reading channel configuration…');}finally{loading=false;}}
+ $effect(()=>{if(active&&!attempted&&!busy&&!$configurationState.recovery)void load();});
+ export async function show(){await tick();const heading=document.getElementById('channel-configuration-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start'});}
+ async function load(refresh=false){attempted=true;loading=true;loadFailed=false;try{loadFailed=!await perform(async()=>{const c=await readChannels(firmware.pwm_count,refresh);baseline=structuredClone(c);draft=c;snapshotRevision=configurationRevision();savedChannels.set(structuredClone(c));},'Channel configuration loaded','Could not load channel configuration. Existing draft kept.','Reading channel configuration…');}finally{loading=false;}}
  async function save(event:SubmitEvent){event.preventDefault();if(!draft||!dirty||!configurationCurrent(snapshotRevision))return;await perform(async()=>{await saveConfiguration(patch,firmware);baseline=JSON.parse(JSON.stringify(draft));savedChannels.set(baseline);onsaved(baseline);},'Channel configuration saved and verified','Could not confirm channel configuration. Draft kept; reload to verify or explicitly retry Save.','Saving channel configuration…');}
  function select(index:number,value:string){if(!draft)return;choosePreset(draft,index,value);onedit();}
 </script>
 <section hidden={!active} class="channel-configuration" aria-label="Channel configuration">
- <div class="title"><div><h2 id="channel-configuration-title" tabindex="-1">Channel configuration</h2><p>Saved display colours and binary output settings. Commands above are separate.</p></div><ActionButton secondary onclick={()=>load(true)} disabled={busy}>{draft?'Reload channel configuration':'Load channel configuration'}</ActionButton></div>
+ <div class="title"><div><h2 id="channel-configuration-title" tabindex="-1">Channel configuration</h2><p>Saved display colours and binary output settings. Commands above are separate.</p></div>{#if draft||loadFailed}<ActionButton secondary onclick={()=>load(true)} disabled={busy}>{draft?'Reload channel configuration':'Retry channel configuration'}</ActionButton>{/if}</div>
  {#if draft}
  <p>Display colour does not change the physical light spectrum. Multi-channel presets expand into subsequent channels, up to the last available output.</p>
  <form onsubmit={save}>
@@ -44,7 +45,7 @@ Third-party material retains its own terms.
  </fieldset>{/each}</div>
  <p>Pump / CO₂ selections set binary mode when entering that category; leaving it restores dimming. Manual overrides are retained when switching within a category. The legacy DEEP-BLUE expansion leaves its uppercase UVA entry unchanged; select UVA explicitly if intended.</p>
  <p>Reload replaces unsaved channel-configuration edits. Binary changes affect controller interpretation; review retained service and sensor drafts. Existing saved names are displayed and preserved; this editor does not create a new name field.</p>
- </form>{:else}<p class:error={!!feedback}>{loading?'Reading channel configuration…':feedback||'Load to inspect saved settings. No settings are written by loading.'}</p>{/if}
+ </form>{:else}<p class:error={loadFailed} aria-live="polite">{loading?'Reading channel configuration…':loadFailed?'Could not load channel configuration. Retry the read; no settings were written.':$configurationState.recovery?'Configuration not verified. Check device readback in Recovery before loading.':'Waiting to read saved channel configuration…'}</p>{/if}
  <div class="links"><a href="#schedules">Schedule modes and planning →</a><a href="#service">Service levels and channel exclusions →</a></div>
 </section>
 <style>

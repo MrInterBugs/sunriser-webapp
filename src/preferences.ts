@@ -5,7 +5,7 @@
  * Upstream: https://github.com/LEDaquaristik/sunriser
  * Adapted for this frontend in 2026; see LICENSING.md and LICENSE.
  */
-import {readConfig} from './api.js';
+import {readSavedConfiguration} from './api.js';
 export type Preferences=Record<string,unknown>;
 const buttonActions=[{value:0,label:'None'},{value:1,label:'Toggle service mode'},{value:2,label:'Toggle thunderstorms'},{value:3,label:'Restart controller'},{value:4,label:'Toggle blackout'}];
 export const actions=(press:'short'|'long'|'double')=>buttonActions.filter(a=>press!=='short'||a.value!==3);
@@ -24,11 +24,11 @@ export function preferencePatch(draft:Preferences,base:Preferences,board:8|10){
  return patch;
 }
 export const thunderIds=(values:Preferences,count:number,ids:number[])=>ids.filter(id=>values[`weather#setup#${id}#thunder#activated`]===true&&Array.from({length:count},(_,i)=>i+1).some(n=>values[`pwm#${n}#weather`]===id&&(values[`pwm#${n}#onoff`]==null||values[`pwm#${n}#onoff`]===false)));
-export async function readThunderEligibility(count:number){
- const catalogue=(await readConfig(['weather#web']))['weather#web'];
+export async function readThunderEligibility(count:number,refresh=false){
+ const catalogue=(await readSavedConfiguration(['weather#web'],refresh))['weather#web'];
  const profiles:unknown=catalogue==null?[]:typeof catalogue==='string'?JSON.parse(catalogue):null;
  if(!Array.isArray(profiles)||profiles.some(p=>!p||!Number.isInteger(p.id)||p.id<1||p.id>65535))throw Error('Invalid weather catalogue');
  const ids:number[]=profiles.map(p=>p.id);
  const keys=Array.from({length:count},(_,i)=>[`pwm#${i+1}#weather`,`pwm#${i+1}#onoff`]).flat().concat(ids.map(id=>`weather#setup#${id}#thunder#activated`));
- return thunderIds(await readConfig(keys),count,ids);
+ return thunderIds(await readSavedConfiguration(keys,refresh),count,ids);
 }

@@ -139,7 +139,7 @@ export async function loadSettings(
       field?.type === "bool"
     ) {
       if (value != null && typeof value !== "boolean")
-        throw Error("Invalid Boolean setting");
+        throw Error(`Invalid Boolean setting: ${key}`);
       draft[key] = value ?? false;
     } else if (field?.type === "ip") {
       if (key === "wifi_ip4" && typeof value === "boolean") draft[key] = "";
@@ -150,18 +150,18 @@ export async function loadSettings(
         value.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)
       )
         draft[key] = value.join(".");
-      else throw Error("Invalid IPv4 setting");
+      else throw Error(`Invalid IPv4 setting: ${key}`);
     } else if (
       key === "timezone" ||
       key === "gmtoff" ||
       field?.type === "port"
     ) {
       if (typeof value !== "number" || !Number.isInteger(value))
-        throw Error("Invalid integer setting");
+        throw Error(`Invalid integer setting: ${key}`);
       draft[key] = String(value);
     } else {
       if (value != null && typeof value !== "string")
-        throw Error("Invalid text setting");
+        throw Error(`Invalid text setting: ${key}`);
       draft[key] = (value ?? "") as string;
     }
   }

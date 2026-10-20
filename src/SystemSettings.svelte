@@ -61,6 +61,7 @@ Third-party material retains its own terms.
     command: (value: { time: number }) => Promise<void>;
     onedit: () => void;
   } = $props();
+  let loadFailure = $state(''),loadingSettings=$state(false);
   let attempted = $state(false),
     editor = $state<Editor>();
   let address = $state(""),
@@ -100,15 +101,16 @@ Third-party material retains its own terms.
   });
   async function reload() {
     attempted = true;
-    await perform(
+    loadFailure='';loadingSettings=true;
+    try{await perform(
       async () => {
-        editor = await loadSettings(kind, wifi);
-        snapshotRevision=configurationRevision();
+        try{editor = await loadSettings(kind, wifi);snapshotRevision=configurationRevision();}
+        catch(e){loadFailure=e instanceof Error?e.message:'Configuration read failed';throw e;}
       },
       `${title} settings loaded`,
       `Could not load ${title} settings. Retry Reload ${title} settings.`,
       `Loading ${title} settings…`,
-    );
+    );}finally{loadingSettings=false;}
   }
   async function save(e: SubmitEvent) {
     e.preventDefault();
@@ -219,6 +221,7 @@ Third-party material retains its own terms.
       Reload replaces unsaved edits. State refresh and verification keep drafts.
       Configuration is not polled; reload before editing after another client.
     </p>
+    {#if loadFailure}<p class="notice" role="note">Saved {title} configuration unavailable: {loadFailure}. {kind==='clock'?'Live clock readback is independent of this settings request.':'Reported addresses are independent of this settings request.'} Reload retries the read; it does not write settings.</p>{/if}
     <div class="configuration-workspace">{#if editor}
       <form class="panel settings system-editor" onsubmit={save} oninput={onedit}>
         <DraftBar {snapshotRevision} {feedback} {dirty} {busy} disabled={!!invalid||!dirty} label={`Save ${title} settings`} scope="" detail="Saved values are verified independently. Reload replaces drafts; Verify keeps them." />
@@ -375,7 +378,7 @@ Third-party material retains its own terms.
           {summary()}
         </p>
       </details>
-    {:else}<div class="empty-state"><h2>{busy?`Loading ${title} settings…`:'Settings unavailable'}</h2><p>{busy?'Reading saved configuration.':`Use Reload ${title} settings to try again.`}</p></div>{/if}
+    {:else}<div class="empty-state"><h2>{loadingSettings?`Loading ${title} settings…`:'Settings unavailable'}</h2><p>{loadingSettings?'Reading saved configuration.':`Use Reload ${title} settings to try again.`}</p></div>{/if}
     {#if kind === 'network'}      <section class="panel readback network-recovery" data-testid="network-recovery">
         <h2>Connection and recovery</h2>
         <p>

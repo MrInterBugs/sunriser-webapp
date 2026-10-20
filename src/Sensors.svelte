@@ -11,9 +11,9 @@ Third-party material retains its own terms.
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
  const configurationReconciled=$derived(!$configurationState.recovery&&snapshotRevision===$configurationState.revision);
-  import {untrack} from 'svelte';
+  import {untrack,onDestroy} from 'svelte';
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
-  import {savedChannels} from './channels';
+  import {savedChannels,channelDisplay} from './channels';
   import EditorPage from './ui/EditorPage.svelte';
   import DraftBar from './ui/DraftBar.svelte';
   import StateBadge from './ui/StateBadge.svelte';
@@ -192,6 +192,32 @@ Third-party material retains its own terms.
         ? [...editor.draft.months, n].sort((a, b) => a - b)
         : editor.draft.months.filter((m) => m !== n);
   }
+  let responseJump=$state(''),revealFrame=0;
+  function jumpChannel(value:string){
+    const number=Number(value);
+    if(Number.isInteger(number)&&number>=1&&number<=channels.length){
+      const target=document.getElementById(`sensor-channel-${number}`);
+      target?.focus({preventScroll:true});target?.scrollIntoView({block:'start'});
+    }
+    responseJump='';
+  }
+  // Keep focused inputs above the mobile dock and below the sticky draft bar.
+  // This is the same visible-viewport boundary used by the schedule editor.
+  function revealControl(target:EventTarget|null){
+    if(!(target instanceof HTMLElement)||!target.matches('input,select,button'))return;
+    cancelAnimationFrame(revealFrame);revealFrame=requestAnimationFrame(()=>{
+      if(!active||document.activeElement!==target)return;
+      const viewport=window.visualViewport;
+      let top=(viewport?.offsetTop??0)+12,bottom=(viewport?.offsetTop??0)+(viewport?.height??innerHeight)-12;
+      const dock=document.querySelector<HTMLElement>('nav[aria-label="Everyday lighting"]');
+      if(dock?.getClientRects().length)bottom=Math.min(bottom,dock.getBoundingClientRect().top-8);
+      const bar=target.closest('form')?.querySelector<HTMLElement>('.draft-bar');
+      if(bar&&getComputedStyle(bar).position==='sticky'&&bar.getBoundingClientRect().top<=top)top=Math.max(top,bar.getBoundingClientRect().bottom+8);
+      const rect=target.getBoundingClientRect();
+      if(rect.top<top)window.scrollBy(0,rect.top-top);else if(rect.bottom>bottom)window.scrollBy(0,rect.bottom-bottom);
+    });
+  }
+  onDestroy(()=>cancelAnimationFrame(revealFrame));
 </script>
 {#if active}
 <EditorPage>
@@ -202,7 +228,7 @@ Third-party material retains its own terms.
   {#if !ids.length}<div class="empty-state"><h2>No sensors yet</h2><p>No sensors reported or configured.</p><p>Discovered probes appear after the device scans its bus. Registration is always explicit.</p></div>{:else}
    <div class="sensor-readback readback"><div><label for="sensor-choice">Sensor</label><select id="sensor-choice" bind:value={selected} disabled={busy}>{#each ids as id}<option value={id}>{catalogue[id]?.name??'Unregistered'} · {id}</option>{/each}</select>
    <details class="sensor-identity"><summary>Sensor identity</summary><p>{catalogue[selected]?.name ?? 'Unregistered sensor'} · ROM <code>{selected}</code></p></details></div><div><p>Device readback</p><StateBadge tone={stale?'draft':reading?'active':'error'}>{stale?'Reading may be stale':reading?'Probe connected':'Probe disconnected'}</StateBadge><p class="reading-value" class:reading-status={!reading || (editor && !editor.supported) || reading.device !== 1} data-testid="sensor-reading">{reading ? editor&&!editor.supported?`${reading.value} raw (unsupported configuration)`:formatReading(reading) : 'Disconnected'}</p>
-   <p>{reading?'Currently reported by device':'Missing from the last device scan; saved configuration is retained.'}</p></div></div>
+   <p>{reading?stale?'Last reported reading · stale':'Currently reported by device':'Missing from the last device scan; saved configuration is retained.'}</p></div></div>
    {#if !catalogue[selected]}<ConfigurationNotice revision={snapshotRevision}/>
     {#if reading?.device===1}<label for="sensor-new-name">Sensor name</label><input id="sensor-new-name" bind:value={names[selected]} placeholder="Temperature" disabled={busy} oninput={onedit} /><p>Register writes temperature defaults: inactive control, correction 0, thresholds 15–35°C, all months. Factory correction is +1°C; firmware includes it in subsequent readings.</p><button onclick={register} disabled={busy||!configurationReconciled||!(names[selected]??'Temperature').trim()}>Register sensor</button>
     {:else}<p>Unsupported sensor device type. Raw readings are shown; registration is unavailable.</p>{/if}
@@ -213,7 +239,7 @@ Third-party material retains its own terms.
 </section>
  {#if editor}
   {#if !editor.supported}<section class="panel"><h2>Unsupported sensor settings</h2><p>This device or unit format is read-only. Its stored configuration is preserved.</p></section>
-  {:else}<form class="panel sensor-configuration" onsubmit={save} oninput={onedit} novalidate>
+  {:else}<form class="panel sensor-configuration" onsubmit={save} oninput={onedit} onfocusin={e=>revealControl(e.target)} novalidate>
    <DraftBar {snapshotRevision} {feedback} dirty={!!Object.keys(patch).length} {busy} disabled={!valid||!Object.keys(patch).length} label="Save sensor settings" scope="sensor " detail="Save applies to this sensor. Reading refreshes keep all drafts." />
    <fieldset disabled={busy}><legend>Temperature settings</legend>
    <div class="field-grid"><div><label for="sensor-name">Sensor name</label><input id="sensor-name" bind:value={editor.draft.name} aria-invalid={!editor.draft.name.trim()} /></div><div>
@@ -225,20 +251,20 @@ Third-party material retains its own terms.
    </div></div><p>Stored bounds {editor.min/10}–{editor.max/10}°C. Minimum must not exceed maximum. Thresholds are inclusive; maximum takes priority when equal.</p>
    <details class="months-editor" open><summary>Active months · none selected means all</summary><fieldset><legend class="visually-hidden">Active months (none selected means all)</legend><div class="sensor-months">{#each Array.from({length:12},(_,i)=>i+1) as n}<label class="check"><input type="checkbox" checked={editor.draft.months.includes(n)} onchange={e=>month(n,e.currentTarget.checked)} />Month {n}</label>{/each}</div></fieldset></details>
    <p class="notice" data-testid="sensor-month-warning">Firmware limitation: changed month selections may retain previously active months until a device reboot. Save confirms persistence, not runtime month replacement. This interface never reboots automatically.</p>
-   <h2>Channel assignments</h2><p>Choose what each output does at the minimum and maximum thresholds. Edits remain local until Save.</p><div class="service-fields">{#each channels as channel,i}<fieldset><legend><ChannelIdentity number={i+1} fallback={channel.name}/></legend>
+   <div class="assignments-heading"><div><h2>Channel assignments</h2><p>Responses at the inclusive minimum and maximum thresholds. Edits stay local until Save.</p></div><div class="channel-jump"><label for="sensor-response-jump">Jump to channel response</label><div class="jump-controls"><select id="sensor-response-jump" bind:value={responseJump} disabled={busy}><option value="">Choose channel…</option>{#each channels as channel,i}<option value={String(i+1)}>{channelDisplay(i+1,$savedChannels[i],$configurationState.revision===0?channel.name:'')}</option>{/each}</select><button type="button" class="secondary" aria-label="Go to channel response" disabled={busy||!responseJump} onclick={()=>jumpChannel(responseJump)}>Go</button></div></div></div>
+   <p class="response-help">Relative: 0–200%. Absolute: 0–100%. Binary: Off/On (0/100%). Save does not enable inactive planners.</p><div class="service-fields sensor-responses">{#each channels as channel,i}<fieldset id={`sensor-channel-${i+1}`} class="sensor-response" tabindex="-1"><legend><ChannelIdentity number={i+1} fallback={channel.name}/></legend>
     {#if channel.manager===0}<p>Planner inactive: sensor assignments will not control this output until planning is enabled separately.</p>{/if}
     <div class="threshold-pair">{#each ['min','max'] as side}{@const s=side as 'min'|'max'}{@const a=editor.draft.channels[i][s]}{@const label=`Channel ${i+1} ${s==='min'?'below minimum':'above maximum'}`}
-     <div><h3>{s==='min'?'Below minimum':'Above maximum'}</h3><label class="check"><input type="checkbox" aria-label={label} bind:checked={a.enabled} />Apply</label>
+     <div><label class="check response-enable"><input type="checkbox" aria-label={label} bind:checked={a.enabled} />{s==='min'?'At/below minimum':'At/above maximum'}</label>
      {#if channel.binary}{#if !['0','100'].includes(a.percent)}<p role="alert">Retained draft: {a.percent}%. Choose On then Off if required; binary channels need 0 or 100%.</p>{/if}<label class="check"><input type="checkbox" aria-label={`${label} on`} checked={a.percent==='100'} onchange={e=>a.percent=e.currentTarget.checked?'100':'0'} />On</label>
-     {:else}<label for={`sensor-${i}-${s}`}>Level (%)</label><input id={`sensor-${i}-${s}`} inputmode="numeric" aria-label={`${label} percent`} aria-invalid={!/^\d+$/.test(a.percent) || Number(a.percent)>(a.absolute?100:200)} bind:value={a.percent} /><label class="check"><input type="checkbox" aria-label={`${label} absolute`} bind:checked={a.absolute} />Absolute</label>{/if}
+     {:else}<div class="response-value-row"><div class="response-value"><label class="visually-hidden" for={`sensor-${i}-${s}`}>Level (%)</label><div class="sensor-level"><input class="sensor-percent" id={`sensor-${i}-${s}`} inputmode="numeric" aria-label={`${label} percent`} aria-invalid={!/^\d+$/.test(a.percent) || Number(a.percent)>(a.absolute?100:200)} bind:value={a.percent} /><span aria-hidden="true">%</span></div></div><label class="check"><input type="checkbox" aria-label={`${label} absolute`} bind:checked={a.absolute} />Absolute</label></div>{/if}
     </div>{/each}</div>
    </fieldset>{/each}</div>
-   <p>Relative brightness: 0–200%. Absolute: 0–100%. Binary channels use Off/On (0/100%). Save does not enable inactive planners.</p>
-   <div class="form-actions"><button type="button" class="secondary" onclick={reset}>Reset sensor draft</button></div>
+   <div class="form-actions"><button type="button" class="secondary" onclick={reset}>Reset sensor draft</button><button type="button" class="secondary" onclick={()=>document.getElementById('sensor-name')?.focus()}>Back to sensor settings ↑</button></div>
    {#if !valid}<p role="alert">Check the name, correction, ordered thresholds and channel percentages before saving.</p>{/if}
    </fieldset>
   </form>{/if}
- {/if}
+ {:else if ready&&catalogue[selected]}<section class="panel"><h2>{busy?'Loading selected sensor…':'Selected sensor settings unavailable'}</h2><ConfigurationNotice revision={snapshotRevision}/>{#if !busy&&configurationReconciled}<button class="secondary" onclick={()=>selectLoad(selected)}>Retry selected sensor</button><p>This read keeps other sensor drafts. Reload sensor configuration replaces all sensor drafts.</p>{/if}</section>{/if}
 </div>
 </EditorPage>
 {/if}
@@ -253,7 +279,14 @@ Third-party material retains its own terms.
  .threshold-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
  .threshold-pair>div { padding:12px; background:var(--sr-surface); border-radius:var(--sr-radius); min-width:0; }
  .threshold-pair label { margin-top:6px; }
+ .assignments-heading{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,240px);gap:20px;align-items:end;margin-top:20px}
+ .assignments-heading h2{margin-bottom:4px}.channel-jump{min-width:0}.jump-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.response-help{margin-top:8px}
+ .sensor-response{scroll-margin-block:180px 90px}.sensor-response:focus-visible{outline:2px solid var(--sr-focus);outline-offset:5px}
+ .sensor-response:focus-within{border-top-color:var(--sr-focus)}
+ .threshold-pair .response-enable{font-size:13px;font-weight:650;margin:0;border-bottom:1px solid var(--sr-line);padding:0 0 6px}
+ .response-value-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:0 12px}.response-value{flex:1 1 76px;min-width:55px}.response-value-row>.check{flex:0 0 auto;margin:0}
+ .sensor-level{position:relative}.sensor-level>input.sensor-percent[inputmode=numeric]{padding:10px 23px 10px 8px}.sensor-level>span{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--sr-muted);pointer-events:none}
  .months-editor { border-block:1px solid var(--sr-line); margin-top:16px; padding:8px 0; }
  @media(max-width:1150px) { .sensor-workspace { grid-template-columns:240px minmax(0,1fr); gap:24px; } .sensor-configuration .service-fields { grid-template-columns:1fr; } }
- @media(max-width:800px) { .sensor-workspace { grid-template-columns:1fr; gap:8px; } .sensor-monitor { position:static; } .sensor-readback { gap:12px; } .sensor-thresholds { padding:12px; } .threshold-pair>div { padding:8px; } }
+ @media(max-width:800px) { .sensor-workspace { grid-template-columns:1fr; gap:8px; } .sensor-monitor { position:static; } .sensor-readback { gap:12px; } .sensor-thresholds { padding:12px; } .threshold-pair{grid-template-columns:minmax(0,1fr);gap:8px}.threshold-pair>div { display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,1.4fr);gap:8px;align-items:center;padding:8px; } .threshold-pair .response-enable{border:0;padding:0;gap:8px}.response-value-row{flex-wrap:nowrap;gap:4px}.response-value{flex-basis:60px;min-width:60px}.response-value-row>.check{gap:6px}.assignments-heading{grid-template-columns:minmax(0,1fr);gap:4px}.channel-jump{max-width:none} }
 </style>

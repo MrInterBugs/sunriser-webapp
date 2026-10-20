@@ -17,3 +17,10 @@ export function configurationChanged(recovery: 'acknowledged' | 'uncertain') {
 export function configurationVerified() {
   configurationState.update(state => ({ ...state, recovery: '' }));
 }
+// Reconnection is not proof of configuration freshness or a known replacement.
+// Notify the shell, but preserve explicit saving of retained drafts. Recovery
+// replacement revisions remain a separate, stronger reconciliation boundary.
+export const configurationConnection = writable(0);
+export function configurationReconnected() {
+  configurationConnection.update(value => value + 1);
+}

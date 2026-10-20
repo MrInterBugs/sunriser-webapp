@@ -162,7 +162,7 @@ export async function readConfig(keys: string[]) {
     const v = await request("POST", "/", keys.slice(i, i + 15));
     if (!record(v)) throw new Error("Invalid configuration");
     for (const key of keys.slice(i, i + 15)) {
-      if (!(key in v)) throw new Error("Missing configuration key");
+      if (!(key in v)) throw new Error(`Missing configuration key: ${key}`);
       result[key] = v[key];
     }
   }

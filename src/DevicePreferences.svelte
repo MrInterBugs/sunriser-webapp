@@ -7,28 +7,29 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
- import {configurationRevision,configurationCurrent} from './configuration-state';
+ import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
- import {readConfig,saveConfiguration,type Firmware} from './api';
+ import {readSavedConfiguration,saveConfiguration,type Firmware} from './api';
  import {actions,preferenceKeys,decodePreferences,preferencePatch,readThunderEligibility,type Preferences} from './preferences';
  import DraftBar from './ui/DraftBar.svelte';
  import ActionButton from './ui/ActionButton.svelte';
  let {active,busy,firmware,feedback,perform,onedit}:{active:boolean;busy:boolean;firmware:Firmware;feedback:string;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>;onedit:()=>void}=$props();
- let draft=$state<Preferences>(),base=$state<Preferences>({}),attempted=$state(false),loading=$state(false),eligible=$state<number[]|undefined>();
+ let draft=$state<Preferences>(),base=$state<Preferences>({}),attempted=$state(false),loading=$state(false),loadFailed=$state(false),eligible=$state<number[]|undefined>();
  const patch=$derived(draft?preferencePatch(draft,base,firmware.pwm_count):{}),dirty=$derived(Object.keys(patch).length>0);
  const usesThunder=$derived(draft&&['button_short','button_long','button_double'].some(k=>draft![k]===2));
  const flags=[['no_error_logging','Disable error logging'],['info_logging','Enable info logging']];
- async function load(){attempted=true;loading=true;try{await perform(async()=>{
-  const next=decodePreferences(await readConfig(preferenceKeys(firmware.pwm_count)),firmware.pwm_count);
+ $effect(()=>{if(active&&!attempted&&!busy&&!$configurationState.recovery)void load();});
+ async function load(refresh=false){attempted=true;loading=true;loadFailed=false;try{loadFailed=!await perform(async()=>{
+  const next=decodePreferences(await readSavedConfiguration(preferenceKeys(firmware.pwm_count),refresh),firmware.pwm_count);
   // A missing/malformed weather catalogue must not block unrelated preferences.
-  try{eligible=await readThunderEligibility(firmware.pwm_count);}catch{eligible=undefined;}
+  try{eligible=await readThunderEligibility(firmware.pwm_count,refresh);}catch{eligible=undefined;}
   base=JSON.parse(JSON.stringify(next));draft=next;snapshotRevision=configurationRevision();
  },'Device preferences loaded','Could not load device preferences. Draft kept; explicitly reload.','Reading device preferences…');}finally{loading=false;}}
  async function save(e:SubmitEvent){e.preventDefault();if(!draft||!dirty||!configurationCurrent(snapshotRevision))return;await perform(async()=>{await saveConfiguration(patch,firmware);base=JSON.parse(JSON.stringify(draft));},'Preferences saved and verified','Could not confirm preferences. Draft kept; reload to verify or explicitly retry Save.','Saving device preferences…');}
  function set(key:string,value:unknown){if(draft){draft[key]=value;onedit();}}
 </script>
 <section hidden={!active} class="preferences" aria-label="Device preferences">
- <div class="section-heading"><div><h2>Device preferences</h2><p>Button actions, status indication and logging. Saving does not simulate a button press.</p></div><ActionButton secondary disabled={busy} onclick={load}>{draft?'Reload device preferences':'Load device preferences'}</ActionButton></div>
+ <div class="section-heading"><div><h2>Device preferences</h2><p>Button actions, status indication and logging. Saving does not simulate a button press.</p></div>{#if draft||loadFailed}<ActionButton secondary disabled={busy} onclick={()=>load(true)}>{draft?'Reload device preferences':'Retry device preferences'}</ActionButton>{/if}</div>
  {#if draft}
  <form onsubmit={save}>
  <DraftBar {snapshotRevision} {dirty} {busy} {feedback} disabled={!dirty} label="Save device preferences" scope="preference " detail="Changed preferences are saved and read back independently of reported output."/>
@@ -56,7 +57,8 @@ Third-party material retains its own terms.
  <details><summary>Help and advanced controls</summary><p>Modern SunRiser keeps advanced sections discoverable and provides local help where needed. Safeguards are always visible. Legacy “hide help” and “show expert” flags are preserved for the legacy interface; they do not hide modern controls.</p></details>
  </section></div>
  </form>
- {:else}<p class:error={attempted&&!!feedback}>{loading?'Reading device preferences…':attempted&&feedback?feedback:'Load preferences to inspect saved values. This does not write to the controller.'}</p>{/if}
+ <p>Reload replaces unsaved preference edits. Navigation and reported-state refresh keep drafts.</p>
+ {:else}<p class:error={loadFailed} aria-live="polite">{loading?'Reading device preferences…':loadFailed?'Could not load device preferences. Retry the read; no settings were written.':$configurationState.recovery?'Configuration not verified. Check device readback in Recovery before loading.':'Waiting to read saved device preferences…'}</p>{/if}
 </section>
 <style>
  .preferences{margin:32px 0 0;padding-top:24px;border-top:1px solid var(--sr-line)}.section-heading{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:20px}h2{font-size:20px;margin:0}h3{font-size:17px;margin:0 0 16px}p{font-size:13px;line-height:1.6;color:var(--sr-muted)}p.error{color:var(--sr-error)}.preferences-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px;max-width:1120px}.preference-group{min-width:0}fieldset{border:0;padding:0;margin:0;min-width:0}label{display:block;font-size:14px;margin:12px 0}select{display:block;min-width:0;width:100%;min-height:44px;background:var(--sr-input);color:var(--sr-ink);border:1px solid var(--sr-control-line);border-radius:var(--sr-radius);padding:8px;font-size:16px;margin-top:6px}.check{display:flex;align-items:center;gap:10px;min-height:44px}.check input{width:20px;height:20px}a{display:inline-flex;align-items:center;min-height:44px;font-size:14px}details{margin-top:20px}summary{min-height:44px;padding:12px 0;cursor:pointer;font-size:14px}

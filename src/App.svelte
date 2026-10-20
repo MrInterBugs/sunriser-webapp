@@ -9,10 +9,11 @@ Third-party material retains its own terms.
 <script lang="ts">
   import OverviewLighting from "./ui/OverviewLighting.svelte";
   import {savedDailyPlans,loadDailyPlan,resetSavedDailyPlans} from "./schedules";
-  import {configurationState,configurationRevision,configurationCurrent,configurationChanged,configurationVerified} from './configuration-state';
+  import {configurationState,configurationRevision,configurationCurrent,configurationChanged,configurationVerified,configurationReconnected,configurationConnection} from './configuration-state';
   import OperatingState from './ui/OperatingState.svelte';
   let overviewChannel=$state(1),scheduleUnsaved=$state(false);
   let labelsPhase=$state<'idle'|'loading'|'ready'|'error'>('idle');
+  let hostnameStale=$state(false);
   let readingState=$state(false),visible=$state(document.visibilityState==='visible');
   import {readChannels,savedChannels,channelLabel} from './channels';
   import ChannelConfiguration from './ChannelConfiguration.svelte';
@@ -28,7 +29,7 @@ Third-party material retains its own terms.
   import AppShell from "./ui/AppShell.svelte";
   import LightingDashboard from "./LightingDashboard.svelte";
   import ActionButton from "./ui/ActionButton.svelte";
-  import { onMount } from "svelte";
+  import { onMount,untrack } from "svelte";
   import Recovery from "./Recovery.svelte";
   import SystemSettings from "./SystemSettings.svelte";
   import Schedules from "./Schedules.svelte";
@@ -113,7 +114,13 @@ Third-party material retains its own terms.
         snapshot = next;
         stale = false;
         refreshFailures = 0;
-        if(reconnecting) invalidateConfiguration();
+        if(reconnecting){
+          configurationReconnected();invalidateConfiguration();hostnameStale=true;
+          if(!$configurationState.recovery){
+            try{const name=await getHostname();if(hostname===persisted){hostname=name;hostnameRevision=configurationRevision();}persisted=name;hostnameStale=false;}
+            catch{/* State is valid; saved identity stays explicitly last-loaded. */}
+          }
+        }
       }
     } finally { readingState=false; }
   }
@@ -138,6 +145,9 @@ Third-party material retains its own terms.
       void loadService();
   });
   const identityPage=()=>['index','channels','service','schedules','weather','sensors','lighting-tools'].includes(route);
+  // A successful editor Retry/Reload can also provide the shared identities.
+  // Only a new saved-map publication clears a previous label-load error.
+  $effect(()=>{const channels=$savedChannels;if(channels.length===firmware?.pwm_count&&!$configurationState.recovery)untrack(()=>{if(labelsPhase!=='loading')labelsPhase='ready';});});
   function invalidateConfiguration(){
     invalidateSavedConfiguration();resetSavedDailyPlans();savedChannels.set([]);labelsPhase='idle';
   }
@@ -188,6 +198,9 @@ Third-party material retains its own terms.
     error = "";
     status = "";
   }
+  async function reloadHostname(){
+    await perform(async()=>{const name=await getHostname();hostname=persisted=name;hostnameStale=false;hostnameRevision=configurationRevision();},'Hostname loaded; draft replaced.','Could not reload hostname. Draft kept.','Reading saved hostname…');
+  }
   async function load() {
     if (!begin()) return;
     error = "";
@@ -201,6 +214,7 @@ Third-party material retains its own terms.
       firmware = info;
       snapshot = initialState;
       hostname = persisted = name;
+      hostnameStale=false;
       raw = Object.fromEntries(
         Array.from({ length: info.pwm_count }, (_, i) => [i + 1, 0]),
       );
@@ -360,6 +374,7 @@ Third-party material retains its own terms.
       {#if error}<p role="alert">{error}</p>{/if}
     </div>
     {#if loaded&&$configurationState.recovery}<div class="configuration-recovery" aria-live="polite"><strong>{$configurationState.recovery==='acknowledged'?'Configuration change acknowledged · verification required':'Configuration outcome uncertain'}</strong><p>Saved labels and planning are not verified. Retained editor snapshots and drafts must be reconciled before saving. <a href="#recovery">Check device readback in Recovery →</a></p></div>{/if}
+    {#if loaded&&$configurationConnection>0&&!$configurationState.recovery}<p class="reconnect-notice" role="note">Device reconnected. Editors retain their last-loaded configuration snapshots and local drafts. Reload an editor to check changes from another client; Reload replaces its drafts. Reported state is independent.</p>{/if}
     {#if loaded&&identityPage()&&labelsPhase!=='ready'&&!$configurationState.recovery}<div class="label-status" aria-live="polite"><p>{labelsPhase==='error'?'Saved channel labels unavailable. Numbered channels remain usable.':labelsPhase==='loading'?'Loading saved channel labels…':'Channel labels waiting for the current operation.'}</p>{#if labelsPhase==='error'}<button class="secondary" disabled={busy} onclick={()=>loadLabels(true)}>Retry channel labels</button>{/if}</div>{/if}
     {#if !loaded}
       {#if route === 'help'}
@@ -382,7 +397,7 @@ Third-party material retains its own terms.
           <div><h1>Overview</h1></div>
           <div class="overview-heading-actions"><button class="secondary" onclick={() => refresh()} disabled={busy}>Refresh state</button></div>
         </div>
-        <OverviewLighting {firmware} {snapshot} hostname={persisted} {stale} {busy} unverified={!!$configurationState.recovery} plan={$savedDailyPlans[overviewChannel]} onretry={()=>readDaily(true)} bind:selected={overviewChannel} unsaved={scheduleUnsaved}/>
+        <OverviewLighting {firmware} {snapshot} hostname={persisted} {hostnameStale} {stale} {busy} unverified={!!$configurationState.recovery} plan={$savedDailyPlans[overviewChannel]} onretry={()=>readDaily(true)} bind:selected={overviewChannel} unsaved={scheduleUnsaved}/>
         <div class="monitor-workspace living-monitor"><section class="overview-outputs" aria-labelledby="channels-title">
           <div class="overview-top"><h2 id="channels-title">Reported channel output</h2><span>Raw counts</span></div>
           <ol class="channels">
@@ -415,12 +430,12 @@ Third-party material retains its own terms.
         <EditorPage>
         <div class="heading"><div><h1>Settings</h1><p>Controller identity and device preferences.</p></div></div>
         <div class="hostname-workspace"><form class="panel settings hostname-form" onsubmit={save}>
-          <h2>Hostname</h2><p class="saved-hostname">Saved hostname<strong>{persisted}</strong></p>
+          <h2>Hostname</h2><p class="saved-hostname">Saved hostname{hostnameStale?' · last loaded, refresh unavailable':''}<strong>{persisted}</strong></p>
           <label for="device-name">Hostname</label>
           <input id="device-name" name="hostname" type="text" bind:value={hostname} oninput={() => { status = ''; error = ''; }} disabled={busy} aria-describedby="name-help" aria-invalid={!valid} autocomplete="off" spellcheck="false" />
           <p id="name-help">Use 1–63 letters, numbers or hyphens. Start and end with a letter or number.</p>
           <DraftBar snapshotRevision={hostnameRevision} feedback={error} {dirty} {busy} disabled={!dirty||!valid} label="Save hostname" scope="" />
-        {#if hostnameRevision!==$configurationState.revision}<button type="button" class="secondary" disabled={busy||!!$configurationState.recovery} onclick={()=>{hostname=persisted;hostnameRevision=configurationRevision();}}>Use verified hostname · replace draft</button>{/if}
+        {#if hostnameStale||hostnameRevision!==$configurationState.revision}<button type="button" class="secondary" disabled={busy||!!$configurationState.recovery} onclick={reloadHostname}>Reload hostname · replace draft</button>{/if}
         </form><aside class="hostname-guidance"><h2>After changing the hostname</h2><p>A changed network hostname may take effect after device restart. Saving here does not restart the device.</p><p>If access changes, network recovery provides explicit read-only verification and address recovery.</p><a href="#network">Network and connection guidance →</a></aside></div></EditorPage>
       {:else}
         <EditorPage><section class="empty-state"><h1>Page unavailable</h1><p>Choose a destination from Lighting or Device navigation, or open local Help.</p><a href="#index">Return to overview</a></section></EditorPage>
@@ -430,7 +445,7 @@ Third-party material retains its own terms.
     {#if loaded && firmware && snapshot}
       <LightingTools active={route === 'lighting-tools'} {busy} {firmware} {snapshot} {stale} feedback={error} {perform} {command} refresh={()=>refresh()} readback={async()=>{try{await readState();}catch(e){uncertain();throw e;}}} onedit={clearFeedback}/>
       <Diagnostics active={route === 'diagnostics'} {busy} {firmware} {perform}/>
-      <Recovery active={route === 'recovery'} {busy} {firmware} {perform} onconfigurationchange={recoveryChanged} onread={(next, info, name) => { ++revision; snapshot=next; firmware=info; configurationVerified(); if(hostname===persisted){hostname=name;hostnameRevision=configurationRevision();} persisted=name; stale=false; overviewChannel=Math.min(overviewChannel,info.pwm_count); invalidateConfiguration(); }} />
+      <Recovery active={route === 'recovery'} {busy} {firmware} {perform} onconfigurationchange={recoveryChanged} onread={(next, info, name) => { ++revision; snapshot=next; firmware=info; configurationVerified(); if(hostname===persisted){hostname=name;hostnameRevision=configurationRevision();} persisted=name; hostnameStale=false;stale=false; overviewChannel=Math.min(overviewChannel,info.pwm_count); invalidateConfiguration(); }} />
       <SystemSettings feedback={error} active={route === 'clock'} kind="clock" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
       <SystemSettings feedback={error} active={route === 'network'} kind="network" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
     {/if}
@@ -498,6 +513,7 @@ Third-party material retains its own terms.
 
   .overview-heading-actions{display:flex;align-items:center;gap:20px}
   .living-monitor{display:block}.living-monitor .overview-outputs{min-width:0}
+  .reconnect-notice{font-size:12px;line-height:1.5;color:var(--sr-muted);margin:8px 0 16px;max-width:95ch}
   .configuration-recovery{border-left:2px solid var(--sr-accent);padding:10px 14px;background:var(--sr-surface);font-size:13px;margin-bottom:12px}.configuration-recovery p{font-size:12px;margin:6px 0}.configuration-recovery a{display:inline-flex;align-items:center;min-height:44px}
   .label-status{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--sr-muted);margin-bottom:8px}.label-status p{margin:0}
 </style>

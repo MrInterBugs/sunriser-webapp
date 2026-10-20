@@ -25,7 +25,7 @@ Third-party material retains its own terms.
  <header><h1>Help and getting started</h1><p>Local guidance for SunRiser. Reading help never applies settings or commands.</p></header>
  <div class="guidance-layout"><section aria-label="Getting started"><h2>Getting started</h2><ol>
  <li><a href="#index">Check reported state</a>. Confirm the controller is reachable; stale readings are not current output.</li>
- <li><a href="#channels">Identify channels</a>. Load channel configuration, choose display presets and confirm binary/on-off behavior for your existing hardware. Colour labels do not change physical spectrum.</li>
+ <li><a href="#channels">Identify channels</a>. Saved channel configuration loads automatically. Choose display presets and confirm binary/on-off behavior for your existing hardware. Colour labels do not change physical spectrum.</li>
  <li><a href="#clock">Check device-local time</a>. Daily and weekly schedules follow the controller’s local calendar.</li>
  <li><a href="#schedules">Create or inspect a schedule</a>. Choose daily or weekly mode, edit precise times and percentages, then explicitly Save. Drafts do not control the device.</li>
  <li><a href="#recovery">Keep a local backup</a>. Review recovery operations and connectivity guidance before applying changes that may interrupt access.</li>
