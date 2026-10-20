@@ -4,6 +4,8 @@ The Living Aquascape Svelte frontend for SunRiser 8 and 10, extracted into a
 standalone project. It communicates with the controller's existing HTTP API.
 All fonts, images and notices are local.
 
+Current Overview polish and configuration-synchronisation notes: [validation report](docs/OVERVIEW_SYNC.md).
+
 ## Screenshots
 
 Desktop and mobile views of Living Aquascape using demonstration data. Select an
