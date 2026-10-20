@@ -1,0 +1,7 @@
+node_modules/
+dist/
+build/
+/NEW.BEE
+/NEW.BEE.download
+__pycache__/
+.DS_Store

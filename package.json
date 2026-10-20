@@ -1,0 +1,29 @@
+{
+  "name": "sunriser-webapp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --strictPort",
+    "check": "svelte-check --tsconfig ./tsconfig.json && tsc --noEmit",
+    "build": "python3 scripts/package.py --check-input && python3 scripts/notices.py --check && vite build && python3 scripts/package.py && npm run verify",
+    "preview": "vite preview --host 127.0.0.1 --strictPort",
+    "verify": "node scripts/verify-package.mjs",
+    "test": "node --test tests/package.test.mjs"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "3.1.2",
+    "svelte": "5.57.2"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "vite": "8.3.4",
+    "typescript": "5.9.3",
+    "svelte-check": "4.7.6",
+    "@types/node": "22.19.0"
+  },
+  "license": "GPL-3.0-only"
+}

@@ -1,0 +1,75 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * Copyright (C) 2026 Aedan Lawrence (original contributions).
+ * Part of the modern frontend adapted from the SunRiser project and its workflows.
+ * Upstream: https://github.com/LEDaquaristik/sunriser
+ * Frontend adaptation (2026); see LICENSING.md and LICENSE.
+ * Third-party material retains its own terms.
+ */
+/* Living Aquascape: approved material and colour system, adapted to complete production editors. */
+.app-shell .app-header{background:#10271f;border-color:#41614f}
+.app-shell .wordmark{font-weight:650;letter-spacing:-1.2px}
+.app-shell .workspace{padding-inline:40px}
+.app-shell main{min-height:65vh}
+.app-shell .feedback{font-size:12px;min-height:38px}
+.app-shell .feedback p{font-size:12px}
+.app-shell :is(.porcelain,.overview-outputs,.channel-row,.all-channels,.curve-editor,.sensor-readback,.schedule-identity,.weather-profiles,.hostname-form){
+ color-scheme:light;--sr-ink:#29472f;--sr-muted:#526746;--sr-canvas:#eaeada;--sr-surface:#eaeada;--sr-soft:#dce2cb;--sr-input:#f4f3e7;--sr-line:#aebe97;--sr-control-line:#839a66;--sr-accent:#6c813f;--sr-teal:#435d2f;--sr-teal-hover:#375126;--sr-action-ink:#f7f5e8;--sr-meter-track:#b6c3a0;--sr-disabled:#66765b;--sr-disabled-bg:#dbe1ce;--sr-focus:#5e7430;--sr-error:#993d28;--sr-error-bg:#f4dfd2;--sr-amber:#6a511e;--sr-amber-bg:#e8dfc6;--sr-active:#405e30;color:var(--sr-ink);background:var(--sr-canvas)
+}
+.app-shell .overview-outputs{padding:20px 24px;margin-top:24px}
+.app-shell .overview-outputs :is(p,a,span){color:var(--sr-muted)}
+.app-shell .overview-outputs .overview-top h2{font-size:20px;font-weight:600}
+.app-shell .overview-outputs .channels{grid-template-columns:repeat(5,minmax(0,1fr));gap:0 24px}
+.app-shell .overview-outputs .channels li{display:block;min-width:0;padding:10px 0 12px}
+.app-shell .overview-outputs .output-select{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;border:0;padding:0;text-align:left;background:transparent;color:var(--sr-ink);min-height:44px;font-weight:500}
+.app-shell .overview-outputs .output-select:hover{background:var(--sr-soft)}
+.app-shell .overview-outputs .output-select[aria-pressed=true]{box-shadow:inset 0 2px #6c813f;background:#dce2cb}
+.app-shell .overview-outputs .output-name{font-size:12px}
+.app-shell .overview-outputs .channels strong{font:24px var(--sr-mono);white-space:nowrap}
+.app-shell .overview-outputs .channels strong small{font:10px var(--sr-font)}
+.app-shell .overview-outputs .overview-links{font-size:12px;gap:16px;flex-wrap:wrap}
+.app-shell .lighting .channel-list{gap:16px 24px}
+.app-shell .lighting .channel-row{padding:18px 20px;border:1px solid #b3c09a;border-radius:2px}
+.app-shell .lighting .all-channels{padding:20px;margin-top:20px;border-radius:2px}
+.app-shell .lighting .channel-identity{border-bottom-color:#aebe97}
+.app-shell .lighting .channel-row .channel-identity h3{font-weight:650}
+.app-shell .lighting .channel-row .command-label{color:#526746}
+.app-shell .lighting .service-command{border-top:2px solid #e4c497}
+.app-shell .lighting .service-settings{border-left:1px solid #41614f;padding-left:28px}
+.app-shell .schedules .curve-section{background:transparent;border:0;border-radius:0;padding:20px 0}
+.app-shell .schedules .selection-context{padding:16px 20px;background:#eaeada;color:#29472f}
+.app-shell .schedules .selection-context p{color:#526746}
+.app-shell .schedules .channel-number{border-color:#82945f;color:#526b3c}
+.app-shell .schedules .curve-editor{padding:20px 16px;border:1px solid #aebe97;border-radius:2px}
+.app-shell .schedules .points-heading{display:block}
+.app-shell .schedules .curve-graph{padding-top:14px}
+.app-shell .schedules .point:focus-within{background:#dce2cb}
+.app-shell .schedules .points input{font-size:15px}
+.app-shell .schedules .curve-layout{gap:26px}
+.app-shell .schedules .point-columns{font-size:11px}
+.app-shell :is(.page-heading,.heading) h1{font-weight:600}
+.app-shell :is(.network-workspace,.clock-workspace,.hostname-workspace){border-top:1px solid var(--sr-line);padding-top:20px}
+.app-shell .readback{border-left-color:#a8ba87}
+.app-shell .danger-zone{border-top-color:var(--sr-error)}
+.app-shell .dialog{background:#1b3a30}
+.app-shell .sensor-readback{border:1px solid #aebe97}
+@media(min-width:1101px){.app-shell .app-header{min-height:68px}.app-shell .lighting-links a{min-height:68px}.app-shell .heading{margin-block:12px 16px}}
+@media(max-width:1100px){.app-shell .workspace{padding-inline:28px}.app-shell .overview-outputs .channels{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:800px){.app-shell .workspace{padding-inline:20px}.app-shell .overview-outputs{padding:18px 14px;margin-top:20px}.app-shell .overview-outputs .channels{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.app-shell .overview-outputs .output-select{gap:6px}.app-shell .overview-outputs .channels strong{font-size:22px}.app-shell .lighting .channel-row{padding:18px 16px}.app-shell .lighting .service-settings{border-left:0;border-top:1px solid #41614f;padding-left:0;padding-top:24px}.app-shell .overview-outputs .overview-links{gap:12px}.app-shell .overview-outputs .overview-links button{width:100%}.app-shell .schedules .selection-context{padding:14px}.app-shell .schedules .curve-editor{padding:16px 12px}.app-shell .schedules .curve-layout{gap:20px}}
+@media(max-width:360px){.app-shell .workspace{padding-inline:16px}.app-shell .overview-outputs .channels strong{font-size:20px}.app-shell .overview-outputs .output-name{font-size:11px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{transition:none!important;animation:none!important}}
+
+.app-shell .schedules .schedule-identity{display:grid;grid-template-columns:minmax(200px,1fr) minmax(360px,480px);gap:24px;align-items:center;padding:14px 18px;margin:12px 0 16px;border:1px solid #aebe97}
+.app-shell .schedules .schedule-identity .selection-context{background:transparent;padding:0;margin:0}
+.app-shell .schedules .schedule-identity .selectors{margin:0;gap:14px;grid-template-columns:1fr 1fr}
+.app-shell .schedules .schedule-identity .channel-number{background:transparent;border:1px solid #839a66;color:#435d2f}
+.app-shell .schedules .schedule-identity .selection-context strong{color:#29472f}
+.app-shell .weather-profiles{padding:18px 16px;border:1px solid #aebe97}
+.app-shell .weather-profiles p{color:#526746}
+.app-shell .weather-profiles h2{color:#29472f}
+.app-shell .overview-heading-actions>p{margin:0}
+@media(max-width:800px){.app-shell .schedules .schedule-identity{grid-template-columns:1fr;gap:12px;padding:14px}.app-shell .schedules .schedule-identity .selectors{width:100%}}
+
+.app-shell .schedules .view-switch{margin-bottom:12px}
+.app-shell .schedules .curve-section{padding-top:12px}
+.app-shell .schedules .curve-section>.section-title{margin-bottom:8px}

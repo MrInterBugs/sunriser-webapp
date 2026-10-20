@@ -1,0 +1,30 @@
+{
+  "source_commit": "6d6cd44adaa974a84880f56f904f16c7070182f3",
+  "source_directory": "sunriser-webapp-modern",
+  "captured_files": 72,
+  "source_snapshot_sha256": "b855213258beb0d56c1895441e89f7d40cb7b22c2fbf271047c69b7d75d017fa",
+  "snapshot_algorithm": "SHA-256 of sorted UTF-8 lines: <source-file SHA-256><two spaces><relative path><LF>. Scope: all src/ and public/ files, plus snapshot_extra_files. Hashes describe source inputs before standalone adaptations.",
+  "snapshot_extra_files": [
+    "LICENSE",
+    "LICENSING.md",
+    "assets/fonts/OFL-Manrope.txt",
+    "assets/photo/ATTRIBUTION.txt",
+    "assets/photo/CC-BY-SA-3.0.txt",
+    "assets/photo/manifest.json",
+    "index.html",
+    "package-lock.json",
+    "package.json",
+    "scripts/notices.py",
+    "tsconfig.json",
+    "vite.config.ts"
+  ],
+  "standalone_adaptations": {
+    "src/recovery.ts": "Standalone terminology in a comment; executable code unchanged.",
+    "public/notices.html": "Generated from local notices; photograph credit links to its source rather than workspace-only evidence.",
+    "assets/photo/ATTRIBUTION.txt": "Source link replaces a workspace-only evidence path.",
+    "assets/photo/manifest.json": "Only asset, attribution and licence metadata required by this standalone build is retained.",
+    "package.json": "Standalone name, scripts and packaging/test dependencies.",
+    "package-lock.json": "Standalone root package metadata; dependency versions preserved."
+  },
+  "note": "Synchronised shared frontend source from the stated commit. Standalone documentation, vendor input verification, packaging and regression tests are maintained separately. Later source edits are not automatically synchronised."
+}

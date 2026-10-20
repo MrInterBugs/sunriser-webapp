@@ -1,0 +1,52 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * Copyright (C) 2026 Aedan Lawrence (original contributions).
+ * Part of the modern frontend adapted from the SunRiser project and its workflows.
+ * Upstream: https://github.com/LEDaquaristik/sunriser
+ * Frontend adaptation (2026); see LICENSING.md and LICENSE.
+ * Third-party material retains its own terms.
+ */
+:root {
+  color-scheme: dark;
+  --sr-accent: #e4c497;
+  --sr-action-ink: #142f29;
+  --sr-input: #17372d;
+  --sr-disabled: #a8b6a2;
+  --sr-disabled-bg: #244235;
+  --sr-meter-track: #aebd95;
+  --sr-active: #bed0a5;
+  --sr-font: Manrope, Arial, sans-serif;
+  --sr-mono: Menlo, Monaco, Consolas, monospace;
+  --sr-canvas: #142f29;
+  --sr-surface: #1b3a30;
+  --sr-ink: #edf0e4;
+  --sr-muted: #bdcdbb;
+  --sr-line: #41614f;
+  --sr-control-line: #7e9a83;
+  --sr-teal: var(--sr-accent);
+  --sr-teal-hover: #f0d7b2;
+  --sr-soft: #244637;
+  --sr-amber: #e4c497;
+  --sr-amber-bg: #35442d;
+  --sr-error: #ffad9b;
+  --sr-error-bg: #3b2425;
+  --sr-focus: #ecd3a5;
+  --sr-radius: 4px;
+  --sr-porcelain: #eaeada;
+  --sr-porcelain-ink: #29472f;
+  --sr-porcelain-muted: #526746;
+  --sr-porcelain-line: #aebe97;
+  --sr-porcelain-input: #f4f3e7;
+  --sr-rail: #10271f;
+  --sr-rail-ink: #edf0e4;
+  --sr-rail-muted: #bdcdbb;
+  --sr-title: clamp(26px, 2.2vw, 30px);
+  --sr-section: 20px;
+  --sr-control: 44px;
+  --sr-space-1: 4px;
+  --sr-space-2: 8px;
+  --sr-space-3: 12px;
+  --sr-space-4: 16px;
+  --sr-space-6: 24px;
+  --sr-space-8: 32px;
+}
