@@ -7,11 +7,13 @@
  */
 import { writable, get, type Writable } from 'svelte/store';
 import { readSavedConfiguration, acceptSavedConfiguration } from './api.js';
+import {configurationState} from './configuration-state.js';
 import { presets } from './channel-presets.js';
 export { presets };
 export type Channel = {color:unknown; binary:unknown; name:unknown};
 const identities = writable<Channel[]>([]);
 function publish(channels: Channel[]) {
+  if(channels.length&&get(configurationState).recovery)return;
   const snapshot=JSON.parse(JSON.stringify(channels)) as Channel[];
   identities.set(snapshot);
   acceptSavedConfiguration(Object.fromEntries(snapshot.flatMap((ch,i)=>[

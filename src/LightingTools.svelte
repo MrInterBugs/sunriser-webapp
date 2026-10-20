@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {configurationRevision,configurationCurrent} from './configuration-state';
+ let snapshotRevision=$state(configurationRevision());
  import {readConfig,saveConfiguration,inRange,type Firmware,type DeviceState} from './api';
  import {readChannels,savedChannels} from './channels';
  import {lightingKeys,decodeLighting,lightingPatch,timeLapseState,type LightingValues} from './advanced';
@@ -23,8 +25,8 @@ Third-party material retains its own terms.
  const minimum=$derived(assessment('minimum')),expert=$derived(assessment('expert')),mode=$derived(timeLapseState(snapshot,stale));
  const flags=[['higherminimum','Raise low-end minimum'],['oldfade','Use original dimming algorithm']];
  function set(key:string,value:unknown){if(draft){draft[key]=value;onedit();}}
- async function load(refresh=false){attempted=true;await perform(async()=>{const next=decodeLighting(await readConfig(lightingKeys(firmware.pwm_count)),firmware.pwm_count);const identities=await readChannels(firmware.pwm_count,refresh);base=JSON.parse(JSON.stringify(next));draft=next;savedChannels.set(identities);},'Lighting settings loaded','Could not load lighting settings. Draft kept; explicitly reload.','Reading lighting settings…');}
- async function save(scope:'minimum'|'expert',event:SubmitEvent){event.preventDefault();const result=assessment(scope);if(result.error||!Object.keys(result.patch).length)return;await perform(async()=>{await saveConfiguration(result.patch,firmware);await readback();Object.assign(base,result.patch);},scope==='minimum'?'Minimum settings saved and verified':'Dimming settings saved and verified','Could not confirm lighting settings. Draft kept; reload to verify or explicitly retry Save.','Saving lighting settings…');}
+ async function load(refresh=false){attempted=true;await perform(async()=>{const next=decodeLighting(await readConfig(lightingKeys(firmware.pwm_count)),firmware.pwm_count);const identities=await readChannels(firmware.pwm_count,refresh);base=JSON.parse(JSON.stringify(next));draft=next;snapshotRevision=configurationRevision();savedChannels.set(identities);},'Lighting settings loaded','Could not load lighting settings. Draft kept; explicitly reload.','Reading lighting settings…');}
+ async function save(scope:'minimum'|'expert',event:SubmitEvent){event.preventDefault();const result=assessment(scope);if(result.error||!Object.keys(result.patch).length||!configurationCurrent(snapshotRevision))return;await perform(async()=>{await saveConfiguration(result.patch,firmware);await readback();Object.assign(base,result.patch);},scope==='minimum'?'Minimum settings saved and verified':'Dimming settings saved and verified','Could not confirm lighting settings. Draft kept; reload to verify or explicitly retry Save.','Saving lighting settings…');}
  async function preview(n:number){const value=draft?.[`pwm#${n}#min`];if(inRange(value,1000))await command({pwms:{[n]:value}});}
 </script>
 <div hidden={!active} class="lighting-tools">
@@ -37,14 +39,14 @@ Third-party material retains its own terms.
  {#if draft}
  <section id="minimum-settings" aria-label="Minimum output settings"><h2>Minimum output</h2><p>Set a stored minimum from 0–1000 raw; 0 disables the minimum. Edit locally, then use Preview only when you intend to command an output. Saving the setting is a separate action.</p>
  <p class="notice">Preview sends a live raw command. Fixed-mode channels retain that command, including after restart; other planning usually resumes after about a minute. Preview does not stop service mode or save the minimum. It does not establish a lamp’s physical switch-on threshold.</p>
- <form onsubmit={e=>save('minimum',e)} novalidate><DraftBar dirty={!!Object.keys(minimum.patch).length||!!minimum.error} {busy} {feedback} disabled={!Object.keys(minimum.patch).length||!!minimum.error} label="Save minimum settings" scope="minimum " detail="Only changed minimum settings are saved; output is read independently."/>
+ <form onsubmit={e=>save('minimum',e)} novalidate><DraftBar {snapshotRevision} dirty={!!Object.keys(minimum.patch).length||!!minimum.error} {busy} {feedback} disabled={!Object.keys(minimum.patch).length||!!minimum.error} label="Save minimum settings" scope="minimum " detail="Only changed minimum settings are saved; output is read independently."/>
  {#if minimum.error}<p class="error" role="alert">{minimum.error}</p>{/if}
  <div class="channel-grid">{#each channels as n}{@const key=`pwm#${n}#min`}<section class="channel-setting"><div class="row-title"><h3><ChannelIdentity number={n}/></h3><span>Reported{stale?' · stale':''}: <strong>{snapshot.pwms[String(n)]} raw</strong></span></div><RawMeter value={snapshot.pwms[String(n)]} {stale}/>
  <p>Saved minimum: {JSON.stringify(base[key])} raw{draft[`pwm#${n}#onoff`]===true?' · Binary channel: minimum does not control on/off output.':''}</p>
  {#if typeof base[key]!=='number'}<p>Unknown stored value is preserved until explicitly replaced.</p>{/if}
  <div class="minimum-control"><LevelControl id={`minimum-${n}`} label={`Channel ${n} minimum raw`} max={1000} disabled={busy} bind:value={()=>typeof draft![key]==='number'?draft![key] as number:undefined,v=>set(key,v)}/><ActionButton secondary label={`Preview channel ${n} minimum`} disabled={busy||!inRange(draft[key],1000)} onclick={()=>preview(n)}>Preview</ActionButton></div></section>{/each}</div></form></section>
  <section id="expert-settings" aria-label="Expert dimming settings"><h2>Expert dimming</h2><p>Compatibility settings for existing lighting hardware. These are raw algorithm limits, not percentages or measurements. No hardware model is inferred from these settings.</p>
- <form onsubmit={e=>save('expert',e)} novalidate><DraftBar dirty={!!Object.keys(expert.patch).length||!!expert.error} {busy} {feedback} disabled={!Object.keys(expert.patch).length||!!expert.error} label="Save dimming settings" scope="dimming " detail="Saves changed compatibility settings without saving minimum drafts."/>
+ <form onsubmit={e=>save('expert',e)} novalidate><DraftBar {snapshotRevision} dirty={!!Object.keys(expert.patch).length||!!expert.error} {busy} {feedback} disabled={!Object.keys(expert.patch).length||!!expert.error} label="Save dimming settings" scope="dimming " detail="Saves changed compatibility settings without saving minimum drafts."/>
  {#if expert.error}<p class="error" role="alert">{expert.error}</p>{/if}
  <fieldset disabled={busy}><legend class="visually-hidden">Dimming settings</legend><div class="flags">{#each flags as [key,label]}{#if typeof draft[key]==='boolean'}<label class="check"><input type="checkbox" checked={draft[key]===true} onchange={e=>set(key,e.currentTarget.checked)}/>{label}</label>{:else}<label>{label}<select value="unknown" onchange={e=>set(key,e.currentTarget.value==='true')}><option value="unknown" disabled>Unknown — preserved</option><option value="false">Off</option><option value="true">On</option></select></label>{/if}{/each}</div>
  <p>Raise low-end minimum applies the firmware’s compatibility floor. Original dimming algorithm changes low-end conversion. Defaults are off; neither setting proves physical brightness or hardware compatibility.</p>

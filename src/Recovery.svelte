@@ -30,6 +30,7 @@ Third-party material retains its own terms.
     firmware,
     perform,
     onread,
+    onconfigurationchange,
   }: {
     active: boolean;
     busy: boolean;
@@ -40,6 +41,7 @@ Third-party material retains its own terms.
       failure: string,
       pending: string,
     ) => Promise<boolean>;
+    onconfigurationchange: (outcome:'acknowledged'|'uncertain') => void;
     onread: (state: DeviceState, info: Firmware, name: string) => void;
   } = $props();
   type Operation = "restore" | "firmware" | "factory" | "reset" | "reboot";
@@ -57,6 +59,7 @@ Third-party material retains its own terms.
     selecting = $state(false),
     demo = $state<keyof typeof demos>("standard");
   let expected: Uint8Array | undefined;
+  let readbackFailed=$state(false);
   // After the device rejected a restore upload with HTTP 413 (see FRAMING_HEADER in recovery.ts), the next deliberate,
   // separately confirmed restore changes the request's framing. Nothing is retried automatically.
   let restoreFraming = $state(false);
@@ -143,6 +146,7 @@ Third-party material retains its own terms.
     if (!op || busy) return;
     confirm = undefined;
     expected = op === "restore" ? backup : undefined;
+    readbackFailed=false;
     result = "Operation in progress…";
     progress =
       op === "restore"
@@ -160,7 +164,9 @@ Third-party material retains its own terms.
       async () => {
         try {
           await run(op, framing);
+          if(['restore','reset','factory'].includes(op))onconfigurationchange('acknowledged');
         } catch (e) {
+          if(['restore','reset','factory'].includes(op))onconfigurationchange('uncertain');
           failure = e;
           throw e;
         }
@@ -223,10 +229,19 @@ Third-party material retains its own terms.
       "Recovery readback not verified.",
       "Checking device readback…",
     );
+    readbackFailed=!!expected&&!ok;
     result = ok
       ? text
       : "Device or values not verified. It may still be processing or unavailable. This check sent reads only; check again explicitly when ready. No write was retried.";
   }
+  async function inspectCurrent() {
+    const ok=await perform(async()=>{
+      const read=await readRecovery(firmware);
+      onread(read.state,read.firmware,read.hostname);
+    },'Current device readback checked; restore remains unverified.','Current device readback unavailable. No write was retried.','Reading current device state…');
+    result=ok?'Current device readback checked. The restore outcome is still unverified. Saved configuration will be read again as pages need it. Retained editor drafts require explicit reconciliation before saving. No restore or other write was repeated.':'Current device readback unavailable. Check the known device address and connection, then explicitly check again. The restore remains unverified. No write was retried.';
+  }
+
 </script>
 
 {#if active}
@@ -248,6 +263,7 @@ Third-party material retains its own terms.
     </p>
     <p data-testid="recovery-result" aria-live="polite">{result}</p>
     {#if progress}<p aria-live="polite">{progress}</p>{/if}
+    {#if readbackFailed}<p>The restored values could not be confirmed. You can inspect the controller's current state without confirming or repeating the restore. Saved settings will be read again; retained drafts still need reconciliation.</p><button class="secondary" onclick={inspectCurrent} disabled={busy||selecting}>Inspect current device state</button>{/if}
 
 
   </section>

@@ -7,6 +7,9 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {configurationRevision} from './configuration-state';
+ import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
+ let snapshotRevision=$state(configurationRevision());
  import type {Firmware} from './api';
  import {readConfig} from './api';
  import {decodeChannels,savedChannels} from './channels';
@@ -16,7 +19,7 @@ Third-party material retains its own terms.
  import ChannelIdentity from './ui/ChannelIdentity.svelte';
  let {active,busy,firmware,perform}:{active:boolean;busy:boolean;firmware:Firmware|undefined;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>}=$props();
  let rows=$state<ReturnType<typeof configuredRows>>(),readAt=$state(''),stale=$state(false);
- async function load(){if(!firmware||busy)return;const count=firmware.pwm_count;const ok=await perform(async()=>{const values=await readConfig(configurationKeys(count));rows=configuredRows(values,count);savedChannels.set(decodeChannels(values,count));readAt=new Date().toISOString();stale=false;},'Configured state read from controller','Could not read configured state. Previous snapshot retained as stale; no changes were made.','Reading configured state…');if(!ok)stale=true;}
+ async function load(){if(!firmware||busy)return;const count=firmware.pwm_count;const ok=await perform(async()=>{const values=await readConfig(configurationKeys(count));rows=configuredRows(values,count);snapshotRevision=configurationRevision();savedChannels.set(decodeChannels(values,count));readAt=new Date().toISOString();stale=false;},'Configured state read from controller','Could not read configured state. Previous snapshot retained as stale; no changes were made.','Reading configured state…');if(!ok)stale=true;}
 </script>
 <div hidden={!active} class="help-page">
  <header><h1>Help and getting started</h1><p>Local guidance for SunRiser. Reading help never applies settings or commands.</p></header>
@@ -29,7 +32,7 @@ Third-party material retains its own terms.
  </ol><p>This is guidance, not a setup wizard. Nothing is written by following these links. Configuration readback does not establish physical operation.</p></section>
  <aside><h2>Three different states</h2><dl><dt>Draft</dt><dd>A local editable value. It remains in the mounted editor while navigating, until Save or explicit Reload.</dd><dt>Saved configuration</dt><dd>Acknowledged and verified stored settings. Save scope is shown beside each action.</dd><dt>Reported output</dt><dd>The controller’s independent reading. It can differ from drafts or newly saved configuration.</dd></dl><p>Raw channel commands use 0–1000; schedule/service settings use 0–100%. Some readbacks can exceed 1000 raw. No spectrum, power or aggregate brightness is inferred.</p></aside></div>
  <section aria-label="Configured-state summary" class="configured"><div class="section-heading"><div><h2>Configured-state summary</h2><p>A snapshot of saved configuration, not proof of active output or a complete hardware setup.</p></div><ActionButton secondary disabled={busy||!firmware} onclick={load}>{rows?'Refresh configured state':'Read configured state'}</ActionButton></div>
- {#if !firmware}<p>Connect to the controller to read saved configuration. The guidance below remains available.</p>{:else if rows}<p class:warning={stale}>{stale?'Stale snapshot':'Configuration snapshot'} · {readAt} · refresh explicitly after editing settings elsewhere.</p><div class="summary-grid">{#each rows as row}<article><h3><ChannelIdentity number={row.number}/></h3><strong>{row.mode}</strong><p>{row.plan}</p><p>{row.weather}</p></article>{/each}</div>{:else}<p>{busy?'Reading configured state…':stale?'Configuration unavailable. Explicitly retry the read.':'Read saved settings on request. This does not change controller configuration.'}</p>{/if}
+ {#if !firmware}<p>Connect to the controller to read saved configuration. The guidance below remains available.</p>{:else if rows}<ConfigurationNotice revision={snapshotRevision}/><p class:warning={stale}>{stale?'Stale snapshot':'Configuration snapshot'} · {readAt} · refresh explicitly after editing settings elsewhere.</p><div class="summary-grid">{#each rows as row}<article><h3><ChannelIdentity number={row.number}/></h3><strong>{row.mode}</strong><p>{row.plan}</p><p>{row.weather}</p></article>{/each}</div>{:else}<p>{busy?'Reading configured state…':stale?'Configuration unavailable. Explicitly retry the read.':'Read saved settings on request. This does not change controller configuration.'}</p>{/if}
  </section>
  <section aria-label="Workflow reference"><h2>Workflow reference</h2><p>Open a topic for the complete local workflow and its important limitations.</p>
  {#each helpSections as section}<details><summary>{section.name}</summary><section aria-label={`Help: ${section.name}`}>{#each section.text as paragraph}<p>{paragraph}</p>{/each}<a class="destination" href={`#${section.route}`}>Open {section.name} →</a></section></details>{/each}

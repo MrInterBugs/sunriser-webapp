@@ -7,14 +7,15 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+  import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
   import RawMeter from './ui/RawMeter.svelte';
   import {inRange, utc, type Firmware, type DeviceState, type ServiceSettings} from './api';
   import ActionButton from './ui/ActionButton.svelte';
   import StateBadge from './ui/StateBadge.svelte';
   import LevelControl from './ui/LevelControl.svelte';
-  let {onconfigure,route,firmware,snapshot,persisted,stale,busy,raw=$bindable(),allRaw=$bindable(),serviceSettings=$bindable(),serviceDirty,serviceValid,refresh,applyRaw,command,loadService,saveServiceForm,onedit}: {
-    onconfigure:()=>void; route:string; firmware:Firmware; snapshot:DeviceState; persisted:string; stale:boolean; busy:boolean;
+  let {serviceRevision,serviceReconciled,onconfigure,route,firmware,snapshot,persisted,stale,busy,raw=$bindable(),allRaw=$bindable(),serviceSettings=$bindable(),serviceDirty,serviceValid,refresh,applyRaw,command,loadService,saveServiceForm,onedit}: {
+    serviceRevision:number;serviceReconciled:boolean;onconfigure:()=>void; route:string; firmware:Firmware; snapshot:DeviceState; persisted:string; stale:boolean; busy:boolean;
     raw:Record<string,number|undefined>; allRaw:number|undefined; serviceSettings:ServiceSettings|undefined;
     serviceDirty:boolean; serviceValid:boolean; refresh:()=>void; applyRaw:(channel:number|'all')=>void;
     command:(value:{service_mode?:number;blackout?:number})=>void; loadService:()=>void; saveServiceForm:(event:SubmitEvent)=>void; onedit:()=>void;
@@ -37,7 +38,7 @@ Third-party material retains its own terms.
     <section aria-labelledby="service-settings-title" class="service-settings">
       <div class="section-title"><div><h2 id="service-settings-title">Service settings</h2><p>Set the light levels to use while you care for your aquarium.</p></div>{#if serviceSettings}<StateBadge tone={serviceDirty?'draft':'neutral'}>{serviceDirty?'Unsaved changes':'Settings saved'}</StateBadge>{/if}</div>
       {#if serviceSettings}
-        <form onsubmit={saveServiceForm} oninput={onedit}>
+        <ConfigurationNotice revision={serviceRevision}/><form onsubmit={saveServiceForm} oninput={onedit}>
           <div class="service-configuration"><div class="timeout"><div><label for="service-timeout">Timeout minutes</label><p id="timeout-help">0 means no automatic end. Maximum 10080 minutes (one week).</p></div><input id="service-timeout" type="number" min="0" max="10080" step="1" bind:value={serviceSettings.timeout} disabled={busy} aria-describedby="timeout-help" aria-invalid={!inRange(serviceSettings.timeout,10080)} /></div>
           <p class="footnote">Readback meters: 0–1000 raw reference; + marks higher values. Service settings below use percent.</p>
 
@@ -54,7 +55,7 @@ Third-party material retains its own terms.
             {/each}
           </div>
           {#if !serviceValid}<p role="alert">Use whole percentages from 0 to 100; binary channels must be 0 or 100. Check your retained draft after a channel-type change.</p>{/if}
-          <div class="save-bar"><div><strong>{serviceDirty?'Save your changes':'Ready for service'}</strong><p>{serviceDirty?'Save to use these levels the next time service starts.':'Edit levels above, then save before starting service.'}</p></div><div class="actions"><ActionButton secondary onclick={loadService} disabled={busy}>Reload service settings</ActionButton><ActionButton type="submit" disabled={busy || !serviceValid || !serviceDirty}>Save service settings</ActionButton></div></div>
+          <div class="save-bar"><div><strong>{serviceDirty?'Save your changes':'Ready for service'}</strong><p>{serviceDirty?'Save to use these levels the next time service starts.':'Edit levels above, then save before starting service.'}</p></div><div class="actions"><ActionButton secondary onclick={loadService} disabled={busy}>Reload service settings</ActionButton><ActionButton type="submit" disabled={busy || !serviceValid || !serviceDirty || !serviceReconciled}>Save service settings</ActionButton></div></div>
           <p class="footnote">Reload replaces unsaved service edits. Saving settings does not start service mode.</p>
         </form>
       {:else}

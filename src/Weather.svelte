@@ -7,6 +7,9 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
+ let snapshotRevision=$state(configurationRevision());
+ const configurationReconciled=$derived(!$configurationState.recovery&&snapshotRevision===$configurationState.revision);
   import {untrack} from 'svelte';
   import WeatherRuntime from './WeatherRuntime.svelte';
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
@@ -70,7 +73,7 @@ Third-party material retains its own terms.
   const dirty = $derived(Object.keys(patch).length > 0);
   const valid = $derived(book && validBook(book));
   $effect(() => {
-    if (active && !attempted && !busy) void reload();
+    if (active && !attempted && !busy && !$configurationState.recovery) void reload();
   });
   $effect(() => {
     if (
@@ -78,6 +81,7 @@ Third-party material retains its own terms.
       book &&
       selected &&
       !draft &&
+      configurationReconciled &&
       !attemptedIds[selected] &&
       !busy
     )
@@ -93,6 +97,7 @@ Third-party material retains its own terms.
           : (next.profiles[0]?.id ?? 0);
         if (id) await loadProfile(next, id);
         book = next;
+        snapshotRevision=configurationRevision();
         selected = id;
         attemptedIds = id ? { [id]: true } : {};
       },
@@ -114,7 +119,7 @@ Third-party material retains its own terms.
   }
   async function save(e: SubmitEvent) {
     e.preventDefault();
-    if (!book || !valid || !dirty) return;
+    if (!book || !valid || !dirty || !configurationCurrent(snapshotRevision)) return;
     const current = book,
       values = { ...patch };
     await perform(
@@ -181,7 +186,7 @@ Third-party material retains its own terms.
   </p>
 
   {#if book}<form class="panel" onsubmit={save} oninput={onedit} novalidate>
-      <DraftBar {feedback} {dirty} {busy} disabled={!valid||!dirty} label="Save weather" scope="weather " detail="Save applies to all edited profiles and channel assignments." />
+      <DraftBar {snapshotRevision} {feedback} {dirty} {busy} disabled={!valid||!dirty} label="Save weather" scope="weather " detail="Save applies to all edited profiles and channel assignments." />
       <fieldset disabled={busy}>
         <legend class="visually-hidden">Weather configuration</legend>
         <div class="weather-workspace"><aside class="weather-profiles" aria-label="Weather profiles"><h2>Profiles</h2><div><label for="weather-profile">Weather profile</label><select

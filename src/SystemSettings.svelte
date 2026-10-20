@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
+ let snapshotRevision=$state(configurationRevision());
   import ClockReadout from "./ui/ClockReadout.svelte";
   import EditorPage from './ui/EditorPage.svelte';
   import DraftBar from './ui/DraftBar.svelte';
@@ -94,13 +96,14 @@ Third-party material retains its own terms.
   );
   const title = $derived(kind === "clock" ? "clock" : "network");
   $effect(() => {
-    if (active && !attempted && !busy) void reload();
+    if (active && !attempted && !busy && !$configurationState.recovery) void reload();
   });
   async function reload() {
     attempted = true;
     await perform(
       async () => {
         editor = await loadSettings(kind, wifi);
+        snapshotRevision=configurationRevision();
       },
       `${title} settings loaded`,
       `Could not load ${title} settings. Retry Reload ${title} settings.`,
@@ -109,7 +112,7 @@ Third-party material retains its own terms.
   }
   async function save(e: SubmitEvent) {
     e.preventDefault();
-    if (!editor || invalid || !dirty) return;
+    if (!editor || invalid || !dirty || !configurationCurrent(snapshotRevision)) return;
     const current = editor,
       patch = settingsPatch(kind, current, wifi);
     await perform(
@@ -218,7 +221,7 @@ Third-party material retains its own terms.
     </p>
     <div class="configuration-workspace">{#if editor}
       <form class="panel settings system-editor" onsubmit={save} oninput={onedit}>
-        <DraftBar {feedback} {dirty} {busy} disabled={!!invalid||!dirty} label={`Save ${title} settings`} scope="" detail="Saved values are verified independently. Reload replaces drafts; Verify keeps them." />
+        <DraftBar {snapshotRevision} {feedback} {dirty} {busy} disabled={!!invalid||!dirty} label={`Save ${title} settings`} scope="" detail="Saved values are verified independently. Reload replaces drafts; Verify keeps them." />
         <fieldset disabled={busy}>
           <legend
             >{kind === "clock"

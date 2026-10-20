@@ -7,13 +7,16 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {configurationState} from '../configuration-state';
+ import ConfigurationNotice from './ConfigurationNotice.svelte';
  import ActionButton from './ActionButton.svelte';
  import StateBadge from './StateBadge.svelte';
- let {dirty, busy, feedback="", disabled=false, label, scope, detail='Changes stay in this tab until you save.'}: {dirty:boolean;busy:boolean;feedback?:string;disabled?:boolean;label:string;scope:string;detail?:string}=$props();
+ let {snapshotRevision, dirty, busy, feedback="", disabled=false, label, scope, detail='Changes stay in this tab until you save.'}: {snapshotRevision?:number;dirty:boolean;busy:boolean;feedback?:string;disabled?:boolean;label:string;scope:string;detail?:string}=$props();
+ const reconciled=$derived(snapshotRevision===undefined||(!$configurationState.recovery&&snapshotRevision===$configurationState.revision));
 </script>
 <div class="draft-bar" class:dirty>
- <div><StateBadge tone={dirty?'draft':'neutral'}>{dirty?`Unsaved ${scope}changes`:`No unsaved ${scope}changes`}</StateBadge><p class:error={!!feedback&&!busy}>{busy?'Operation pending · controls are temporarily unavailable.':feedback||detail}</p></div>
- <ActionButton type="submit" disabled={busy||disabled}>{label}</ActionButton>
+ <div><ConfigurationNotice revision={snapshotRevision}/><StateBadge tone={dirty?'draft':'neutral'}>{dirty?`Unsaved ${scope}changes`:`No unsaved ${scope}changes`}</StateBadge><p class:error={!!feedback&&!busy}>{busy?'Operation pending · controls are temporarily unavailable.':feedback||detail}</p></div>
+ <ActionButton type="submit" disabled={busy||disabled||!reconciled}>{label}</ActionButton>
 </div>
 <style>
  .draft-bar { position:sticky; top:0; z-index:3; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:12px; background:var(--sr-canvas); border:0; border-radius:var(--sr-radius); padding:12px 0; margin:0 0 16px; }

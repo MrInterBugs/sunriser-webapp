@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {configurationRevision,configurationCurrent} from './configuration-state';
+ let snapshotRevision=$state(configurationRevision());
  import {readConfig,saveConfiguration,type Firmware} from './api';
  import {actions,preferenceKeys,decodePreferences,preferencePatch,readThunderEligibility,type Preferences} from './preferences';
  import DraftBar from './ui/DraftBar.svelte';
@@ -20,16 +22,16 @@ Third-party material retains its own terms.
   const next=decodePreferences(await readConfig(preferenceKeys(firmware.pwm_count)),firmware.pwm_count);
   // A missing/malformed weather catalogue must not block unrelated preferences.
   try{eligible=await readThunderEligibility(firmware.pwm_count);}catch{eligible=undefined;}
-  base=JSON.parse(JSON.stringify(next));draft=next;
+  base=JSON.parse(JSON.stringify(next));draft=next;snapshotRevision=configurationRevision();
  },'Device preferences loaded','Could not load device preferences. Draft kept; explicitly reload.','Reading device preferences…');}finally{loading=false;}}
- async function save(e:SubmitEvent){e.preventDefault();if(!draft||!dirty)return;await perform(async()=>{await saveConfiguration(patch,firmware);base=JSON.parse(JSON.stringify(draft));},'Preferences saved and verified','Could not confirm preferences. Draft kept; reload to verify or explicitly retry Save.','Saving device preferences…');}
+ async function save(e:SubmitEvent){e.preventDefault();if(!draft||!dirty||!configurationCurrent(snapshotRevision))return;await perform(async()=>{await saveConfiguration(patch,firmware);base=JSON.parse(JSON.stringify(draft));},'Preferences saved and verified','Could not confirm preferences. Draft kept; reload to verify or explicitly retry Save.','Saving device preferences…');}
  function set(key:string,value:unknown){if(draft){draft[key]=value;onedit();}}
 </script>
 <section hidden={!active} class="preferences" aria-label="Device preferences">
  <div class="section-heading"><div><h2>Device preferences</h2><p>Button actions, status indication and logging. Saving does not simulate a button press.</p></div><ActionButton secondary disabled={busy} onclick={load}>{draft?'Reload device preferences':'Load device preferences'}</ActionButton></div>
  {#if draft}
  <form onsubmit={save}>
- <DraftBar {dirty} {busy} {feedback} disabled={!dirty} label="Save device preferences" scope="preference " detail="Changed preferences are saved and read back independently of reported output."/>
+ <DraftBar {snapshotRevision} {dirty} {busy} {feedback} disabled={!dirty} label="Save device preferences" scope="preference " detail="Changed preferences are saved and read back independently of reported output."/>
  <div class="preferences-grid">
  <section class="preference-group"><h3>Physical button</h3>
  {#if typeof draft.nobutton==='boolean'}<label class="check"><input type="checkbox" disabled={busy} checked={draft.nobutton} onchange={e=>set('nobutton',e.currentTarget.checked)}/>Disable physical button</label>

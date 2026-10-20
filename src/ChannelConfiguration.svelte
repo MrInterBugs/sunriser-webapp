@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {configurationRevision,configurationCurrent} from './configuration-state';
+ let snapshotRevision=$state(configurationRevision());
  import {tick} from 'svelte';
  import {readChannels,savedChannels,choosePreset,channelPatch,presets,type Channel} from './channels';
  import {saveConfiguration,type Firmware} from './api';
@@ -19,8 +21,8 @@ Third-party material retains its own terms.
  const patch=$derived(draft?channelPatch(draft,baseline):{});
  const dirty=$derived(Object.keys(patch).length>0);
  export async function show(){if(!draft)await load();await tick();const heading=document.getElementById('channel-configuration-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start'});}
- async function load(refresh=false){loading=true;try{await perform(async()=>{const c=await readChannels(firmware.pwm_count,refresh);baseline=structuredClone(c);draft=c;savedChannels.set(structuredClone(c));},'Channel configuration loaded','Could not load channel configuration. Existing draft kept.','Reading channel configuration…');}finally{loading=false;}}
- async function save(event:SubmitEvent){event.preventDefault();if(!draft||!dirty)return;await perform(async()=>{await saveConfiguration(patch,firmware);baseline=JSON.parse(JSON.stringify(draft));savedChannels.set(baseline);onsaved(baseline);},'Channel configuration saved and verified','Could not confirm channel configuration. Draft kept; reload to verify or explicitly retry Save.','Saving channel configuration…');}
+ async function load(refresh=false){loading=true;try{await perform(async()=>{const c=await readChannels(firmware.pwm_count,refresh);baseline=structuredClone(c);draft=c;snapshotRevision=configurationRevision();savedChannels.set(structuredClone(c));},'Channel configuration loaded','Could not load channel configuration. Existing draft kept.','Reading channel configuration…');}finally{loading=false;}}
+ async function save(event:SubmitEvent){event.preventDefault();if(!draft||!dirty||!configurationCurrent(snapshotRevision))return;await perform(async()=>{await saveConfiguration(patch,firmware);baseline=JSON.parse(JSON.stringify(draft));savedChannels.set(baseline);onsaved(baseline);},'Channel configuration saved and verified','Could not confirm channel configuration. Draft kept; reload to verify or explicitly retry Save.','Saving channel configuration…');}
  function select(index:number,value:string){if(!draft)return;choosePreset(draft,index,value);onedit();}
 </script>
 <section hidden={!active} class="channel-configuration" aria-label="Channel configuration">
@@ -28,7 +30,7 @@ Third-party material retains its own terms.
  {#if draft}
  <p>Display colour does not change the physical light spectrum. Multi-channel presets expand into subsequent channels, up to the last available output.</p>
  <form onsubmit={save}>
- <DraftBar {feedback} {dirty} {busy} disabled={!dirty} label="Save channel configuration" scope="channel " detail="Only changed colour and binary keys are saved. Reported output remains independent."/>
+ <DraftBar {snapshotRevision} {feedback} {dirty} {busy} disabled={!dirty} label="Save channel configuration" scope="channel " detail="Only changed colour and binary keys are saved. Reported output remains independent."/>
  <div class="configuration-grid">
  {#each draft as channel,i}
  <fieldset disabled={busy}><legend><ChannelIdentity number={i+1}/></legend>

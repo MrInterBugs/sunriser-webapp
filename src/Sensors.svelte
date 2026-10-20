@@ -7,6 +7,10 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
+ import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
+ let snapshotRevision=$state(configurationRevision());
+ const configurationReconciled=$derived(!$configurationState.recovery&&snapshotRevision===$configurationState.revision);
   import {untrack} from 'svelte';
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
   import {savedChannels} from './channels';
@@ -72,7 +76,7 @@ Third-party material retains its own terms.
   const valid = $derived(!!editor && validDraft(editor, channels));
   const patch = $derived(editor ? sensorPatch(selected, editor, catalogue) : {});
   $effect(() => {
-    if (active && !attempted && !busy) void reload();
+    if (active && !attempted && !busy && !$configurationState.recovery) void reload();
   });
   $effect(() => {
     if (ready && (!selected || !ids.includes(selected))) selected = ids[0] ?? "";
@@ -84,6 +88,7 @@ Third-party material retains its own terms.
       selected &&
       catalogue[selected] &&
       !editors[selected] &&
+      configurationReconciled &&
       !attemptedSensors[selected] &&
       !busy
     )
@@ -107,6 +112,7 @@ Third-party material retains its own terms.
         attemptedSensors = target ? { [target]: true } : {};
         names = {};
         ready = true;
+        snapshotRevision=configurationRevision();
       },
       "Sensor configuration loaded",
       "Could not load sensors. Retry Reload sensor configuration.",
@@ -128,7 +134,7 @@ Third-party material retains its own terms.
   async function register() {
     const rom = selected,
       name = names[rom] ?? "Temperature";
-    if (!name.trim() || reading?.device !== 1) return;
+    if (!name.trim() || reading?.device !== 1 || !configurationCurrent(snapshotRevision)) return;
     const { entry, patch } = registration(rom, name, catalogue);
     await perform(
       async () => {
@@ -147,7 +153,7 @@ Third-party material retains its own terms.
   }
   async function save(event: SubmitEvent) {
     event.preventDefault();
-    if (!editor || !valid || !Object.keys(patch).length) return;
+    if (!editor || !valid || !Object.keys(patch).length || !configurationCurrent(snapshotRevision)) return;
     const rom = selected,
       values = { ...patch },
       current = editor;
@@ -197,8 +203,8 @@ Third-party material retains its own terms.
    <div class="sensor-readback readback"><div><label for="sensor-choice">Sensor</label><select id="sensor-choice" bind:value={selected} disabled={busy}>{#each ids as id}<option value={id}>{catalogue[id]?.name??'Unregistered'} · {id}</option>{/each}</select>
    <details class="sensor-identity"><summary>Sensor identity</summary><p>{catalogue[selected]?.name ?? 'Unregistered sensor'} · ROM <code>{selected}</code></p></details></div><div><p>Device readback</p><StateBadge tone={stale?'draft':reading?'active':'error'}>{stale?'Reading may be stale':reading?'Probe connected':'Probe disconnected'}</StateBadge><p class="reading-value" class:reading-status={!reading || (editor && !editor.supported) || reading.device !== 1} data-testid="sensor-reading">{reading ? editor&&!editor.supported?`${reading.value} raw (unsupported configuration)`:formatReading(reading) : 'Disconnected'}</p>
    <p>{reading?'Currently reported by device':'Missing from the last device scan; saved configuration is retained.'}</p></div></div>
-   {#if !catalogue[selected]}
-    {#if reading?.device===1}<label for="sensor-new-name">Sensor name</label><input id="sensor-new-name" bind:value={names[selected]} placeholder="Temperature" disabled={busy} oninput={onedit} /><p>Register writes temperature defaults: inactive control, correction 0, thresholds 15–35°C, all months. Factory correction is +1°C; firmware includes it in subsequent readings.</p><button onclick={register} disabled={busy||!(names[selected]??'Temperature').trim()}>Register sensor</button>
+   {#if !catalogue[selected]}<ConfigurationNotice revision={snapshotRevision}/>
+    {#if reading?.device===1}<label for="sensor-new-name">Sensor name</label><input id="sensor-new-name" bind:value={names[selected]} placeholder="Temperature" disabled={busy} oninput={onedit} /><p>Register writes temperature defaults: inactive control, correction 0, thresholds 15–35°C, all months. Factory correction is +1°C; firmware includes it in subsequent readings.</p><button onclick={register} disabled={busy||!configurationReconciled||!(names[selected]??'Temperature').trim()}>Register sensor</button>
     {:else}<p>Unsupported sensor device type. Raw readings are shown; registration is unavailable.</p>{/if}
    {/if}
   {/if}
@@ -208,7 +214,7 @@ Third-party material retains its own terms.
  {#if editor}
   {#if !editor.supported}<section class="panel"><h2>Unsupported sensor settings</h2><p>This device or unit format is read-only. Its stored configuration is preserved.</p></section>
   {:else}<form class="panel sensor-configuration" onsubmit={save} oninput={onedit} novalidate>
-   <DraftBar {feedback} dirty={!!Object.keys(patch).length} {busy} disabled={!valid||!Object.keys(patch).length} label="Save sensor settings" scope="sensor " detail="Save applies to this sensor. Reading refreshes keep all drafts." />
+   <DraftBar {snapshotRevision} {feedback} dirty={!!Object.keys(patch).length} {busy} disabled={!valid||!Object.keys(patch).length} label="Save sensor settings" scope="sensor " detail="Save applies to this sensor. Reading refreshes keep all drafts." />
    <fieldset disabled={busy}><legend>Temperature settings</legend>
    <div class="field-grid"><div><label for="sensor-name">Sensor name</label><input id="sensor-name" bind:value={editor.draft.name} aria-invalid={!editor.draft.name.trim()} /></div><div>
    <label class="check"><input type="checkbox" bind:checked={editor.draft.active} />Enable sensor control</label><p>Control uses the saved thresholds and assignments below.</p></div></div>

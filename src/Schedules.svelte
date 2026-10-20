@@ -7,6 +7,10 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
+ import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
+ let snapshotRevision=$state(configurationRevision());
+ const configurationReconciled=$derived(!$configurationState.recovery&&snapshotRevision===$configurationState.revision);
   import DayCycle from "./ui/DayCycle.svelte";
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
   import {savedChannels,channelDisplay} from './channels';
@@ -163,7 +167,7 @@ Third-party material retains its own terms.
       .join(" ");
   });
   $effect(() => {
-    if (active && !attempted && !busy) void load();
+    if (active && !attempted && !busy && !$configurationState.recovery) void load();
   });
   $effect(()=>{const value=!!edited;untrack(()=>ondraftview?.(value));});
   async function load(refresh=false) {
@@ -174,6 +178,7 @@ Third-party material retains its own terms.
         book = next;
         toolsReset++;
         baseline = clone(next);
+        snapshotRevision=configurationRevision();
         targets = Array(firmware.pwm_count).fill(false);
         if (!next.programs.some((p) => p.id === program))
           program = next.programs[0]?.id ?? 0;
@@ -185,7 +190,7 @@ Third-party material retains its own terms.
   }
   async function save(event: SubmitEvent) {
     event.preventDefault();
-    if (!book || !baseline || !dirty || errors.length || rawPending || busy) return;
+    if (!book || !baseline || !dirty || errors.length || rawPending || busy || !configurationCurrent(snapshotRevision)) return;
     const draft = clone(book);
     await perform(
       async () => {
@@ -265,8 +270,8 @@ Third-party material retains its own terms.
       <fieldset class="editor" disabled={busy}>
         <legend class="visually-hidden">Schedule editor</legend>
         <div class="save-bar">
-          <div><StateBadge tone={edited ? 'draft' : 'neutral'}>{edited ? 'Unsaved schedule changes' : 'No unsaved schedule changes'}</StateBadge><p>Save applies all edited channels and programs.</p></div>
-          <ActionButton type="submit" disabled={!dirty || !!errors.length || rawPending}>Save schedules</ActionButton>
+          <div><ConfigurationNotice revision={snapshotRevision}/><StateBadge tone={edited ? 'draft' : 'neutral'}>{edited ? 'Unsaved schedule changes' : 'No unsaved schedule changes'}</StateBadge><p>Save applies all edited channels and programs.</p></div>
+          <ActionButton type="submit" disabled={!dirty || !!errors.length || rawPending || !configurationReconciled}>Save schedules</ActionButton>
         </div>
         <div class="schedule-identity">
         <div class="selection-context">

@@ -9,11 +9,12 @@ Third-party material retains its own terms.
 <script lang="ts">
   import OverviewLighting from "./ui/OverviewLighting.svelte";
   import {savedDailyPlans,loadDailyPlan,resetSavedDailyPlans} from "./schedules";
+  import {configurationState,configurationRevision,configurationCurrent,configurationChanged,configurationVerified} from './configuration-state';
   import OperatingState from './ui/OperatingState.svelte';
   let overviewChannel=$state(1),scheduleUnsaved=$state(false);
   let labelsPhase=$state<'idle'|'loading'|'ready'|'error'>('idle');
   let readingState=$state(false),visible=$state(document.visibilityState==='visible');
-  import {readChannels,savedChannels} from './channels';
+  import {readChannels,savedChannels,channelLabel} from './channels';
   import ChannelConfiguration from './ChannelConfiguration.svelte';
   import DevicePreferences from './DevicePreferences.svelte';
   import Help from './Help.svelte';
@@ -64,6 +65,8 @@ Third-party material retains its own terms.
   let allRaw = $state<number | undefined>(0);
   let serviceSettings = $state<ServiceSettings>();
   let serviceBaseline = $state("");
+  let serviceRevision=$state(configurationRevision()),hostnameRevision=$state(configurationRevision());
+  const serviceReconciled=$derived(!$configurationState.recovery&&serviceRevision===$configurationState.revision);
   let serviceAttempted = $state(false);
   let refreshFailures = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -131,7 +134,7 @@ Third-party material retains its own terms.
     JSON.stringify(serviceSettings) !== serviceBaseline,
   );
   $effect(() => {
-    if (loaded && route === "service" && !serviceAttempted && !busy)
+    if (loaded && route === "service" && !serviceAttempted && !busy && !$configurationState.recovery)
       void loadService();
   });
   const identityPage=()=>['index','channels','service','schedules','weather','sensors','lighting-tools'].includes(route);
@@ -141,18 +144,19 @@ Third-party material retains its own terms.
   // Bounded lazy reads share the existing gate. Failures stay local and require
   // explicit retry; neither labels nor planning add a recurring poll.
   $effect(()=>{
-    if(!loaded||!firmware||busy||stale||!visible)return;
+    if(!loaded||!firmware||busy||stale||!visible||$configurationState.recovery)return;
     if(identityPage()&&labelsPhase==='idle')void loadLabels();
     else if(route==='index'&&!$savedDailyPlans[overviewChannel])void readDaily();
   });
+  function recoveryChanged(outcome:'acknowledged'|'uncertain'){configurationChanged(outcome);invalidateConfiguration();}
   async function loadLabels(refresh=false){
-    if(!firmware||!begin())return;
+    if(!firmware||$configurationState.recovery||!begin())return;
     labelsPhase='loading';
     try{savedChannels.set(await readChannels(firmware.pwm_count,refresh));labelsPhase='ready';}
     catch{labelsPhase='error';}finally{end();}
   }
   async function readDaily(refresh=false){
-    if(!firmware||!begin())return;
+    if(!firmware||$configurationState.recovery||!begin())return;
     const selected=overviewChannel;
     try{await loadDailyPlan(selected,refresh);}catch{/* Per-channel saved-plan error is displayed locally. */}finally{end();}
   }
@@ -202,6 +206,7 @@ Third-party material retains its own terms.
       );
       loaded = true;
       stale = false;
+      hostnameRevision=configurationRevision();
       status = "Device loaded";
     } catch {
       error = "Could not load device. Check the connection, then retry.";
@@ -278,6 +283,7 @@ Third-party material retains its own terms.
     try {
       serviceSettings = await getService(firmware.pwm_count);
       serviceBaseline = JSON.stringify(serviceSettings);
+      serviceRevision=configurationRevision();
       status = "Service settings loaded";
     } catch {
       error = "Could not load service settings. Retry Reload service settings.";
@@ -293,6 +299,7 @@ Third-party material retains its own terms.
       !serviceSettings ||
       !serviceValid ||
       !serviceDirty ||
+      !configurationCurrent(serviceRevision) ||
       !begin()
     )
       return;
@@ -312,7 +319,7 @@ Third-party material retains its own terms.
   }
   async function save(event: SubmitEvent) {
     event.preventDefault();
-    if (!firmware || !valid || !dirty || !begin()) return;
+    if (!firmware || !valid || !dirty || !configurationCurrent(hostnameRevision) || !begin()) return;
     error = "";
     status = "Saving…";
     const draft = hostname;
@@ -352,7 +359,8 @@ Third-party material retains its own terms.
       <div class="operation-status">{#if status}<span aria-hidden="true">Last operation:</span>{/if}<p role="status" aria-label="Last operation" aria-live="polite">{status}</p></div>
       {#if error}<p role="alert">{error}</p>{/if}
     </div>
-    {#if loaded&&identityPage()&&labelsPhase!=='ready'}<div class="label-status" aria-live="polite"><p>{labelsPhase==='error'?'Saved channel labels unavailable. Numbered channels remain usable.':labelsPhase==='loading'?'Loading saved channel labels…':'Channel labels waiting for the current operation.'}</p>{#if labelsPhase==='error'&&route!=='index'}<button class="secondary" disabled={busy} onclick={()=>loadLabels(true)}>Retry channel labels</button>{/if}</div>{/if}
+    {#if loaded&&$configurationState.recovery}<div class="configuration-recovery" aria-live="polite"><strong>{$configurationState.recovery==='acknowledged'?'Configuration change acknowledged · verification required':'Configuration outcome uncertain'}</strong><p>Saved labels and planning are not verified. Retained editor snapshots and drafts must be reconciled before saving. <a href="#recovery">Check device readback in Recovery →</a></p></div>{/if}
+    {#if loaded&&identityPage()&&labelsPhase!=='ready'&&!$configurationState.recovery}<div class="label-status" aria-live="polite"><p>{labelsPhase==='error'?'Saved channel labels unavailable. Numbered channels remain usable.':labelsPhase==='loading'?'Loading saved channel labels…':'Channel labels waiting for the current operation.'}</p>{#if labelsPhase==='error'}<button class="secondary" disabled={busy} onclick={()=>loadLabels(true)}>Retry channel labels</button>{/if}</div>{/if}
     {#if !loaded}
       {#if route === 'help'}
         <section aria-label="Controller connection" class="help-connection"><p>{busy?'Connecting to controller… Local help is available below.':'Controller unavailable. Local help remains available; reconnect to read configured state.'}</p>{#if !busy}<ActionButton secondary onclick={load}>Retry connection</ActionButton>{/if}</section>
@@ -367,23 +375,23 @@ Third-party material retains its own terms.
       {/if}
     {:else if firmware && snapshot}
       {#if route === 'channels' || route === 'service'}
-        <LightingDashboard onconfigure={()=>channelConfiguration?.show()} {route} {firmware} {snapshot} {persisted} {stale} {busy} bind:raw bind:allRaw bind:serviceSettings {serviceDirty} {serviceValid} refresh={() => refresh()} {applyRaw} {command} {loadService} {saveServiceForm} onedit={clearFeedback} />
+        <LightingDashboard onconfigure={()=>channelConfiguration?.show()} {serviceRevision} {serviceReconciled} {route} {firmware} {snapshot} {persisted} {stale} {busy} bind:raw bind:allRaw bind:serviceSettings {serviceDirty} {serviceValid} refresh={() => refresh()} {applyRaw} {command} {loadService} {saveServiceForm} onedit={clearFeedback} />
       {:else if route === 'index'}
         <EditorPage>
         <div class="heading">
           <div><h1>Overview</h1></div>
           <div class="overview-heading-actions"><button class="secondary" onclick={() => refresh()} disabled={busy}>Refresh state</button></div>
         </div>
-        <OverviewLighting {firmware} {snapshot} hostname={persisted} {stale} {busy} plan={$savedDailyPlans[overviewChannel]} onretry={()=>readDaily(true)} bind:selected={overviewChannel} unsaved={scheduleUnsaved}/>
+        <OverviewLighting {firmware} {snapshot} hostname={persisted} {stale} {busy} unverified={!!$configurationState.recovery} plan={$savedDailyPlans[overviewChannel]} onretry={()=>readDaily(true)} bind:selected={overviewChannel} unsaved={scheduleUnsaved}/>
         <div class="monitor-workspace living-monitor"><section class="overview-outputs" aria-labelledby="channels-title">
           <div class="overview-top"><h2 id="channels-title">Reported channel output</h2><span>Raw counts</span></div>
           <ol class="channels">
             {#each Array.from({ length: firmware.pwm_count }, (_, i) => i + 1) as channel}
-              <li data-testid="channel"><button type="button" class="output-select" aria-label={`Inspect channel ${channel} saved schedule`} aria-pressed={overviewChannel===channel} onclick={()=>overviewChannel=channel}><span class="output-name"><ChannelIdentity number={channel}/></span><strong>{snapshot.pwms[String(channel)]} <small>raw</small></strong></button><RawMeter value={snapshot.pwms[String(channel)]} {stale}/></li>
+              <li data-testid="channel"><button type="button" class="output-select" aria-label={`Inspect ${channelLabel($savedChannels[channel-1])?channelLabel($savedChannels[channel-1])+' · ':''}channel ${channel} saved schedule`} aria-pressed={overviewChannel===channel} onclick={()=>overviewChannel=channel}><span class="output-name"><ChannelIdentity number={channel}/></span><strong>{snapshot.pwms[String(channel)]} <small>raw</small></strong></button><RawMeter value={snapshot.pwms[String(channel)]} {stale}/></li>
             {/each}
           </ol>
           <p class="meter-key">Reported raw counts, not brightness percentages. Meter reference: 0–1000 raw; + marks higher readback.</p>
-          <div class="overview-links"><button class="secondary" disabled={busy} onclick={()=>loadLabels(true)}>{labelsPhase==='error'?'Retry channel labels':'Refresh channel labels'}</button><a href="#channels">Open channel controls <span aria-hidden="true">→</span></a><a href="#schedules">Edit schedules <span aria-hidden="true">→</span></a><a href="#help">Getting started and help <span aria-hidden="true">→</span></a></div>
+          <div class="overview-links"><a href="#channels">Open channel controls <span aria-hidden="true">→</span></a><a href="#schedules">Edit schedules <span aria-hidden="true">→</span></a><a href="#help">Getting started and help <span aria-hidden="true">→</span></a></div>
         </section>
         <OperatingState {snapshot} {stale} loading={readingState}/></div>
         <section class="overview-details" aria-label="Device state">
@@ -411,7 +419,8 @@ Third-party material retains its own terms.
           <label for="device-name">Hostname</label>
           <input id="device-name" name="hostname" type="text" bind:value={hostname} oninput={() => { status = ''; error = ''; }} disabled={busy} aria-describedby="name-help" aria-invalid={!valid} autocomplete="off" spellcheck="false" />
           <p id="name-help">Use 1–63 letters, numbers or hyphens. Start and end with a letter or number.</p>
-          <DraftBar feedback={error} {dirty} {busy} disabled={!dirty||!valid} label="Save hostname" scope="" />
+          <DraftBar snapshotRevision={hostnameRevision} feedback={error} {dirty} {busy} disabled={!dirty||!valid} label="Save hostname" scope="" />
+        {#if hostnameRevision!==$configurationState.revision}<button type="button" class="secondary" disabled={busy||!!$configurationState.recovery} onclick={()=>{hostname=persisted;hostnameRevision=configurationRevision();}}>Use verified hostname · replace draft</button>{/if}
         </form><aside class="hostname-guidance"><h2>After changing the hostname</h2><p>A changed network hostname may take effect after device restart. Saving here does not restart the device.</p><p>If access changes, network recovery provides explicit read-only verification and address recovery.</p><a href="#network">Network and connection guidance →</a></aside></div></EditorPage>
       {:else}
         <EditorPage><section class="empty-state"><h1>Page unavailable</h1><p>Choose a destination from Lighting or Device navigation, or open local Help.</p><a href="#index">Return to overview</a></section></EditorPage>
@@ -421,7 +430,7 @@ Third-party material retains its own terms.
     {#if loaded && firmware && snapshot}
       <LightingTools active={route === 'lighting-tools'} {busy} {firmware} {snapshot} {stale} feedback={error} {perform} {command} refresh={()=>refresh()} readback={async()=>{try{await readState();}catch(e){uncertain();throw e;}}} onedit={clearFeedback}/>
       <Diagnostics active={route === 'diagnostics'} {busy} {firmware} {perform}/>
-      <Recovery active={route === 'recovery'} {busy} {firmware} {perform} onread={(next, info, name) => { ++revision; snapshot=next; firmware=info; if(hostname===persisted) hostname=name; persisted=name; stale=false; overviewChannel=Math.min(overviewChannel,info.pwm_count); invalidateConfiguration(); }} />
+      <Recovery active={route === 'recovery'} {busy} {firmware} {perform} onconfigurationchange={recoveryChanged} onread={(next, info, name) => { ++revision; snapshot=next; firmware=info; configurationVerified(); if(hostname===persisted){hostname=name;hostnameRevision=configurationRevision();} persisted=name; stale=false; overviewChannel=Math.min(overviewChannel,info.pwm_count); invalidateConfiguration(); }} />
       <SystemSettings feedback={error} active={route === 'clock'} kind="clock" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
       <SystemSettings feedback={error} active={route === 'network'} kind="network" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
     {/if}
@@ -489,5 +498,6 @@ Third-party material retains its own terms.
 
   .overview-heading-actions{display:flex;align-items:center;gap:20px}
   .living-monitor{display:block}.living-monitor .overview-outputs{min-width:0}
+  .configuration-recovery{border-left:2px solid var(--sr-accent);padding:10px 14px;background:var(--sr-surface);font-size:13px;margin-bottom:12px}.configuration-recovery p{font-size:12px;margin:6px 0}.configuration-recovery a{display:inline-flex;align-items:center;min-height:44px}
   .label-status{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--sr-muted);margin-bottom:8px}.label-status p{margin:0}
 </style>
