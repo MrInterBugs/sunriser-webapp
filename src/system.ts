@@ -138,9 +138,14 @@ export async function loadSettings(
       ["nodst", "summertime", "usentp"].includes(key) ||
       field?.type === "bool"
     ) {
-      if (value != null && typeof value !== "boolean")
+      // The original web UI persisted this legacy flag as integer 0/1.
+      // Both supported firmware releases read it via bee_bool_in. Keep the
+      // compatibility boundary narrow: no truthiness or arbitrary coercion.
+      const flag = key === "summertime" && (value === 0 || value === 1)
+        ? value === 1 : value;
+      if (flag != null && typeof flag !== "boolean")
         throw Error(`Invalid Boolean setting: ${key}`);
-      draft[key] = value ?? false;
+      draft[key] = flag ?? false;
     } else if (field?.type === "ip") {
       if (key === "wifi_ip4" && typeof value === "boolean") draft[key] = "";
       else if (value == null) draft[key] = "";
