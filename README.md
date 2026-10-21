@@ -1,73 +1,61 @@
 # SunRiser modern web interface
 
-The Living Aquascape Svelte frontend for SunRiser 8 and 10, extracted into a
-standalone project. It communicates with the controller's existing HTTP API.
-All fonts, images and notices are local.
+A responsive frontend for **SunRiser 8 and 10 aquarium lighting controllers**, built
+with Svelte and TypeScript. It uses the original controller’s HTTP/MessagePack API;
+no separate backend, cloud account or remote assets are required by the frontend.
 
-Routine settings load when their pages open. Reload replaces local drafts; independent state Refresh keeps them. Sensors retain all responses with compact editing and optional channel navigation.
+[![Living Aquascape Overview with reference photograph, saved Daily Rhythm and reported channel outputs](docs/screenshots/overview-desktop-en.webp)](docs/screenshots/overview-desktop-en.webp)
 
-Choose English or Deutsch in navigation (Menu on mobile). English is the default;
-the browser remembers your choice. Switching language preserves unsaved drafts.
-Raw commands and meters use 0–1024; firmware still applies the channel's configured
-limit (ordinary dimming defaults to 1000). Percentage semantics are unchanged.
+*Current application, simulated SR10 data. The photograph is a reference aquascape,
+not a live view; the saved lighting rhythm is separate from reported output.*
 
-To change interface text, update `src/locales/en.ts` and `de.ts` together;
-`npm run check` checks translation keys and matching placeholders.
+## Features
 
+- Named channel readback and precise manual drafts with explicit **Apply**.
+- Daily curves, weekly programmes, numeric point editing and copy/shift tools.
+- Service mode, blackout and configurable clouds, rain, thunderstorms and moonlight.
+- Sensor readings, corrections, thresholds and channel responses.
+- Clock, network, lighting tools, diagnostics and Help.
+- Backups, reviewed restores and separately confirmed firmware/reset operations.
 
-## Screenshots
+**English and German:** the compact **EN / DE** control remembers your preference.
+English is the default; switching languages preserves drafts and sends no device
+requests. Fonts, translations and photography are bundled locally.
 
-Desktop and mobile views of Living Aquascape using demonstration data. Select an
-image to view it at full resolution.
+<a href="docs/screenshots/overview-mobile-en.webp"><img src="docs/screenshots/overview-mobile-en.webp" width="250" alt="Mobile Overview with reference aquascape and Daily Rhythm"></a>
+<a href="docs/screenshots/schedules-mobile-de.webp"><img src="docs/screenshots/schedules-mobile-de.webp" width="250" alt="German mobile schedule curve and point editor"></a>
 
-### Overview
+[More screenshots](docs/screenshots/README.md): Channels, desktop/mobile Schedules,
+Weather, Sensors and German Overview. Select any image for its full resolution.
 
-[![Desktop Overview showing the reference aquascape, saved Daily Rhythm, named channel outputs and Operating State](docs/screenshots/overview-desktop.png)](docs/screenshots/overview-desktop.png)
+## Compatibility and safety
 
-### Channel controls
+Targets **SR8/SR10**. Firmware **1.006** has broad frontend coverage in isolated
+firmware-derived C simulators. **1.007** is the verified packaging input, with
+raw-PWM contract probes on both boards; complete frontend/hardware qualification
+remains incomplete. Other models/releases are unverified.
 
-[![Desktop channel controls with separate reported raw output, local command drafts and explicit Apply actions](docs/screenshots/channels-desktop.jpg)](docs/screenshots/channels-desktop.jpg)
+Raw commands/meters use **0–1024**; firmware still applies configured limits
+(ordinary dimming defaults to **1000**). Percentage settings remain independent.
+Reported state, saved configuration and local drafts are distinct. Writes require
+explicit actions and are never automatically retried; acknowledgement does not
+prove a physical output changed.
 
-### Schedule editor
+Use a trusted network and retain backups. Network, clock, restore and firmware
+operations can interrupt aquarium control or access. Read the warnings and verify
+uncertain outcomes before resubmitting. Existing firmware HTTP limitations remain;
+Wi-Fi access-point scanning is unsupported.
 
-[![Desktop schedule workspace with the saved daily rhythm, technical percentage graph and numeric point editor](docs/screenshots/schedules-desktop.jpg)](docs/screenshots/schedules-desktop.jpg)
+## Build and installation
 
-### Mobile Overview
-
-<a href="docs/screenshots/overview-mobile.jpg"><img src="docs/screenshots/overview-mobile.jpg" width="300" alt="Mobile Overview with controller identity, the reference aquascape and channel selection for saved Daily Rhythm"></a>
-
-Aquascape photograph: *Positive nihilism-2, 2021 IIAC R.25, RFLAC R.14* by 조재선,
-[CC BY-SA 3.0](assets/photo/CC-BY-SA-3.0.txt). The screenshots include the existing
-cropped and optimised adaptation; [source and attribution](assets/photo/ATTRIBUTION.txt).
-The photograph depicts a reference aquascape, independently of controller output.
-
-## Build
-
-Requires Node.js 22.12 or newer and Python 3.10 or newer.
-
-**No firmware binaries are included in this repository.** Download the original
-[vendor NEW.BEE](http://sunriser.ledaquaristik.de/NEW.BEE), check its SHA-256,
-and place it at the repository root as `NEW.BEE`.
-
-The supported input is the original **v1.007** package with SHA-256:
+Requires **Node.js 22.12+** and **Python 3.10+**.
+Download the original [vendor v1.007 NEW.BEE](http://sunriser.ledaquaristik.de/NEW.BEE)
+to the repository root as `NEW.BEE`. Firmware binaries are not tracked here.
+The build verifies this exact SHA-256 and rejects other input:
 
 ```text
 725b39aba735740b55e51c06f9626f4949454d37fe4678f72583b0d6e2415377
 ```
-
-For example, from the repository root on macOS:
-
-```sh
-curl --fail --location --output NEW.BEE.download http://sunriser.ledaquaristik.de/NEW.BEE
-printf '%s\n' '725b39aba735740b55e51c06f9626f4949454d37fe4678f72583b0d6e2415377  NEW.BEE.download' | shasum -a 256 -c - &&
-  mv NEW.BEE.download NEW.BEE
-```
-
-Proceed only if the checksum prints `OK`. On Linux, use `sha256sum -c -`
-instead of `shasum -a 256 -c -`. The vendor URL may later serve another release;
-a different hash is rejected until that release is explicitly supported.
-
-Then build:
 
 ```sh
 npm ci --ignore-scripts
@@ -76,70 +64,51 @@ npm run build
 npm test
 ```
 
-Outputs:
+Outputs: `dist/` contains the static site; `build/NEW.BEE` is the installable
+package. `build/SHA256SUMS` and `build/package.json` record its checksum/provenance.
+All **51 non-website vendor records** are retained byte for byte. `npm run verify`
+independently checks them and the packaged website. Builds never download or deploy.
 
-- `dist/`: the static website.
-- `build/NEW.BEE`: the modern website with **original vendor v1.007 C firmware**.
-- `build/SHA256SUMS`: the package checksum.
-- `build/package.json`: firmware provenance and web asset hashes.
+**Installation is a firmware update, not a website-only upload:** the package
+contains original **v1.007 C applications**. Confirm the
+model/version, back up configuration and use the controller’s documented update
+procedure. In an existing modern interface: **Device → Recovery → Local firmware**,
+select `build/NEW.BEE`, then **Review firmware update**. Follow the confirmation
+warnings, keep power stable and check device readback afterward. Routine updates
+do not require replacing the factory/recovery image.
 
-`npm run verify` independently checks the CDB lookup tables, all retained vendor
-records and every packaged website asset against `dist/`.
-The scripts recheck the input hash automatically. The downloaded root `NEW.BEE`
-is read-only input; output goes to `build/NEW.BEE`. Both are Git-ignored.
-No download happens automatically during a build.
-
-## Firmware contents
-
-The build takes the 51 non-website records directly from your hash-verified
-root `NEW.BEE`. It replaces only the website: the original SR8/SR10 applications,
-bootloader records, metadata and defaults are retained byte for byte. Only the
-supported version, download URL and expected hash are stored in `scripts/vendor.json`.
-
-The resulting `NEW.BEE` has a different hash from the vendor package because its
-website is different. Its normal device update path installs the C application;
-including bootloader records does not mean the updater replaces the bootloader.
-
-This extraction and package verification do not establish physical-device
-readiness or full frontend compatibility with every v1.007 behavior.
-No device is updated by these build commands.
-
-## Local development
+## Development and testing
 
 ```sh
-npm run dev
-# Or serve the production build:
-npm run preview
+npm run dev      # local development server
+npm run preview  # production preview; build first
+npm run verify   # package integrity; build first
 ```
 
-These commands serve the frontend only. Device operations require the existing
-SunRiser API at the same origin; a static preview alone has no controller.
-The packaged website is intended to be served by the controller or an isolated
-simulator. No device address or automatic connection is configured here.
+These servers bind loopback and provide no simulated API. Controller operations
+need the existing API at the same origin; no physical-device connection is
+configured. Edit `src/locales/en.ts` and `de.ts` together; `npm run check` validates
+keys, placeholders, Svelte and TypeScript.
 
-## Source and licences
+`npm test` runs six packaging/integrity tests. Broader browser and SR8/SR10 native
+simulator tests are maintained separately in the development workspace.
+Simulator/browser results are not physical-device validation.
 
-The frontend snapshot is identified in `provenance.json`. It is independent of
-the original workspace; later redesign changes are not synchronised automatically.
-The record lists intentional standalone adaptations alongside the source revision
-and snapshot hash. Packaging remains specific to this repository and the verified
-vendor v1.007 input.
+## Credits and licences
 
-Copyright © 2026 Aedan Lawrence. Original contributions to this frontend are
-licensed under [GNU GPLv3 or later](LICENSE). Third-party material retains its
-respective copyright and licence.
+Built on [SunRiser](https://github.com/LEDaquaristik/sunriser), its contributors,
+including **Torsten Raudssus**, and LEDaquaristik hardware/firmware. Modern frontend:
+**Aedan Lawrence**. [provenance.json](provenance.json) identifies the source snapshot.
 
-SunRiser-derived code and configuration retain the original project’s GNU GPL v3
-terms. Original firmware and workflow attribution includes Torsten Raudssus and
-the [SunRiser project](https://github.com/LEDaquaristik/sunriser).
-Firmware bytes come directly from the verified vendor package.
-The combined application's package metadata is `GPL-3.0-only`; the upstream
-grant does not explicitly include later versions. Your original contributions
-remain `GPL-3.0-or-later`. See [LICENSING.md](LICENSING.md) for the file-level
-scope, upstream licensing statement and separate asset terms.
+Combined application: **GPL-3.0-only**; original contributions also available under
+**GPL-3.0-or-later**. See [LICENSE](LICENSE), [LICENSING.md](LICENSING.md) and bundled
+[third-party notices](public/notices.html), including Manrope (OFL), Svelte (MIT)
+and MessagePack (ISC).
 
-The embedded Manrope font is under the SIL Open Font License. The photograph and
-its adaptations are CC BY-SA 3.0; see `assets/` for credits and licence texts.
-Bundled Svelte and MessagePack notices are generated from the pinned dependencies
-into `public/notices.html`. Run `python3 scripts/notices.py` after a deliberate
-dependency or licence update, then review the changes.
+Aquascape: *Positive nihilism-2, 2021 IIAC R.25, RFLAC R.14* by **조재선**,
+[original source](https://commons.wikimedia.org/wiki/File:Positive_nihilism-2,_2021_IIAC_R.25,_RFLAC_R.14.jpg),
+[CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
+[Attribution and modifications](assets/photo/ATTRIBUTION.txt) cover the cropped,
+resized and format-converted photograph, including its appearance in screenshots.
+Adaptations retain CC BY-SA 3.0; keep the credits when redistributing. No endorsement
+is implied.
