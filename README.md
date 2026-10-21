@@ -14,7 +14,7 @@ not a live view; the saved lighting rhythm is separate from reported output.*
 - Named channel readback and precise manual drafts with explicit **Apply**.
 - Daily curves, weekly programmes, numeric point editing and copy/shift tools.
 - Service mode, blackout and configurable clouds, rain, thunderstorms and moonlight.
-- Sensor readings, corrections, thresholds and channel responses.
+- Sensor readings, corrections, thresholds, channel responses and confirmed removal.
 - Clock, network, lighting tools, diagnostics and Help.
 - Backups, reviewed restores and separately confirmed firmware/reset operations.
 
@@ -32,8 +32,8 @@ Weather, Sensors and German Overview. Select any image for its full resolution.
 
 Targets **SR8/SR10**. Firmware **1.006** has broad frontend coverage in isolated
 firmware-derived C simulators. **1.007** is the verified packaging input, with
-raw-PWM contract probes on both boards; complete frontend/hardware qualification
-remains incomplete. Other models/releases are unverified.
+raw-PWM and sensor-removal contract probes on both boards. Complete frontend/hardware
+qualification remains incomplete. Other models/releases are unverified.
 
 Raw commands/meters use **0–1024**; firmware still applies configured limits
 (ordinary dimming defaults to **1000**). Percentage settings remain independent.
