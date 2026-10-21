@@ -85,7 +85,7 @@ export const en = {
   "app.saved_c0ae8": "Saved",
   "app.couldNotConfirmSaveDraftKeptReloadSettingsTo_9484c": "Could not confirm the save. Your draft is kept. Reload settings to check what was saved before trying again.",
   "app.readbackMismatch_2cf0d": "Readback mismatch",
-  "app.couldNotConfirmSaveYourDraftIsKeptReload_bbbe1": "Could not confirm save. Your draft is kept. Reload to check the saved value, or explicitly retry Save hostname.",
+  "app.couldNotConfirmSaveYourDraftIsKeptReload_bbbe1": "Could not confirm the save. Your draft is kept. Reload to check the saved value, or explicitly retry Save hostname.",
   "channelconfiguration.channelConfiguration_98b61": "Channel configuration",
   "channelconfiguration.savedDisplayColoursAndBinaryOutputSettingsCommandsAbove_43f0f": "Choose channel types and on/off behaviour. Manual output commands above are separate.",
   "channelconfiguration.reloadChannelConfiguration_a0da7": "Reload channel configuration",
