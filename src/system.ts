@@ -138,7 +138,7 @@ export async function loadSettings(
       ["nodst", "summertime", "usentp"].includes(key) ||
       field?.type === "bool"
     ) {
-      // The original web UI persisted this legacy flag as integer 0/1.
+      // Legacy stored configuration can contain this flag as integer 0/1.
       // Both supported firmware releases read it via bee_bool_in. Keep the
       // compatibility boundary narrow: no truthiness or arbitrary coercion.
       const flag = key === "summertime" && (value === 0 || value === 1)
