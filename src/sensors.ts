@@ -54,16 +54,12 @@ export interface Channel {
   manager: number;
   name: string;
 }
-export async function loadSensorIndex(count: number) {
-  const keys = ["sensors#web"];
-  for (let n = 1; n <= count; n++)
-    keys.push(`pwm#${n}#onoff`, `pwm#${n}#manager`, `pwm#${n}#name`);
-  const values = await readConfig(keys);
+export function sensorCatalogue(value: unknown): Catalogue {
   let catalogue: Catalogue = {};
-  if (values["sensors#web"] != null && values["sensors#web"] !== "") {
-    if (typeof values["sensors#web"] !== "string")
+  if (value != null && value !== "") {
+    if (typeof value !== "string")
       throw Error(source("sensors.invalidSensorCatalogue_cd8df"));
-    const parsed: unknown = JSON.parse(values["sensors#web"]);
+    const parsed: unknown = JSON.parse(value);
     if (!object(parsed)) throw Error(source("sensors.invalidSensorCatalogue_cd8df"));
     for (const [rom, entry] of Object.entries(parsed)) {
       if (
@@ -77,6 +73,14 @@ export async function loadSensorIndex(count: number) {
     }
     catalogue = parsed as Catalogue;
   }
+  return catalogue;
+}
+export async function loadSensorIndex(count: number) {
+  const keys = ["sensors#web"];
+  for (let n = 1; n <= count; n++)
+    keys.push(`pwm#${n}#onoff`, `pwm#${n}#manager`, `pwm#${n}#name`);
+  const values = await readConfig(keys);
+  const catalogue = sensorCatalogue(values["sensors#web"]);
   const channels = Array.from({ length: count }, (_, i) => {
     const binary = values[`pwm#${i + 1}#onoff`] ?? false,
       manager = values[`pwm#${i + 1}#manager`] ?? 0,

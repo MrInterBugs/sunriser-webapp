@@ -12,7 +12,8 @@ Third-party material retains its own terms.
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
  const configurationReconciled=$derived(!$configurationState.recovery&&snapshotRevision===$configurationState.revision);
-  import {untrack,onDestroy} from 'svelte';
+  import {untrack,onDestroy,tick} from 'svelte';
+  import {reviewSensorRemoval,verifySensorRemoval,type SensorRemoval} from './sensor-removal';
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
   import {savedChannels,channelDisplay} from './channels';
   import EditorPage from './ui/EditorPage.svelte';
@@ -62,6 +63,7 @@ Third-party material retains its own terms.
   let attempted = $state(false),
     ready = $state(false),
     selected = $state("");
+  let removal = $state<SensorRemoval>(), removing=$state(false), removalUncertain=$state(false);
   let catalogue = $state<Catalogue>({}),
     channels = $state<Channel[]>([]),
     editors = $state<Record<string, SensorEditor>>({}),
@@ -114,6 +116,7 @@ Third-party material retains its own terms.
         names = {};
         ready = true;
         snapshotRevision=configurationRevision();
+        removalUncertain=false;
       },
       source("sensors.sensorConfigurationLoaded_de09a"),
       source("sensors.couldNotLoadSensorsRetryReloadSensorConfiguration_88a6c"),
@@ -135,7 +138,7 @@ Third-party material retains its own terms.
   async function register() {
     const rom = selected,
       name = names[rom] ?? $t("sensors.temperature_0a906");
-    if (!name.trim() || reading?.device !== 1 || !configurationCurrent(snapshotRevision)) return;
+    if (!name.trim() || reading?.device !== 1 || removalUncertain || !configurationCurrent(snapshotRevision)) return;
     const { entry, patch } = registration(rom, name, catalogue);
     await perform(
       async () => {
@@ -154,7 +157,7 @@ Third-party material retains its own terms.
   }
   async function save(event: SubmitEvent) {
     event.preventDefault();
-    if (!editor || !valid || !Object.keys(patch).length || !configurationCurrent(snapshotRevision)) return;
+    if (!editor || !valid || !Object.keys(patch).length || removalUncertain || !configurationCurrent(snapshotRevision)) return;
     const rom = selected,
       values = { ...patch },
       current = editor;
@@ -169,6 +172,47 @@ Third-party material retains its own terms.
       source("sensors.couldNotConfirmSensorSaveDraftKeptReloadTo_8bc0c"),
       source("sensors.savingSensorSettings_722b7"),
     );
+  }
+  async function prepareRemoval() {
+    if (busy || removing || removalUncertain || !catalogue[selected] || !configurationCurrent(snapshotRevision)) return;
+    const rom=selected;
+    let plan:SensorRemoval|undefined;
+    const ok=await perform(async()=>{plan=await reviewSensorRemoval(rom);}, "",
+      source('sensors.removalReviewFailed'), source('sensors.removalPreparing'));
+    if(ok && plan && selected===rom && configurationCurrent(snapshotRevision)) removal=plan;
+  }
+  async function restoreRemovalFocus() {
+    await tick();
+    (document.getElementById('sensor-remove')??document.getElementById('sensor-choice')??document.getElementById('sensor-reload'))?.focus();
+  }
+  function cancelRemoval() {
+    if(removing || busy)return;
+    removal=undefined;
+    void restoreRemovalFocus();
+  }
+  function removalDialog(node:HTMLDialogElement){
+    node.showModal();
+    node.querySelector<HTMLButtonElement>('[data-cancel]')?.focus();
+  }
+  async function removeSensor() {
+    const plan=removal;
+    if(!plan || busy || removing || removalUncertain || !configurationCurrent(snapshotRevision))return;
+    removing=true;
+    let writeAttempted=false;
+    const ok=await perform(async()=>{
+      await verifySensorRemoval(plan);
+      if(!configurationCurrent(snapshotRevision))throw Error(source('sensors.removalChanged'));
+      writeAttempted=true;
+      await saveConfiguration(plan.patch,firmware);
+      catalogue=plan.catalogue;
+      delete editors[plan.rom];
+      delete names[plan.rom];
+      delete attemptedSensors[plan.rom];
+    },source('sensors.removed'),source('sensors.removalFailed'),source('sensors.removalPending'));
+    if(!ok && writeAttempted)removalUncertain=true;
+    removing=false;
+    removal=undefined;
+    void restoreRemovalFocus();
   }
   function reset() {
     if (!editor) return;
@@ -225,23 +269,27 @@ Third-party material retains its own terms.
  <div class="heading"><div><h1>{$t("sensors.sensors_711bf")}</h1></div><button class="secondary" onclick={refresh} disabled={busy}>{$t("sensors.refreshSensorReadings_b57a7")}</button></div>
 
  {#if sensorState.errors.length}<p role="alert" data-testid="sensor-state-error">{sensorState.errors.map(error=>$renderText(error)).join('; ')}</p>{/if}
+ {#if removalUncertain}<p class="notice" role="alert" data-testid="sensor-removal-uncertain">{$t("sensors.removalUncertain")}</p>{/if}
  <div class="sensor-workspace"><section class="panel sensor-monitor"> {#if ready}
   {#if !ids.length}<div class="empty-state"><h2>{$t("sensors.noSensorsYet_472a1")}</h2><p>{$t("sensors.noSensorsReportedOrConfigured_3405f")}</p><p>{$t("sensors.discoveredProbesAppearAfterTheDeviceScansItsBus_17340")}</p></div>{:else}
    <div class="sensor-readback readback"><div><label for="sensor-choice">{$t("sensors.sensor_9101f")}</label><select id="sensor-choice" bind:value={selected} disabled={busy}>{#each ids as id}<option value={id}>{catalogue[id]?.name??$t("sensors.unregistered_eca5e")} · {id}</option>{/each}</select>
    <details class="sensor-identity"><summary>{$t("sensors.sensorIdentity_1c22e")}</summary><p>{catalogue[selected]?.name ?? $t("sensors.unregisteredSensor_3adba")} {$t("sensors.rom_1ea25")} <code>{selected}</code></p></details></div><div><p>{$t("lightingdashboard.deviceReadback_207fa")}</p><StateBadge tone={stale?'draft':reading?'active':'error'}>{stale?$t("sensors.readingMayBeStale_ed95d"):reading?$t("sensors.probeConnected_f8cf4"):$t("sensors.probeDisconnected_b8bfe")}</StateBadge><p class="reading-value" class:reading-status={!reading || (editor && !editor.supported) || reading.device !== 1} data-testid="sensor-reading">{reading ? editor&&!editor.supported?$t("sensors.v0RawUnsupportedConfiguration_7d607",{v0: reading.value}):(reading.device===1?numberText(reading.value/10,$language,Number.isInteger(reading.value/10)?0:1)+' °C':$t('sensors.unsupportedReading',{v0:reading.value,v1:reading.device})) : $t("sensors.disconnected_771e0")}</p>
    <p>{reading?stale?$t("sensors.lastReportedReadingStale_97cbe"):$t("sensors.currentlyReportedByDevice_ca2bf"):$t("sensors.missingFromTheLastDeviceScanSavedConfigurationIs_acff1")}</p></div></div>
+   {#if catalogue[selected]}
+    <div class="sensor-remove-action"><button id="sensor-remove" type="button" class="secondary remove-sensor" onclick={prepareRemoval} disabled={busy||removing||removalUncertain||!configurationReconciled}>{$t("sensors.removeSaved")}</button></div>
+   {/if}
    {#if !catalogue[selected]}<ConfigurationNotice revision={snapshotRevision}/>
-    {#if reading?.device===1}<label for="sensor-new-name">{$t("sensors.sensorName_d8c93")}</label><input id="sensor-new-name" bind:value={names[selected]} placeholder={$t("sensors.temperature_0a906")} disabled={busy} oninput={onedit} /><p>{$t("sensors.registerWritesTemperatureDefaultsInactiveControlCorrection0Thresholds_f3a77")}</p><button onclick={register} disabled={busy||!configurationReconciled||!(names[selected]??'Temperature').trim()}>{$t("sensors.registerSensor_7b392")}</button>
+    {#if reading?.device===1}<label for="sensor-new-name">{$t("sensors.sensorName_d8c93")}</label><input id="sensor-new-name" bind:value={names[selected]} placeholder={$t("sensors.temperature_0a906")} disabled={busy} oninput={onedit} /><p>{$t("sensors.registerWritesTemperatureDefaultsInactiveControlCorrection0Thresholds_f3a77")}</p><button onclick={register} disabled={busy||removalUncertain||!configurationReconciled||!(names[selected]??'Temperature').trim()}>{$t("sensors.registerSensor_7b392")}</button>
     {:else}<p>{$t("sensors.unsupportedSensorDeviceTypeRawReadingsAreShownRegistration_721fd")}</p>{/if}
    {/if}
   {/if}
- {:else}<div class="empty-state"><h2>{busy?$t("sensors.loadingSensors_9e8a1"):$t("sensors.sensorSettingsUnavailable_dd572")}</h2><p>{busy?$t("sensors.readingTheSensorCatalogueAndSavedConfiguration_5093d"):$t("sensors.useReloadSensorConfigurationToTryAgain_e241c")}</p></div>{/if}<div class="form-actions"><button class="secondary" onclick={reload} disabled={busy}>{$t("sensors.reloadSensorConfiguration_360e6")}</button></div><p>{$t("sensors.reloadDiscardsUnsavedSensorDraftsReadingRefreshesDoNot_31fee")}</p>
+ {:else}<div class="empty-state"><h2>{busy?$t("sensors.loadingSensors_9e8a1"):$t("sensors.sensorSettingsUnavailable_dd572")}</h2><p>{busy?$t("sensors.readingTheSensorCatalogueAndSavedConfiguration_5093d"):$t("sensors.useReloadSensorConfigurationToTryAgain_e241c")}</p></div>{/if}<div class="form-actions"><button id="sensor-reload" class="secondary" onclick={reload} disabled={busy}>{$t("sensors.reloadSensorConfiguration_360e6")}</button></div><p>{$t("sensors.reloadDiscardsUnsavedSensorDraftsReadingRefreshesDoNot_31fee")}</p>
 <details class="reading-details"><summary>{$t("app.readingDetails_28520")}{stale?$t("app.readbackStale_e56ed"):''}</summary> <p class:stale>{stale?$t("app.lastSnapshotStale_329af"):$t("sensors.deviceSnapshot_35538")} {$t("sensors.readingsRefreshEvery30SecondsWhileVisibleFailuresBack_2eda5")}</p></details>
 </section>
  {#if editor}
   {#if !editor.supported}<section class="panel"><h2>{$t("sensors.unsupportedSensorSettings_e93c5")}</h2><p>{$t("sensors.thisDeviceOrUnitFormatIsReadOnlyIts_4f855")}</p></section>
   {:else}<form class="panel sensor-configuration" onsubmit={save} oninput={onedit} onfocusin={e=>revealControl(e.target)} novalidate>
-   <DraftBar {snapshotRevision} feedback={$renderText(feedback)} dirty={!!Object.keys(patch).length} {busy} disabled={!valid||!Object.keys(patch).length} label={$t("sensors.saveSensorSettings_19f30")} scope={$t("sensors.sensor_2fc03")} detail={$t("sensors.saveAppliesToThisSensorReadingRefreshesKeepAll_f1f54")} />
+   <DraftBar {snapshotRevision} feedback={$renderText(feedback)} dirty={!!Object.keys(patch).length} {busy} disabled={removalUncertain||!valid||!Object.keys(patch).length} label={$t("sensors.saveSensorSettings_19f30")} scope={$t("sensors.sensor_2fc03")} detail={$t("sensors.saveAppliesToThisSensorReadingRefreshesKeepAll_f1f54")} />
    <fieldset disabled={busy}><legend>{$t("sensors.temperatureSettings_71778")}</legend>
    <div class="field-grid"><div><label for="sensor-name">{$t("sensors.sensorName_d8c93")}</label><input id="sensor-name" bind:value={editor.draft.name} aria-invalid={!editor.draft.name.trim()} /></div><div>
    <label class="check"><input type="checkbox" bind:checked={editor.draft.active} />{$t("sensors.enableSensorControl_7cd2d")}</label><p>{$t("sensors.controlUsesTheSavedThresholdsAndAssignmentsBelow_0bb96")}</p></div></div>
@@ -267,10 +315,28 @@ Third-party material retains its own terms.
   </form>{/if}
  {:else if ready&&catalogue[selected]}<section class="panel"><h2>{busy?$t("sensors.loadingSelectedSensor_ede94"):$t("sensors.selectedSensorSettingsUnavailable_5ebdf")}</h2><ConfigurationNotice revision={snapshotRevision}/>{#if !busy&&configurationReconciled}<button class="secondary" onclick={()=>selectLoad(selected)}>{$t("sensors.retrySelectedSensor_ffa89")}</button><p>{$t("sensors.thisReadKeepsOtherSensorDraftsReloadSensorConfiguration_b8ee4")}</p>{/if}</section>{/if}
 </div>
+{#if removal}
+ <dialog use:removalDialog oncancel={event=>{event.preventDefault();cancelRemoval();}} aria-labelledby="sensor-removal-title" aria-describedby="sensor-removal-identity sensor-removal-description">
+  <h2 id="sensor-removal-title">{$t('sensors.removeTitle')}</h2>
+  <p id="sensor-removal-identity" class="removal-identity"><strong>{removal.name}</strong><code>{removal.rom}</code></p>
+  <StateBadge tone={stale?'draft':sensorState.readings[removal.rom]?'active':'neutral'}>{stale?$t('sensors.readingMayBeStale_ed95d'):sensorState.readings[removal.rom]?$t('sensors.probeConnected_f8cf4'):$t('sensors.probeDisconnected_b8bfe')}</StateBadge>
+  <p id="sensor-removal-description">{$t('sensors.removeExplanation')}</p>
+  <p class="notice">{$t('sensors.removeControlWarning')}</p>
+  <p>{$t('sensors.removeConnected')}</p>
+  {#if editors[removal.rom]&&Object.keys(sensorPatch(removal.rom,editors[removal.rom],catalogue)).length}<p class="notice">{$t('sensors.removeDraft')}</p>{/if}
+  {#if removing}<p role="status">{$t('sensors.removalPending')}</p>{/if}
+  <div class="form-actions"><button type="button" class="secondary" data-cancel onclick={cancelRemoval} disabled={busy||removing}>{$t('recovery.cancel_77dfd')}</button><button type="button" class="danger" onclick={removeSensor} disabled={busy||removing}>{$t('sensors.removeConfirm')}</button></div>
+ </dialog>
+{/if}
 </EditorPage>
 {/if}
 
 <style>
+ .sensor-remove-action{margin-top:16px}.remove-sensor{color:var(--sr-error)}
+ dialog{box-sizing:border-box;max-width:36rem;width:calc(100% - 2rem);max-height:calc(100dvh - 2rem);overflow:auto;background:var(--sr-surface);color:var(--sr-ink);border:1px solid var(--sr-line);border-radius:var(--sr-radius);padding:24px}
+ dialog::backdrop{background:#0009}dialog h2{margin-top:0}dialog p{overflow-wrap:anywhere}.removal-identity{display:grid;gap:6px}.removal-identity code{font-size:14px}
+ @media(max-width:480px){dialog{padding:18px}dialog .form-actions{display:grid;grid-template-columns:minmax(0,1fr)}}
+
  .sensor-workspace { display:grid; grid-template-columns:280px minmax(0,1fr); gap:32px; align-items:start; }
  .sensor-monitor { position:sticky; top:20px; min-width:0; } .sensor-readback { display:flex; flex-direction:column-reverse; gap:16px; align-items:stretch; }
  .sensor-readback>div:first-child { border-top:1px solid var(--sr-line); padding-top:12px; }
