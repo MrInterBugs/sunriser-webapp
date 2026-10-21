@@ -265,3 +265,8 @@ export interface ChannelPreset {id:string; name:string; originalName:string; col
 export const presets: ChannelPreset[] = originalCatalogue.map(entry => ({
   ...entry, originalName:entry.name, name:englishCatalogueNames[entry.id] ?? entry.name.trim(),
 }));
+
+/** Manufacturer/model spelling, IDs and expansion stay exact; original German descriptors are display-only. */
+export function presetName(preset: ChannelPreset, language: 'en'|'de'):string {
+ return language==='de'?preset.originalName.trim():preset.name;
+}

@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {t,renderText,language,source} from './i18n';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
  const configurationReconciled=$derived(!$configurationState.recovery&&snapshotRevision===$configurationState.revision);
@@ -101,9 +102,9 @@ Third-party material retains its own terms.
         selected = id;
         attemptedIds = id ? { [id]: true } : {};
       },
-      "Weather loaded",
-      "Could not load weather. Drafts kept; explicitly retry Reload weather.",
-      "Loading weather…",
+      source("weather.weatherLoaded_9a15a"),
+      source("weather.couldNotLoadWeatherDraftsKeptExplicitlyRetryReload_32fed"),
+      source("weather.loadingWeather_bc236"),
     );
   }
   async function selectLoad(id: number) {
@@ -112,9 +113,9 @@ Third-party material retains its own terms.
       async () => {
         await loadProfile(book!, id);
       },
-      "Weather loaded",
-      "Could not load weather profile. Drafts kept; retry Load selected profile.",
-      "Loading weather…",
+      source("weather.weatherLoaded_9a15a"),
+      source("weather.couldNotLoadWeatherProfileDraftsKeptRetryLoad_89ffe"),
+      source("weather.loadingWeather_bc236"),
     );
   }
   async function save(e: SubmitEvent) {
@@ -128,15 +129,15 @@ Third-party material retains its own terms.
         Object.assign(current.baseline, values);
         current.removed = [];
       },
-      "Saved",
-      "Could not confirm weather save. Drafts kept; reload to check persistence or explicitly retry Save. No automatic write retry.",
-      "Saving weather…",
+      source("app.saved_c0ae8"),
+      source("weather.couldNotConfirmWeatherSaveDraftsKeptReloadTo_203f4"),
+      source("weather.savingWeather_7fc8d"),
     );
   }
   function add() {
     if (!book) return;
     const id = addProfile(book);
-    if (id) selected = id;
+    if (id) {book.profiles.find(profile=>profile.id===id)!.name=$t("weather.newProfileV0_3363f",{v0:id});selected = id;}
     onedit();
   }
   function remove() {
@@ -168,28 +169,28 @@ Third-party material retains its own terms.
   <div class="heading">
     <div>
 
-      <h1>Weather</h1>
+      <h1>{$t("weather.weather_284af")}</h1>
     </div>
     <button class="secondary" onclick={refresh} disabled={busy}
-      >Refresh weather state</button
+      >{$t("weather.refreshWeatherState_c0483")}</button
     >
   </div>
   <p class:stale>
-    Thunderstorms{stale ? " · stale" : ""}:
+    {$t("weather.thunderstorms_b57d4")}{stale ? $t("app.readbackStale_e56ed") : ''}:
     <strong data-testid="weather-thunder"
       >{typeof snapshot.thunder === "boolean"
         ? snapshot.thunder
-          ? "Active"
-          : "Off"
-        : "Unknown"}</strong
+          ? $t("lightingdashboard.active_a733b")
+          : $t("lightingdashboard.off_e3de5")
+        : $t("weather.unknown_bc781")}</strong
     >
   </p>
 
   {#if book}<form class="panel" onsubmit={save} oninput={onedit} novalidate>
-      <DraftBar {snapshotRevision} {feedback} {dirty} {busy} disabled={!valid||!dirty} label="Save weather" scope="weather " detail="Save applies to all edited profiles and channel assignments." />
+      <DraftBar {snapshotRevision} feedback={$renderText(feedback)} {dirty} {busy} disabled={!valid||!dirty} label={$t("weather.saveWeather_5241a")} scope={$language==='en'?$t("weather.weather_f9866")+' ':$t("weather.weather_f9866")} detail={$t("weather.saveAppliesToAllEditedProfilesAndChannelAssignments_5fe83")} />
       <fieldset disabled={busy}>
-        <legend class="visually-hidden">Weather configuration</legend>
-        <div class="weather-workspace"><aside class="weather-profiles" aria-label="Weather profiles"><h2>Profiles</h2><div><label for="weather-profile">Weather profile</label><select
+        <legend class="visually-hidden">{$t("weather.weatherConfiguration_74d13")}</legend>
+        <div class="weather-workspace"><aside class="weather-profiles" aria-label={$t("weather.weatherProfiles_3b38a")}><h2>{$t("weather.profiles_0c2a9")}</h2><div><label for="weather-profile">{$t("weather.weatherProfile_9a2f1")}</label><select
             id="weather-profile"
             bind:value={selected}
             >{#each book.profiles as p}<option value={p.id}
@@ -198,51 +199,43 @@ Third-party material retains its own terms.
           >
           </div>        <div class="form-actions">
           <button type="button" onclick={add} disabled={nextId(book) > 65535}
-            >Add weather profile</button
+            >{$t("weather.addWeatherProfile_777d8")}</button
           ><button
             type="button"
             class="secondary"
             onclick={remove}
             disabled={!profile ||
               book.channels.some((c) => c.profile === selected)}
-            >Delete weather profile</button
+            >{$t("weather.deleteWeatherProfile_e4c91")}</button
           >
         </div>
         {#if nextId(book) > 65535}<p>
-            Profile IDs exhausted (65535); no ID will be reused.
+            {$t("weather.profileIDsExhausted65535NoIDWillBeReused_3de4e")}
           </p>{/if}
-<p>Profiles configure effects. Assign them to channels below.</p>  <section class="weather-reload">
+<p>{$t("weather.profilesConfigureEffectsAssignThemToChannelsBelow_e493e")}</p>  <section class="weather-reload">
     <button type="button" class="secondary" onclick={reload} disabled={busy}
-      >Reload weather</button
+      >{$t("weather.reloadWeather_b6431")}</button
     >
     <p>
-      Reload discards all weather drafts. State refresh and navigation keep
-      them. Configuration saves and ending service mode reinitialize weather,
-      including manually started storms.
+      {$t("weather.reloadDiscardsAllWeatherDraftsStateRefreshAndNavigation_d2c5f")}
     </p>
   </section>
-</aside><section class="profile-editor" aria-label="Weather profile editor">
+</aside><section class="profile-editor" aria-label={$t("weather.weatherProfileEditor_6e375")}>
         {#if book.profiles.length}
-          <div class="profile-name">{#if profile}<div><label for="weather-name">Profile name</label><input
+          <div class="profile-name">{#if profile}<div><label for="weather-name">{$t("weather.profileName_77574")}</label><input
               id="weather-name"
               bind:value={profile.name}
               aria-invalid={!profile.name.trim()}
             /></div>{/if}</div>
           {#if draft}
-            <div class="panel effect-editor"><StateBadge tone={dirty?'draft':'neutral'}>{dirty?'Profile editor · unsaved changes in weather':'Profile editor · saved configuration'}</StateBadge>
-            <div class="effect-switch" role="group" aria-label="Weather effect">{#each [['clouds','Clouds'],['rain','Rain'],['thunder','Thunderstorms'],['moon','Moonlight']] as [value,label]}<button type="button" aria-pressed={selectedEffect===value} onclick={()=>selectedEffect=value as Effect}>{label}</button>{/each}</div>
+            <div class="panel effect-editor"><StateBadge tone={dirty?'draft':'neutral'}>{dirty?$t("weather.profileEditorUnsavedChangesInWeather_c5125"):$t("weather.profileEditorSavedConfiguration_21c53")}</StateBadge>
+            <div class="effect-switch" role="group" aria-label={$t("weather.weatherEffect_4afe3")}>{#each [['clouds',source("weather.clouds_99990")],['rain',source("weather.rain_0a858")],['thunder',source("weather.thunderstorms_b57d4")],['moon',source("weather.moonlight_f61a8")]] as [value,label]}<button type="button" aria-pressed={selectedEffect===value} onclick={()=>selectedEffect=value as Effect}>{$renderText(label)}</button>{/each}</div>
             {#if selectedEffect === "moon"}<p>
-                Moonlight follows real moon phases and times. It can illuminate
-                a planned-off channel, including during daytime. Use schedules
-                for a controlled night light.
+                {$t("weather.moonlightFollowsRealMoonPhasesAndTimesItCan_faf17")}
               </p>{:else if selectedEffect === "thunder"}<p>
-                Planner restrictions refer to planned levels: all zero, or at
-                least one above zero. Weekdays restrict storm starts; a front
-                may continue into another day. A manual start bypasses these
-                restrictions and does not count against the daily quota.
+                {$t("weather.plannerRestrictionsReferToPlannedLevelsAllZeroOr_af492")}
               </p>{:else if selectedEffect === "rain"}<p>
-                Weekdays restrict rain-front starts; a front may continue into
-                another day. Rain can also make a cloudy day.
+                {$t("weather.weekdaysRestrictRainFrontStartsAFrontMayContinue_cb5ff")}
               </p>{/if}
             <div class="field-grid weather-values">
             {#each fields.filter((f) => f.group === selectedEffect) as f}{@const k =
@@ -252,30 +245,30 @@ Third-party material retains its own terms.
                     type="checkbox"
                     checked={draft[k] === true}
                     onchange={(e) => (draft[k] = e.currentTarget.checked)}
-                  />{f.label}</label
+                  />{$renderText(f.label)}</label
                 >
               {:else if f.type === "array"}<fieldset>
-                  <legend>{f.label} · none means every day</legend>
+                  <legend>{$renderText(f.label)} {$t("weather.noneMeansEveryDay_4b11f")}</legend>
                   <div class="sensor-months">
                     {#each [1, 2, 3, 4, 5, 6, 0] as n}<label class="check"
                         ><input
                           type="checkbox"
-                          aria-label={`Weekday ${n}`}
+                          aria-label={$t("weather.weekdayV0_dbc34",{v0: n})}
                           checked={(draft[k] as number[]).includes(n)}
                           onchange={(e) => weekday(n, e.currentTarget.checked)}
                         />{[
-                          "Sunday",
-                          "Monday",
-                          "Tuesday",
-                          "Wednesday",
-                          "Thursday",
-                          "Friday",
-                          "Saturday",
+                          $t("schedules.sunday_bc5dd"),
+                          $t("schedules.monday_932ee"),
+                          $t("schedules.tuesday_42e43"),
+                          $t("schedules.wednesday_5656b"),
+                          $t("schedules.thursday_76031"),
+                          $t("schedules.friday_d166e"),
+                          $t("schedules.saturday_17063"),
                         ][n]}</label
                       >{/each}
                   </div>
                 </fieldset>
-              {:else}<label for={`weather-${k}`}>{f.label}</label><input
+              {:else}<label for={`weather-${k}`}>{$renderText(f.label)}</label><input
                   id={`weather-${k}`}
                   inputmode="numeric"
                   value={String(draft[k])}
@@ -283,74 +276,61 @@ Third-party material retains its own terms.
                   aria-invalid={!/^\d+$/.test(String(draft[k])) || Number(draft[k]) < f.min! || Number(draft[k]) > f.max!}
                 />
                 <p class="field-help">
-                  Integer {f.min}–{f.max}; default {String(f.default)}.
+                  {$t("weather.integer_9edcf")} {f.min}–{f.max}{$t("weather.default_887ff")} {String(f.default)}.
                 </p>{/if}
             </div>{/each}</div>
             {#if selectedEffect === "thunder" && draft["thunder#zeroonly"] && draft["thunder#nozeroonly"]}<p
               >
-                Both planner restrictions are set: automatic thunderstorms
-                cannot start. This combination is preserved; change it
-                explicitly if unwanted.
+                {$t("weather.bothPlannerRestrictionsAreSetAutomaticThunderstormsCannotStart_cb20e")}
               </p>{/if}
             <button type="button" class="secondary" onclick={reset}
-              >Reset effect draft</button
+              >{$t("weather.resetEffectDraft_c16b1")}</button
             ></div>
-          {:else}<p>Selected profile settings are unavailable.</p>
+          {:else}<p>{$t("weather.selectedProfileSettingsAreUnavailable_811df")}</p>
             <button type="button" onclick={() => selectLoad(selected)}
-              >Load selected profile</button
+              >{$t("weather.loadSelectedProfile_35799")}</button
             >{/if}
-        {:else}<div class="empty-state"><h2>No weather profiles</h2><p>No weather profiles. Add creates a local draft until Save.</p></div>{/if}
-        </section><section class="weather-channels" aria-label="Weather channel assignments"><h2>Channel assignments</h2>
+        {:else}<div class="empty-state"><h2>{$t("weather.noWeatherProfiles_9f244")}</h2><p>{$t("weather.noWeatherProfilesAddCreatesALocalDraftUntil_225a1")}</p></div>{/if}
+        </section><section class="weather-channels" aria-label={$t("weather.weatherChannelAssignments_857f2")}><h2>{$t("sensors.channelAssignments_433f0")}</h2>
         <p>
-          Channels sharing a profile have synchronized weather. Assignment does
-          not enable planning. Binary channels retain assignments but firmware
-          ignores their weather.
+          {$t("weather.channelsSharingAProfileHaveSynchronizedWeatherAssignmentDoes_77eed")}
         </p>
         <div class="weather-assignments">
           {#each book.channels as ch, i}<div>
               <label for={`weather-channel-${i}`}
                 ><ChannelIdentity number={i+1}/></label
-              ><select id={`weather-channel-${i}`} aria-label={`Channel ${i + 1} weather profile`} bind:value={ch.profile}
-                ><option value={0}>None</option
+              ><select id={`weather-channel-${i}`} aria-label={$t("weather.channelV0WeatherProfile_3aeeb",{v0: i + 1})} bind:value={ch.profile}
+                ><option value={0}>{$t("weather.none_6eef6")}</option
                 >{#if ch.profile && !book.profiles.some((p) => p.id === ch.profile)}<option
-                    value={ch.profile}>Unknown profile {ch.profile}</option
+                    value={ch.profile}>{$t("weather.unknownProfile_b4e36")} {ch.profile}</option
                   >{/if}{#each book.profiles as p}<option value={p.id}
                     >{p.name} · #{p.id}</option
                   >{/each}</select
-              >{#if ch.binary}<p>Binary output · weather ignored</p>{/if}
+              >{#if ch.binary}<p>{$t("weather.binaryOutputWeatherIgnored_966de")}</p>{/if}
             </div>{/each}
         </div>
         </section></div>
         {#if !valid}<p role="alert">
-            Check profile names, channel references, integer ranges and
-            minimum/maximum shares before saving.
+            {$t("weather.checkProfileNamesChannelReferencesIntegerRangesAndMinimum_320b9")}
           </p>{/if}
         <p>
-          Save writes all changed weather drafts, verifies persisted values, and
-          preserves unrelated settings. It does not prove lighting effects.
-          Reload before editing after another client; same-key concurrent edits
-          cannot be merged.
+          {$t("weather.saveWritesAllChangedWeatherDraftsVerifiesPersistedValues_f2942")}
         </p>
       </fieldset>
     </form>{:else}  <section class="weather-reload">
     <button type="button" class="secondary" onclick={reload} disabled={busy}
-      >Reload weather</button
+      >{$t("weather.reloadWeather_b6431")}</button
     >
     <p>
-      Reload discards all weather drafts. State refresh and navigation keep
-      them. Configuration saves and ending service mode reinitialize weather,
-      including manually started storms.
+      {$t("weather.reloadDiscardsAllWeatherDraftsStateRefreshAndNavigation_d2c5f")}
     </p>
   </section>
-<div class="empty-state"><h2>{busy?'Loading weather…':'Weather settings unavailable'}</h2><p>{busy?'Reading saved profiles and channel assignments.':'Use Reload weather to try again. No draft has been replaced.'}</p></div>{/if}
-  <details class="reading-details"><summary>Reading details{stale?' · stale':''}</summary><p>State refreshes every 30 seconds while visible; failures back off to 120 seconds.</p></details>
+<div class="empty-state"><h2>{busy?$t("weather.loadingWeather_bc236"):$t("weather.weatherSettingsUnavailable_c09c1")}</h2><p>{busy?$t("weather.readingSavedProfilesAndChannelAssignments_76a87"):$t("weather.useReloadWeatherToTryAgainNoDraftHas_6c1b6")}</p></div>{/if}
+  <details class="reading-details"><summary>{$t("app.readingDetails_28520")}{stale?$t("app.readbackStale_e56ed"):''}</summary><p>{$t("weather.stateRefreshesEvery30SecondsWhileVisibleFailuresBack_a0363")}</p></details>
   <section class="panel readback weather-commands">
-    <h2>Global thunderstorm commands</h2>
+    <h2>{$t("weather.globalThunderstormCommands_2f34e")}</h2>
     <p>
-      Start affects all saved enabled profiles assigned to dimmable channels.
-      Save drafts first. Time-lapse prevents starting. Stop ends the current
-      storm and rain front; continuous mode can restart later. Readback does not
-      prove visible flashes.
+      {$t("weather.startAffectsAllSavedEnabledProfilesAssignedToDimmable_dad12")}
     </p>
     <div class="form-actions">
       <button
@@ -361,11 +341,11 @@ Third-party material retains its own terms.
           !!snapshot.timewarp ||
           !book ||
           !eligible(book) ||
-          dirty}>Start all thunderstorms</button
+          dirty}>{$t("weather.startAllThunderstorms_e9e21")}</button
       ><button
         onclick={() => command({ thunder: 0 })}
         disabled={busy || snapshot.thunder !== true}
-        >Stop all thunderstorms</button
+        >{$t("weather.stopAllThunderstorms_4ded4")}</button
       >
     </div>
   </section>

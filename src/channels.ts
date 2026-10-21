@@ -1,3 +1,5 @@
+import {translate} from './i18n.js';
+import {source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -8,7 +10,7 @@
 import { writable, get, type Writable } from 'svelte/store';
 import { readSavedConfiguration, acceptSavedConfiguration } from './api.js';
 import {configurationState} from './configuration-state.js';
-import { presets } from './channel-presets.js';
+import {presets,presetName} from './channel-presets.js';
 export { presets };
 export type Channel = {color:unknown; binary:unknown; name:unknown};
 const identities = writable<Channel[]>([]);
@@ -28,17 +30,17 @@ export async function readChannels(count:number, refresh=true){
   const values=await readSavedConfiguration(Array.from({length:count},(_,i)=>['color','onoff','name'].map(k=>`pwm#${i+1}#${k}`)).flat(),refresh);
   return decodeChannels(values,count);
 }
-export function channelLabel(channel?:Channel):string {
+export function channelLabel(channel?:Channel,language:'en'|'de'='en'):string {
   if(typeof channel?.name==='string'&&channel.name) return channel.name;
-  return presets.find(p=>p.id===channel?.color)?.name ?? '';
+  const preset=presets.find(p=>p.id===channel?.color);return preset?presetName(preset,language):'';
 }
-export function channelDisplay(number:number,channel?:Channel,fallback=''):string {
-  const label=channelLabel(channel)||fallback;
-  return label?`${String(number).padStart(2,'0')} · ${label}`:`Channel ${number}`;
+export function channelDisplay(number:number,channel?:Channel,fallback='',language:'en'|'de'='en'):string {
+  const label=channelLabel(channel,language)||fallback;
+  return label?`${String(number).padStart(2,'0')} · ${label}`:translate(language,'channels.channelV0_04477',{v0:number});
 }
 export function channelColor(channel?:Channel){return presets.find(p=>p.id===channel?.color)?.color;}
 export function choosePreset(channels:Channel[], index:number, id:string){
-  if(!channels[index] || (id!==''&&!presets.some(p=>p.id===id)))throw Error('Unknown preset');
+  if(!channels[index] || (id!==''&&!presets.some(p=>p.id===id)))throw Error(source("channels.unknownPreset_bab86"));
   const binary=(v:unknown)=>v==='pump'||v==='co';
   function assign(i:number,value:string){
     const c=channels[i];
@@ -57,11 +59,11 @@ export function channelPatch(draft:Channel[],base:Channel[]){
   const patch:Record<string,unknown>={};
   draft.forEach((channel,i)=>{
     if(JSON.stringify(channel.color)!==JSON.stringify(base[i].color)){
-      if(typeof channel.color!=='string'||(channel.color!==''&&!presets.some(p=>p.id===channel.color)))throw Error('Invalid colour');
+      if(typeof channel.color!=='string'||(channel.color!==''&&!presets.some(p=>p.id===channel.color)))throw Error(source("channels.invalidColour_dd67f"));
       patch[`pwm#${i+1}#color`]=channel.color;
     }
     if(JSON.stringify(channel.binary)!==JSON.stringify(base[i].binary)){
-      if(typeof channel.binary!=='boolean')throw Error('Invalid binary setting');
+      if(typeof channel.binary!=='boolean')throw Error(source("channels.invalidBinarySetting_80f4b"));
       patch[`pwm#${i+1}#onoff`]=channel.binary;
     }
   });

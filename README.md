@@ -6,6 +6,15 @@ All fonts, images and notices are local.
 
 Routine settings load when their pages open. Reload replaces local drafts; independent state Refresh keeps them. Sensors retain all responses with compact editing and optional channel navigation.
 
+Choose English or Deutsch in navigation (Menu on mobile). English is the default;
+the browser remembers your choice. Switching language preserves unsaved drafts.
+Raw commands and meters use 0–1024; firmware still applies the channel's configured
+limit (ordinary dimming defaults to 1000). Percentage semantics are unchanged.
+
+To change interface text, update `src/locales/en.ts` and `de.ts` together;
+`npm run check` checks translation keys and matching placeholders.
+
+
 ## Screenshots
 
 Desktop and mobile views of Living Aquascape using demonstration data. Select an
@@ -94,16 +103,6 @@ including bootloader records does not mean the updater replaces the bootloader.
 This extraction and package verification do not establish physical-device
 readiness or full frontend compatibility with every v1.007 behavior.
 No device is updated by these build commands.
-
-The initial extracted build passed type checking, package-integrity tests and
-focused checks on disposable SR8/SR10 v1.007 host C simulators: all ten assets
-served byte-identically, Chromium startup, hostname save and restart persistence.
-These are focused host tests, not the original workspace's complete acceptance
-suite. Simulators and browser tooling are not dependencies of this repository.
-The subsequent source synchronisation recorded in `provenance.json` passed type
-checking, a fresh build and all six package-integrity tests. Its generated
-JavaScript and CSS match the modern frontend's isolated build; the earlier
-simulator/browser checks were not repeated for this synchronisation.
 
 ## Local development
 

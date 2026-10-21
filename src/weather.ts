@@ -1,3 +1,4 @@
+import {source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -5,7 +6,7 @@
  * Upstream: https://github.com/LEDaquaristik/sunriser
  * Adapted for this frontend in 2026; see LICENSING.md and LICENSE.
  */
-import { readConfig } from "./api";
+import { readConfig } from "./api.js";
 export type Effect = "clouds" | "rain" | "thunder" | "moon";
 export type Value = string | boolean | number[];
 export interface Field {
@@ -23,14 +24,14 @@ export const fields: Field[] = [
   {
     group: "clouds",
     key: "activated",
-    label: "Enable clouds",
+    label: source("weather.enableClouds_6ca5f"),
     default: false,
     type: "boolean",
   },
   {
     group: "clouds",
     key: "daychance",
-    label: "Cloud day chance %",
+    label: source("weather.cloudDayChance_4564c"),
     default: 30,
     type: "integer",
     min: 0,
@@ -39,7 +40,7 @@ export const fields: Field[] = [
   {
     group: "clouds",
     key: "mincloudshare",
-    label: "Minimum cloud share %",
+    label: source("weather.minimumCloudShare_30e87"),
     default: 10,
     type: "integer",
     min: 1,
@@ -48,7 +49,7 @@ export const fields: Field[] = [
   {
     group: "clouds",
     key: "cloudshare",
-    label: "Maximum cloud share %",
+    label: source("weather.maximumCloudShare_299cb"),
     default: 30,
     type: "integer",
     min: 1,
@@ -57,7 +58,7 @@ export const fields: Field[] = [
   {
     group: "clouds",
     key: "clouddarkness",
-    label: "Cloud darkness (1–10)",
+    label: source("weather.cloudDarkness110_64844"),
     default: 10,
     type: "integer",
     min: 1,
@@ -66,14 +67,14 @@ export const fields: Field[] = [
   {
     group: "clouds",
     key: "weekdays",
-    label: "Cloud weekdays",
+    label: source("weather.cloudWeekdays_ae5dc"),
     default: [],
     type: "array",
   },
   {
     group: "clouds",
     key: "mincloud",
-    label: "Minimum cloud seconds",
+    label: source("weather.minimumCloudSeconds_15f3c"),
     default: 2,
     type: "integer",
     min: 1,
@@ -82,7 +83,7 @@ export const fields: Field[] = [
   {
     group: "clouds",
     key: "randcloud",
-    label: "Additional cloud seconds",
+    label: source("weather.additionalCloudSeconds_c3b22"),
     default: 40,
     type: "integer",
     min: 0,
@@ -91,14 +92,14 @@ export const fields: Field[] = [
   {
     group: "rain",
     key: "activated",
-    label: "Enable rain",
+    label: source("weather.enableRain_90294"),
     default: false,
     type: "boolean",
   },
   {
     group: "rain",
     key: "daychance",
-    label: "Rain day chance %",
+    label: source("weather.rainDayChance_c017d"),
     default: 30,
     type: "integer",
     min: 0,
@@ -107,7 +108,7 @@ export const fields: Field[] = [
   {
     group: "rain",
     key: "minrainshare",
-    label: "Minimum rain share %",
+    label: source("weather.minimumRainShare_635a7"),
     default: 10,
     type: "integer",
     min: 1,
@@ -116,7 +117,7 @@ export const fields: Field[] = [
   {
     group: "rain",
     key: "rainshare",
-    label: "Maximum rain share %",
+    label: source("weather.maximumRainShare_e7ef4"),
     default: 30,
     type: "integer",
     min: 1,
@@ -125,14 +126,14 @@ export const fields: Field[] = [
   {
     group: "rain",
     key: "weekdays",
-    label: "Rain weekdays",
+    label: source("weather.rainWeekdays_26a8b"),
     default: [],
     type: "array",
   },
   {
     group: "rain",
     key: "minrain",
-    label: "Minimum rain minutes",
+    label: source("weather.minimumRainMinutes_6bcaf"),
     default: 5,
     type: "integer",
     min: 1,
@@ -141,7 +142,7 @@ export const fields: Field[] = [
   {
     group: "rain",
     key: "randrain",
-    label: "Additional rain minutes",
+    label: source("weather.additionalRainMinutes_2f19f"),
     default: 60,
     type: "integer",
     min: 0,
@@ -150,7 +151,7 @@ export const fields: Field[] = [
   {
     group: "rain",
     key: "dropdarkness",
-    label: "Drop darkness (1–10)",
+    label: source("weather.dropDarkness110_b385c"),
     default: 10,
     type: "integer",
     min: 1,
@@ -159,14 +160,14 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "activated",
-    label: "Enable thunderstorms",
+    label: source("weather.enableThunderstorms_76ab1"),
     default: false,
     type: "boolean",
   },
   {
     group: "thunder",
     key: "daychance",
-    label: "Storm chance per attempt %",
+    label: source("weather.stormChancePerAttempt_690b0"),
     default: 35,
     type: "integer",
     min: 1,
@@ -175,7 +176,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "daymax",
-    label: "Maximum storms per day",
+    label: source("weather.maximumStormsPerDay_184e1"),
     default: 3,
     type: "integer",
     min: 1,
@@ -184,7 +185,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "minstorm",
-    label: "Minimum storm minutes",
+    label: source("weather.minimumStormMinutes_e7b97"),
     default: 30,
     type: "integer",
     min: 2,
@@ -193,7 +194,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "randstorm",
-    label: "Additional storm minutes",
+    label: source("weather.additionalStormMinutes_8920c"),
     default: 120,
     type: "integer",
     min: 0,
@@ -202,28 +203,28 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "zeroonly",
-    label: "Only when all planned levels are zero",
+    label: source("weather.onlyWhenAllPlannedLevelsAreZero_56d49"),
     default: false,
     type: "boolean",
   },
   {
     group: "thunder",
     key: "nozeroonly",
-    label: "Only when a planned level is above zero",
+    label: source("weather.onlyWhenAPlannedLevelIsAboveZero_cd9bc"),
     default: false,
     type: "boolean",
   },
   {
     group: "thunder",
     key: "weekdays",
-    label: "Storm weekdays",
+    label: source("weather.stormWeekdays_466ca"),
     default: [],
     type: "array",
   },
   {
     group: "thunder",
     key: "fixdeload",
-    label: "Fixed afterflash strength (0 dynamic)",
+    label: source("weather.fixedAfterflashStrength0Dynamic_f2e92"),
     default: 0,
     type: "integer",
     min: 0,
@@ -232,7 +233,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "minrainextra",
-    label: "Minimum rain after storm minutes",
+    label: source("weather.minimumRainAfterStormMinutes_caa17"),
     default: 2,
     type: "integer",
     min: 0,
@@ -241,7 +242,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "randrainextra",
-    label: "Additional rain after storm minutes",
+    label: source("weather.additionalRainAfterStormMinutes_5e9b8"),
     default: 10,
     type: "integer",
     min: 0,
@@ -250,7 +251,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "preflashlength",
-    label: "Preflash milliseconds",
+    label: source("weather.preflashMilliseconds_ed04a"),
     default: 150,
     type: "integer",
     min: 100,
@@ -259,7 +260,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "pauselength",
-    label: "Pause before main flash milliseconds",
+    label: source("weather.pauseBeforeMainFlashMilliseconds_b61ac"),
     default: 200,
     type: "integer",
     min: 0,
@@ -268,7 +269,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "fullflashlength",
-    label: "Main flash milliseconds",
+    label: source("weather.mainFlashMilliseconds_94f75"),
     default: 300,
     type: "integer",
     min: 100,
@@ -277,7 +278,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "deloadflashlength",
-    label: "Afterflash milliseconds",
+    label: source("weather.afterflashMilliseconds_62b2d"),
     default: 150,
     type: "integer",
     min: 100,
@@ -286,7 +287,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "deloadpauselength",
-    label: "Pause between afterflashes milliseconds",
+    label: source("weather.pauseBetweenAfterflashesMilliseconds_5febe"),
     default: 200,
     type: "integer",
     min: 0,
@@ -295,7 +296,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "minflashpause",
-    label: "Minimum pause between flashes seconds",
+    label: source("weather.minimumPauseBetweenFlashesSeconds_23ab1"),
     default: 30,
     type: "integer",
     min: 1,
@@ -304,7 +305,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "randflashpause",
-    label: "Additional pause between flashes seconds",
+    label: source("weather.additionalPauseBetweenFlashesSeconds_eff00"),
     default: 120,
     type: "integer",
     min: 0,
@@ -313,7 +314,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "preflash",
-    label: "Preflash strength (1–16)",
+    label: source("weather.preflashStrength116_dfa25"),
     default: 8,
     type: "integer",
     min: 1,
@@ -322,7 +323,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "flash",
-    label: "Main flash strength (0–16)",
+    label: source("weather.mainFlashStrength016_93b50"),
     default: 16,
     type: "integer",
     min: 0,
@@ -331,7 +332,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "mindeload",
-    label: "Minimum afterflash count",
+    label: source("weather.minimumAfterflashCount_8579b"),
     default: 2,
     type: "integer",
     min: 0,
@@ -340,7 +341,7 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "randdeload",
-    label: "Additional afterflash count",
+    label: source("weather.additionalAfterflashCount_8b094"),
     default: 2,
     type: "integer",
     min: 0,
@@ -349,21 +350,21 @@ export const fields: Field[] = [
   {
     group: "thunder",
     key: "permanent",
-    label: "Continuous thunderstorms",
+    label: source("weather.continuousThunderstorms_036b3"),
     default: false,
     type: "boolean",
   },
   {
     group: "moon",
     key: "activated",
-    label: "Enable moonlight",
+    label: source("weather.enableMoonlight_b2449"),
     default: false,
     type: "boolean",
   },
   {
     group: "moon",
     key: "maximum",
-    label: "Maximum moonlight %",
+    label: source("weather.maximumMoonlight_1f1bf"),
     default: 100,
     type: "integer",
     min: 0,
@@ -409,7 +410,7 @@ const bool = (v: unknown) =>
     : typeof v === "boolean"
       ? v
       : (() => {
-          throw Error("Invalid Boolean");
+          throw Error(source("weather.invalidBoolean_ab602"));
         })();
 export async function loadBook(count: number): Promise<Book> {
   const keys = ["weather#web", "weather#last_setup_id"];
@@ -427,9 +428,9 @@ export async function loadBook(count: number): Promise<Book> {
     ) ||
     new Set(profiles.map((p) => p.id)).size !== profiles.length
   )
-    throw Error("Invalid catalogue");
+    throw Error(source("schedules.invalidCatalogue_27a60"));
   const counter = baseline["weather#last_setup_id"] ?? 0;
-  if (!int(counter)) throw Error("Invalid counter");
+  if (!int(counter)) throw Error(source("weather.invalidCounter_98dff"));
   Object.assign(
     baseline,
     await readConfig(
@@ -445,12 +446,12 @@ export async function loadBook(count: number): Promise<Book> {
       baseline[key(p.id, "name")] !== p.name ||
       bool(baseline[key(p.id, "deleted")])
     )
-      throw Error("Conflicting profile");
+      throw Error(source("weather.conflictingProfile_a36cf"));
     bool(baseline[key(p.id, "thunder#activated")]);
   }
   const channels = Array.from({ length: count }, (_, i) => {
     const profile = baseline[`pwm#${i + 1}#weather`] ?? 0;
-    if (!int(profile)) throw Error("Invalid assignment");
+    if (!int(profile)) throw Error(source("weather.invalidAssignment_40165"));
     return { profile, binary: bool(baseline[`pwm#${i + 1}#onoff`]) };
   });
   return { profiles, counter, channels, baseline, drafts: {}, removed: [] };
@@ -462,7 +463,7 @@ export async function loadProfile(book: Book, id: number) {
     const v = values[key(id, fieldKey(f))];
     if (v == null) continue;
     if (f.type === "boolean") {
-      if (typeof v !== "boolean") throw Error("Invalid Boolean");
+      if (typeof v !== "boolean") throw Error(source("weather.invalidBoolean_ab602"));
       draft[fieldKey(f)] = v;
     } else if (f.type === "array") {
       if (
@@ -470,11 +471,11 @@ export async function loadProfile(book: Book, id: number) {
         v.some((n) => !int(n, 0, 6)) ||
         new Set(v).size !== v.length
       )
-        throw Error("Invalid weekdays");
+        throw Error(source("weather.invalidWeekdays_33964"));
       draft[fieldKey(f)] = v;
     } else {
       if (typeof v !== "number" || !Number.isSafeInteger(v))
-        throw Error("Invalid integer");
+        throw Error(source("weather.invalidInteger_30bfc"));
       draft[fieldKey(f)] = String(v);
     }
   }
@@ -491,7 +492,7 @@ export const nextId = (book: Book) =>
 export function addProfile(book: Book) {
   const id = nextId(book);
   if (id > 65535) return;
-  book.profiles.push({ id, name: `New profile ${id}` });
+  book.profiles.push({ id, name: source("weather.newProfileV0_3363f",{v0:id}) });
   book.counter = id;
   book.drafts[id] = defaults();
   return id;

@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {t,renderText,language} from '../i18n';
   import type { Point } from '../schedules';
   import { parseTime } from '../schedules';
   let { points, preview, valid, draft = false, selected = -1, disabled=false, onpointchange, onselect }: {
@@ -36,13 +37,13 @@ Third-party material retains its own terms.
     onpointchange?.(index,horizontal?{...point,time:clock(Math.max(0,Math.min(1439,time+direction*(event.shiftKey?15:1))))}:{...point,percent:Math.max(0,Math.min(100,point.percent+direction*(event.shiftKey?5:1)))});
   }
 </script>
-<figure aria-label="Schedule curve">
-  <figcaption><span>Scheduled level <strong>%</strong></span><span>{draft ? 'Draft preview' : 'Saved preview'}</span></figcaption>
+<figure aria-label={$t("schedulepreview.scheduleCurve_d9778")}>
+  <figcaption><span>{$t("schedulepreview.scheduledLevel_13353")} <strong>%</strong></span><span>{draft ? $t("schedulepreview.draftPreview_89f24") : $t("schedulepreview.savedPreview_2e0ae")}</span></figcaption>
   <div class="chart">
     <div class="levels" aria-hidden="true"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div>
     <div class="plot" bind:this={plot}>
-      <svg role="img" aria-label="Schedule percentage preview" viewBox="0 0 1440 100" preserveAspectRatio="none">
-        <title>Schedule percentages over one device-local day</title>
+      <svg role="img" aria-label={$t("schedulepreview.schedulePercentagePreview_2ad43")} viewBox="0 0 1440 100" preserveAspectRatio="none">
+        <title>{$t("schedulepreview.schedulePercentagesOverOneDeviceLocalDay_a5f66")}</title>
         <path d="M0 0H1440M0 25H1440M0 50H1440M0 75H1440M0 100H1440 M360 0V100 M720 0V100 M1080 0V100" class="grid" vector-effect="non-scaling-stroke" />
         {#if preview}
           <polygon points={`0,100 ${preview} 1440,100`} class="area" />
@@ -51,16 +52,16 @@ Third-party material retains its own terms.
       </svg>
       {#each points as point,i}
         {#if parseTime(point.time)!==undefined && typeof point.percent==='number' && Number.isInteger(point.percent) && point.percent>=0 && point.percent<=100}
-          {#if onpointchange}<button type="button" class="point-handle" class:selected={selected===i} {disabled} aria-label={`Graph point ${i+1}: ${point.time}, ${point.percent}%`} aria-describedby="graph-edit-help" style:left={`${parseTime(point.time)!/1440*100}%`} style:top={`${100-point.percent}%`} onfocus={()=>onselect?.(i)} onkeydown={e=>key(e,i)} onpointerdown={e=>start(e,i)} onpointermove={move} onpointerup={()=>drag=undefined} onpointercancel={cancel} onlostpointercapture={cancel}><span class="marker" aria-hidden="true"></span></button>
+          {#if onpointchange}<button type="button" class="point-handle" class:selected={selected===i} {disabled} aria-label={$t("schedulepreview.graphPointV0V1V2_a5fd5",{v0: i+1,v1: point.time,v2: point.percent})} aria-describedby="graph-edit-help" style:left={`${parseTime(point.time)!/1440*100}%`} style:top={`${100-point.percent}%`} onfocus={()=>onselect?.(i)} onkeydown={e=>key(e,i)} onpointerdown={e=>start(e,i)} onpointermove={move} onpointerup={()=>drag=undefined} onpointercancel={cancel} onlostpointercapture={cancel}><span class="marker" aria-hidden="true"></span></button>
           {:else}<span class="marker" class:selected={selected===i} aria-hidden="true" style:left={`${parseTime(point.time)!/1440*100}%`} style:top={`${100-point.percent}%`}></span>{/if}
         {/if}
       {/each}
-      {#if !valid || !points.length}<div class="empty">{valid ? 'No points yet' : 'Preview unavailable'}<small>{valid ? 'Add a point below to begin.' : 'Correct the point values below.'}</small></div>{/if}
+      {#if !valid || !points.length}<div class="empty">{valid ? $t("schedulepreview.noPointsYet_c294f") : $t("schedulepreview.previewUnavailable_36d31")}<small>{valid ? $t("schedulepreview.addAPointBelowToBegin_d0db4") : $t("schedulepreview.correctThePointValuesBelow_a5640")}</small></div>{/if}
     </div>
     <div class="times" aria-hidden="true">{#each ["00:00","06:00","12:00","18:00","24:00"] as time,i}<span style:left={`${i*25}%`}>{time}</span>{/each}</div>
   </div>
-  <p>Device-local time · schematic percentages, not measured output.</p>
-  {#if onpointchange}<p id="graph-edit-help">Drag points to edit the draft only. Arrow keys: 1 minute / 1%; Shift: 15 minutes / 5%. Escape cancels a drag. Exact time and level fields remain below; Save is always explicit.</p>{/if}
+  <p>{$t("schedulepreview.deviceLocalTimeSchematicPercentagesNotMeasuredOutput_1f04f")}</p>
+  {#if onpointchange}<p id="graph-edit-help">{$t("schedulepreview.dragPointsToEditTheDraftOnlyArrowKeys_9df69")}</p>{/if}
 </figure>
 <style>
   figure { margin:0; min-width:0; }

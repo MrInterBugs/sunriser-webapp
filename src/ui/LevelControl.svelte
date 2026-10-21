@@ -7,15 +7,16 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {t,renderText,language} from '../i18n';
   let {id, label, value=$bindable(), max, disabled=false, unit='raw'}: {
     id:string; label:string; value:number|undefined; max:number; disabled?:boolean; unit?:string;
   }=$props();
   const valid=$derived(value!==undefined && Number.isInteger(value) && value>=0 && value<=max);
 </script>
 <div class="level">
-  <label class="sr-only" for={id}>{label}</label>
-  <input class="slider" aria-label={`${label} slider`} type="range" min="0" {max} step="1" value={valid ? value : 0} oninput={(event)=>value=Number(event.currentTarget.value)} {disabled} />
-  <div class="exact"><input {id} type="number" min="0" {max} step="1" bind:value {disabled} aria-invalid={!valid} aria-describedby={`${id}-unit`} /><span id={`${id}-unit`}>{unit}</span></div>
+  <label class="sr-only" for={id}>{$renderText(label)}</label>
+  <input class="slider" aria-label={$t("levelcontrol.v0Slider_96303",{v0: label})} type="range" min="0" {max} step="1" value={valid ? value : 0} oninput={(event)=>value=Number(event.currentTarget.value)} {disabled} />
+  <div class="exact"><input {id} type="number" min="0" {max} step="1" bind:value {disabled} aria-invalid={!valid} aria-describedby={`${id}-unit`} /><span id={`${id}-unit`}>{$renderText(unit)}</span></div>
 </div>
 <style>
   .level { display:flex; align-items:center; gap:12px; min-width:0; }

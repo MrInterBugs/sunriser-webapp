@@ -1,3 +1,4 @@
+import {source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -43,11 +44,11 @@ const clock = (minute: number) =>
 export function fromFlat(value: unknown): Point[] {
   if (value == null) return [];
   if (!Array.isArray(value) || value.length % 2)
-    throw Error("Malformed marker array");
+    throw Error(source("schedules.malformedMarkerArray_3f987"));
   const points: Point[] = [];
   for (let i = 0; i < value.length; i += 2) {
     if (!integer(value[i], 1440) || !integer(value[i + 1], 100))
-      throw Error("Malformed marker value");
+      throw Error(source("schedules.malformedMarkerValue_0df3b"));
     points.push({ time: clock(value[i]), percent: value[i + 1] });
   }
   return points;
@@ -56,15 +57,15 @@ export function validateCurve(points: Point[]): string[] {
   const errors: string[] = [];
   const times = points.map((p) => parseTime(p.time));
   if (times.some((t) => t === undefined))
-    errors.push("Use HH:MM from 00:00 to 23:59.");
+    errors.push(source("schedules.useHHMMFrom0000To2359_e75fe"));
   if (new Set(times).size !== times.length)
-    errors.push("Point times must be unique.");
+    errors.push(source("schedules.pointTimesMustBeUnique_99ece"));
   if (points.some((p) => !integer(p.percent, 100)))
-    errors.push("Percent must be a whole number from 0 to 100.");
+    errors.push(source("schedules.percentMustBeAWholeNumberFrom0To_462ad"));
   return errors;
 }
 export function flatten(points: Point[]): number[] {
-  if (validateCurve(points).length) throw Error("Invalid curve");
+  if (validateCurve(points).length) throw Error(source("schedules.invalidCurve_d0e7d"));
   return points
     .map((p) => [parseTime(p.time)!, p.percent!])
     .sort((a, b) => a[0] - b[0])
@@ -91,17 +92,17 @@ export function validateBook(book: ScheduleBook): string[] {
   const ids = new Set(book.programs.map((p) => p.id));
   book.channels.forEach((ch, i) => {
     errors.push(
-      ...validateCurve(ch.points).map((s) => `Channel ${i + 1}: ${s}`),
+      ...validateCurve(ch.points).map((s) => source("schedules.channelV0V1_a8de0",{v0:i + 1,v1:s})),
     );
     if (
       ch.week.length !== 8 ||
       ch.week.some((id) => !integer(id, 65535) || (id !== 0 && !ids.has(id)))
     )
-      errors.push(`Channel ${i + 1}: unknown program in weekly assignment.`);
+      errors.push(source("schedules.channelV0UnknownProgramInWeeklyAssignment_4f3e0",{v0:i + 1}));
   });
   for (const p of book.programs) {
-    if (!p.name.trim()) errors.push(`Program ${p.id}: enter a name.`);
-    errors.push(...validateCurve(p.points).map((s) => `Program ${p.id}: ${s}`));
+    if (!p.name.trim()) errors.push(source("schedules.programV0EnterAName_09134",{v0:p.id}));
+    errors.push(...validateCurve(p.points).map((s) => source("schedules.programV0V1_ad394",{v0:p.id,v1:s})));
   }
   return errors;
 }
@@ -183,11 +184,11 @@ export async function getSchedules(count: number, refresh=true): Promise<Schedul
     );
   const v = await readSavedConfiguration(keys,refresh);
   if (v["programs#web"] != null && typeof v["programs#web"] !== "string")
-    throw Error("Invalid catalogue type");
+    throw Error(source("schedules.invalidCatalogueType_56c2e"));
   const entries: unknown = JSON.parse((v["programs#web"] ?? "[]") as string);
   const lastId = v["programs#last_setup_id"] ?? 0;
   if (!Array.isArray(entries) || !integer(lastId, 65535))
-    throw Error("Invalid catalogue");
+    throw Error(source("schedules.invalidCatalogue_27a60"));
   const seen = new Set<number>();
   for (const p of entries) {
     if (
@@ -198,7 +199,7 @@ export async function getSchedules(count: number, refresh=true): Promise<Schedul
       typeof p.name !== "string" ||
       seen.has(p.id)
     )
-      throw Error("Invalid program");
+      throw Error(source("schedules.invalidProgram_0a9be"));
     seen.add(p.id);
   }
   const details = await readSavedConfiguration(
@@ -219,7 +220,7 @@ export async function getSchedules(count: number, refresh=true): Promise<Schedul
         week.length !== 8 ||
         week.some((id) => !integer(id, 65535))
       )
-        throw Error("Invalid channel plan");
+        throw Error(source("schedules.invalidChannelPlan_17ece"));
       return {
         manager,
         week,
@@ -234,7 +235,7 @@ export async function getSchedules(count: number, refresh=true): Promise<Schedul
         name !== p.name ||
         (deleted != null && deleted !== false)
       )
-        throw Error("Invalid program metadata");
+        throw Error(source("schedules.invalidProgramMetadata_7d412"));
       return {
         id: p.id,
         name,
@@ -251,7 +252,7 @@ export async function saveSchedules(
   next: ScheduleBook,
   firmware: Firmware,
 ) {
-  if (validateBook(next).length) throw Error("Invalid schedules");
+  if (validateBook(next).length) throw Error(source("schedules.invalidSchedules_739c1"));
   const patch = schedulePatch(base, next);
   if (Object.keys(patch).length) await saveConfiguration(patch, firmware);
   const changed=new Set(Object.keys(patch).flatMap(key=>{const match=/^(?:pwm#(\d+)#manager|dayplanner#marker#(\d+)|weekplanner#programs#(\d+))$/.exec(key);return match?[Number(match[1]||match[2]||match[3])]:[];}));
@@ -272,7 +273,7 @@ function publishScheduleBook(book:ScheduleBook,changed?:Set<number>){
 /** One selected channel, through the same bounded configuration reader as the editor.
  * No weekly programmes, other channels or draft data are requested here. */
 export function loadDailyPlan(number:number,refresh=false):Promise<ScheduleChannel>{
-  if(!Number.isInteger(number)||number<1||number>10) return Promise.reject(Error('Invalid channel'));
+  if(!Number.isInteger(number)||number<1||number>10) return Promise.reject(Error(source("schedules.invalidChannel_f48c8")));
   const existing=get(savedDailyPlans)[number];
   if(!refresh&&existing?.phase==='ready'&&existing.channel)return Promise.resolve(clone(existing.channel));
   const pending=pendingDaily.get(number);if(pending)return pending.then(clone);
@@ -282,10 +283,10 @@ export function loadDailyPlan(number:number,refresh=false):Promise<ScheduleChann
     try{
       const keys=[`pwm#${number}#manager`,`dayplanner#marker#${number}`];
       const values=await readSavedConfiguration(keys,refresh),manager=values[keys[0]]??0;
-      if(!integer(manager,4))throw Error('Invalid channel plan');
+      if(!integer(manager,4))throw Error(source("schedules.invalidChannelPlan_17ece"));
       const channel:ScheduleChannel={manager,points:manager===1?fromFlat(values[keys[1]]):[],week:[]};
-      if(manager===1&&validateCurve(channel.points).length)throw Error('Invalid daily points');
-      if(epoch!==dailyEpoch)throw Error('Obsolete daily plan');
+      if(manager===1&&validateCurve(channel.points).length)throw Error(source("schedules.invalidDailyPoints_55861"));
+      if(epoch!==dailyEpoch)throw Error(source("schedules.obsoleteDailyPlan_5f4cb"));
       savedDailyPlans.update(all=>({...all,[number]:{phase:'ready',channel:clone(channel)}}));
       return channel;
     }catch(error){

@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {t,renderText,language,source,numberText,decimalDraft,canonicalDecimal} from './i18n';
  import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
@@ -114,9 +115,9 @@ Third-party material retains its own terms.
         ready = true;
         snapshotRevision=configurationRevision();
       },
-      "Sensor configuration loaded",
-      "Could not load sensors. Retry Reload sensor configuration.",
-      "Loading sensors…",
+      source("sensors.sensorConfigurationLoaded_de09a"),
+      source("sensors.couldNotLoadSensorsRetryReloadSensorConfiguration_88a6c"),
+      source("sensors.loadingSensors_9e8a1"),
     );
   }
   async function selectLoad(rom: string) {
@@ -126,14 +127,14 @@ Third-party material retains its own terms.
         const value = await loadSensor(rom, catalogue[rom], channels);
         editors[rom] = value;
       },
-      "Sensor configuration loaded",
-      "Could not load sensors. Retry Reload sensor configuration.",
-      "Loading sensors…",
+      source("sensors.sensorConfigurationLoaded_de09a"),
+      source("sensors.couldNotLoadSensorsRetryReloadSensorConfiguration_88a6c"),
+      source("sensors.loadingSensors_9e8a1"),
     );
   }
   async function register() {
     const rom = selected,
-      name = names[rom] ?? "Temperature";
+      name = names[rom] ?? $t("sensors.temperature_0a906");
     if (!name.trim() || reading?.device !== 1 || !configurationCurrent(snapshotRevision)) return;
     const { entry, patch } = registration(rom, name, catalogue);
     await perform(
@@ -146,9 +147,9 @@ Third-party material retains its own terms.
         editors[rom] = registered;
         attemptedSensors[rom] = true;
       },
-      "Sensor registered",
-      "Could not confirm registration. Draft kept; reload to check persistence or explicitly retry Register sensor.",
-      "Registering sensor…",
+      source("sensors.sensorRegistered_27c15"),
+      source("sensors.couldNotConfirmRegistrationDraftKeptReloadToCheck_dd82c"),
+      source("sensors.registeringSensor_c087c"),
     );
   }
   async function save(event: SubmitEvent) {
@@ -164,9 +165,9 @@ Third-party material retains its own terms.
         if (values["sensors#web"])
           catalogue = JSON.parse(values["sensors#web"] as string);
       },
-      "Saved",
-      "Could not confirm sensor save. Draft kept; reload to check persistence or explicitly retry Save. No automatic write retry.",
-      "Saving sensor settings…",
+      source("app.saved_c0ae8"),
+      source("sensors.couldNotConfirmSensorSaveDraftKeptReloadTo_8bc0c"),
+      source("sensors.savingSensorSettings_722b7"),
     );
   }
   function reset() {
@@ -209,7 +210,7 @@ Third-party material retains its own terms.
       if(!active||document.activeElement!==target)return;
       const viewport=window.visualViewport;
       let top=(viewport?.offsetTop??0)+12,bottom=(viewport?.offsetTop??0)+(viewport?.height??innerHeight)-12;
-      const dock=document.querySelector<HTMLElement>('nav[aria-label="Everyday lighting"]');
+      const dock=document.querySelector<HTMLElement>('.mobile-dock');
       if(dock?.getClientRects().length)bottom=Math.min(bottom,dock.getBoundingClientRect().top-8);
       const bar=target.closest('form')?.querySelector<HTMLElement>('.draft-bar');
       if(bar&&getComputedStyle(bar).position==='sticky'&&bar.getBoundingClientRect().top<=top)top=Math.max(top,bar.getBoundingClientRect().bottom+8);
@@ -221,50 +222,50 @@ Third-party material retains its own terms.
 </script>
 {#if active}
 <EditorPage>
- <div class="heading"><div><h1>Sensors</h1></div><button class="secondary" onclick={refresh} disabled={busy}>Refresh sensor readings</button></div>
+ <div class="heading"><div><h1>{$t("sensors.sensors_711bf")}</h1></div><button class="secondary" onclick={refresh} disabled={busy}>{$t("sensors.refreshSensorReadings_b57a7")}</button></div>
 
- {#if sensorState.errors.length}<p role="alert" data-testid="sensor-state-error">{sensorState.errors.join('; ')}</p>{/if}
+ {#if sensorState.errors.length}<p role="alert" data-testid="sensor-state-error">{sensorState.errors.map(error=>$renderText(error)).join('; ')}</p>{/if}
  <div class="sensor-workspace"><section class="panel sensor-monitor"> {#if ready}
-  {#if !ids.length}<div class="empty-state"><h2>No sensors yet</h2><p>No sensors reported or configured.</p><p>Discovered probes appear after the device scans its bus. Registration is always explicit.</p></div>{:else}
-   <div class="sensor-readback readback"><div><label for="sensor-choice">Sensor</label><select id="sensor-choice" bind:value={selected} disabled={busy}>{#each ids as id}<option value={id}>{catalogue[id]?.name??'Unregistered'} · {id}</option>{/each}</select>
-   <details class="sensor-identity"><summary>Sensor identity</summary><p>{catalogue[selected]?.name ?? 'Unregistered sensor'} · ROM <code>{selected}</code></p></details></div><div><p>Device readback</p><StateBadge tone={stale?'draft':reading?'active':'error'}>{stale?'Reading may be stale':reading?'Probe connected':'Probe disconnected'}</StateBadge><p class="reading-value" class:reading-status={!reading || (editor && !editor.supported) || reading.device !== 1} data-testid="sensor-reading">{reading ? editor&&!editor.supported?`${reading.value} raw (unsupported configuration)`:formatReading(reading) : 'Disconnected'}</p>
-   <p>{reading?stale?'Last reported reading · stale':'Currently reported by device':'Missing from the last device scan; saved configuration is retained.'}</p></div></div>
+  {#if !ids.length}<div class="empty-state"><h2>{$t("sensors.noSensorsYet_472a1")}</h2><p>{$t("sensors.noSensorsReportedOrConfigured_3405f")}</p><p>{$t("sensors.discoveredProbesAppearAfterTheDeviceScansItsBus_17340")}</p></div>{:else}
+   <div class="sensor-readback readback"><div><label for="sensor-choice">{$t("sensors.sensor_9101f")}</label><select id="sensor-choice" bind:value={selected} disabled={busy}>{#each ids as id}<option value={id}>{catalogue[id]?.name??$t("sensors.unregistered_eca5e")} · {id}</option>{/each}</select>
+   <details class="sensor-identity"><summary>{$t("sensors.sensorIdentity_1c22e")}</summary><p>{catalogue[selected]?.name ?? $t("sensors.unregisteredSensor_3adba")} {$t("sensors.rom_1ea25")} <code>{selected}</code></p></details></div><div><p>{$t("lightingdashboard.deviceReadback_207fa")}</p><StateBadge tone={stale?'draft':reading?'active':'error'}>{stale?$t("sensors.readingMayBeStale_ed95d"):reading?$t("sensors.probeConnected_f8cf4"):$t("sensors.probeDisconnected_b8bfe")}</StateBadge><p class="reading-value" class:reading-status={!reading || (editor && !editor.supported) || reading.device !== 1} data-testid="sensor-reading">{reading ? editor&&!editor.supported?$t("sensors.v0RawUnsupportedConfiguration_7d607",{v0: reading.value}):(reading.device===1?numberText(reading.value/10,$language,Number.isInteger(reading.value/10)?0:1)+'°C':$t('sensors.unsupportedReading',{v0:reading.value,v1:reading.device})) : $t("sensors.disconnected_771e0")}</p>
+   <p>{reading?stale?$t("sensors.lastReportedReadingStale_97cbe"):$t("sensors.currentlyReportedByDevice_ca2bf"):$t("sensors.missingFromTheLastDeviceScanSavedConfigurationIs_acff1")}</p></div></div>
    {#if !catalogue[selected]}<ConfigurationNotice revision={snapshotRevision}/>
-    {#if reading?.device===1}<label for="sensor-new-name">Sensor name</label><input id="sensor-new-name" bind:value={names[selected]} placeholder="Temperature" disabled={busy} oninput={onedit} /><p>Register writes temperature defaults: inactive control, correction 0, thresholds 15–35°C, all months. Factory correction is +1°C; firmware includes it in subsequent readings.</p><button onclick={register} disabled={busy||!configurationReconciled||!(names[selected]??'Temperature').trim()}>Register sensor</button>
-    {:else}<p>Unsupported sensor device type. Raw readings are shown; registration is unavailable.</p>{/if}
+    {#if reading?.device===1}<label for="sensor-new-name">{$t("sensors.sensorName_d8c93")}</label><input id="sensor-new-name" bind:value={names[selected]} placeholder={$t("sensors.temperature_0a906")} disabled={busy} oninput={onedit} /><p>{$t("sensors.registerWritesTemperatureDefaultsInactiveControlCorrection0Thresholds_f3a77")}</p><button onclick={register} disabled={busy||!configurationReconciled||!(names[selected]??'Temperature').trim()}>{$t("sensors.registerSensor_7b392")}</button>
+    {:else}<p>{$t("sensors.unsupportedSensorDeviceTypeRawReadingsAreShownRegistration_721fd")}</p>{/if}
    {/if}
   {/if}
- {:else}<div class="empty-state"><h2>{busy?'Loading sensors…':'Sensor settings unavailable'}</h2><p>{busy?'Reading the sensor catalogue and saved configuration.':'Use Reload sensor configuration to try again.'}</p></div>{/if}<div class="form-actions"><button class="secondary" onclick={reload} disabled={busy}>Reload sensor configuration</button></div><p>Reload discards unsaved sensor drafts. Reading refreshes do not.</p>
-<details class="reading-details"><summary>Reading details{stale?' · stale':''}</summary> <p class:stale>{stale?'Last snapshot · stale':'Device snapshot'} · Readings refresh every 30 seconds while visible; failures back off to 120 seconds. Firmware scans on its own cycle (about 60 seconds); Refresh only reads state.</p></details>
+ {:else}<div class="empty-state"><h2>{busy?$t("sensors.loadingSensors_9e8a1"):$t("sensors.sensorSettingsUnavailable_dd572")}</h2><p>{busy?$t("sensors.readingTheSensorCatalogueAndSavedConfiguration_5093d"):$t("sensors.useReloadSensorConfigurationToTryAgain_e241c")}</p></div>{/if}<div class="form-actions"><button class="secondary" onclick={reload} disabled={busy}>{$t("sensors.reloadSensorConfiguration_360e6")}</button></div><p>{$t("sensors.reloadDiscardsUnsavedSensorDraftsReadingRefreshesDoNot_31fee")}</p>
+<details class="reading-details"><summary>{$t("app.readingDetails_28520")}{stale?$t("app.readbackStale_e56ed"):''}</summary> <p class:stale>{stale?$t("app.lastSnapshotStale_329af"):$t("sensors.deviceSnapshot_35538")} {$t("sensors.readingsRefreshEvery30SecondsWhileVisibleFailuresBack_2eda5")}</p></details>
 </section>
  {#if editor}
-  {#if !editor.supported}<section class="panel"><h2>Unsupported sensor settings</h2><p>This device or unit format is read-only. Its stored configuration is preserved.</p></section>
+  {#if !editor.supported}<section class="panel"><h2>{$t("sensors.unsupportedSensorSettings_e93c5")}</h2><p>{$t("sensors.thisDeviceOrUnitFormatIsReadOnlyIts_4f855")}</p></section>
   {:else}<form class="panel sensor-configuration" onsubmit={save} oninput={onedit} onfocusin={e=>revealControl(e.target)} novalidate>
-   <DraftBar {snapshotRevision} {feedback} dirty={!!Object.keys(patch).length} {busy} disabled={!valid||!Object.keys(patch).length} label="Save sensor settings" scope="sensor " detail="Save applies to this sensor. Reading refreshes keep all drafts." />
-   <fieldset disabled={busy}><legend>Temperature settings</legend>
-   <div class="field-grid"><div><label for="sensor-name">Sensor name</label><input id="sensor-name" bind:value={editor.draft.name} aria-invalid={!editor.draft.name.trim()} /></div><div>
-   <label class="check"><input type="checkbox" bind:checked={editor.draft.active} />Enable sensor control</label><p>Control uses the saved thresholds and assignments below.</p></div></div>
-   <div class="field-grid three-columns sensor-thresholds"><div><label for="sensor-correction">Correction °C</label><input id="sensor-correction" inputmode="decimal" bind:value={editor.draft.offset} aria-invalid={tenths(editor.draft.offset) === undefined || Math.abs(tenths(editor.draft.offset)!) > 50} />
-   <p>−5 to +5°C in tenths. Device readings already include corrections; unsaved edits never change the displayed reading.</p>
-   </div><div><label for="sensor-min">Minimum °C</label><input id="sensor-min" inputmode="decimal" bind:value={editor.draft.desiredmin} aria-invalid={tenths(editor.draft.desiredmin) === undefined || tenths(editor.draft.desiredmin)! < editor.min || tenths(editor.draft.desiredmin)! > tenths(editor.draft.desiredmax)!} />
-   </div><div><label for="sensor-max">Maximum °C</label><input id="sensor-max" inputmode="decimal" bind:value={editor.draft.desiredmax} aria-invalid={tenths(editor.draft.desiredmax) === undefined || tenths(editor.draft.desiredmax)! > editor.max || tenths(editor.draft.desiredmax)! < tenths(editor.draft.desiredmin)!} />
-   </div></div><p>Stored bounds {editor.min/10}–{editor.max/10}°C. Minimum must not exceed maximum. Thresholds are inclusive; maximum takes priority when equal.</p>
-   <details class="months-editor" open><summary>Active months · none selected means all</summary><fieldset><legend class="visually-hidden">Active months (none selected means all)</legend><div class="sensor-months">{#each Array.from({length:12},(_,i)=>i+1) as n}<label class="check"><input type="checkbox" checked={editor.draft.months.includes(n)} onchange={e=>month(n,e.currentTarget.checked)} />Month {n}</label>{/each}</div></fieldset></details>
-   <p class="notice" data-testid="sensor-month-warning">Firmware limitation: changed month selections may retain previously active months until a device reboot. Save confirms persistence, not runtime month replacement. This interface never reboots automatically.</p>
-   <div class="assignments-heading"><div><h2>Channel assignments</h2><p>Responses at the inclusive minimum and maximum thresholds. Edits stay local until Save.</p></div><div class="channel-jump"><label for="sensor-response-jump">Jump to channel response</label><div class="jump-controls"><select id="sensor-response-jump" bind:value={responseJump} disabled={busy}><option value="">Choose channel…</option>{#each channels as channel,i}<option value={String(i+1)}>{channelDisplay(i+1,$savedChannels[i],$configurationState.revision===0?channel.name:'')}</option>{/each}</select><button type="button" class="secondary" aria-label="Go to channel response" disabled={busy||!responseJump} onclick={()=>jumpChannel(responseJump)}>Go</button></div></div></div>
-   <p class="response-help">Relative: 0–200%. Absolute: 0–100%. Binary: Off/On (0/100%). Save does not enable inactive planners.</p><div class="service-fields sensor-responses">{#each channels as channel,i}<fieldset id={`sensor-channel-${i+1}`} class="sensor-response" tabindex="-1"><legend><ChannelIdentity number={i+1} fallback={channel.name}/></legend>
-    {#if channel.manager===0}<p>Planner inactive: sensor assignments will not control this output until planning is enabled separately.</p>{/if}
-    <div class="threshold-pair">{#each ['min','max'] as side}{@const s=side as 'min'|'max'}{@const a=editor.draft.channels[i][s]}{@const label=`Channel ${i+1} ${s==='min'?'below minimum':'above maximum'}`}
-     <div><label class="check response-enable"><input type="checkbox" aria-label={label} bind:checked={a.enabled} />{s==='min'?'At/below minimum':'At/above maximum'}</label>
-     {#if channel.binary}{#if !['0','100'].includes(a.percent)}<p role="alert">Retained draft: {a.percent}%. Choose On then Off if required; binary channels need 0 or 100%.</p>{/if}<label class="check"><input type="checkbox" aria-label={`${label} on`} checked={a.percent==='100'} onchange={e=>a.percent=e.currentTarget.checked?'100':'0'} />On</label>
-     {:else}<div class="response-value-row"><div class="response-value"><label class="visually-hidden" for={`sensor-${i}-${s}`}>Level (%)</label><div class="sensor-level"><input class="sensor-percent" id={`sensor-${i}-${s}`} inputmode="numeric" aria-label={`${label} percent`} aria-invalid={!/^\d+$/.test(a.percent) || Number(a.percent)>(a.absolute?100:200)} bind:value={a.percent} /><span aria-hidden="true">%</span></div></div><label class="check"><input type="checkbox" aria-label={`${label} absolute`} bind:checked={a.absolute} />Absolute</label></div>{/if}
+   <DraftBar {snapshotRevision} feedback={$renderText(feedback)} dirty={!!Object.keys(patch).length} {busy} disabled={!valid||!Object.keys(patch).length} label={$t("sensors.saveSensorSettings_19f30")} scope={$language==='en'?$t("sensors.sensor_2fc03")+' ':$t("sensors.sensor_2fc03")} detail={$t("sensors.saveAppliesToThisSensorReadingRefreshesKeepAll_f1f54")} />
+   <fieldset disabled={busy}><legend>{$t("sensors.temperatureSettings_71778")}</legend>
+   <div class="field-grid"><div><label for="sensor-name">{$t("sensors.sensorName_d8c93")}</label><input id="sensor-name" bind:value={editor.draft.name} aria-invalid={!editor.draft.name.trim()} /></div><div>
+   <label class="check"><input type="checkbox" bind:checked={editor.draft.active} />{$t("sensors.enableSensorControl_7cd2d")}</label><p>{$t("sensors.controlUsesTheSavedThresholdsAndAssignmentsBelow_0bb96")}</p></div></div>
+   <div class="field-grid three-columns sensor-thresholds"><div><label for="sensor-correction">{$t("sensors.correctionC_c8478")}</label><input id="sensor-correction" inputmode="decimal" bind:value={()=>decimalDraft(editor.draft.offset,$language),v=>editor.draft.offset=canonicalDecimal(v,$language)} aria-invalid={tenths(editor.draft.offset) === undefined || Math.abs(tenths(editor.draft.offset)!) > 50} />
+   <p>{$t("sensors.5To5CInTenthsDeviceReadingsAlready_90439")}</p>
+   </div><div><label for="sensor-min">{$t("sensors.minimumC_82d4f")}</label><input id="sensor-min" inputmode="decimal" bind:value={()=>decimalDraft(editor.draft.desiredmin,$language),v=>editor.draft.desiredmin=canonicalDecimal(v,$language)} aria-invalid={tenths(editor.draft.desiredmin) === undefined || tenths(editor.draft.desiredmin)! < editor.min || tenths(editor.draft.desiredmin)! > tenths(editor.draft.desiredmax)!} />
+   </div><div><label for="sensor-max">{$t("sensors.maximumC_83e2c")}</label><input id="sensor-max" inputmode="decimal" bind:value={()=>decimalDraft(editor.draft.desiredmax,$language),v=>editor.draft.desiredmax=canonicalDecimal(v,$language)} aria-invalid={tenths(editor.draft.desiredmax) === undefined || tenths(editor.draft.desiredmax)! > editor.max || tenths(editor.draft.desiredmax)! < tenths(editor.draft.desiredmin)!} />
+   </div></div><p>{$t("sensors.storedBounds_31ede")} {numberText(editor.min/10,$language,Number.isInteger(editor.min/10)?0:1)}–{numberText(editor.max/10,$language,Number.isInteger(editor.max/10)?0:1)}{$t("sensors.cMinimumMustNotExceedMaximumThresholdsAreInclusive_bf7b0")}</p>
+   <details class="months-editor" open><summary>{$t("sensors.activeMonthsNoneSelectedMeansAll_28793")}</summary><fieldset><legend class="visually-hidden">{$t("sensors.activeMonthsNoneSelectedMeansAll_622b6")}</legend><div class="sensor-months">{#each Array.from({length:12},(_,i)=>i+1) as n}<label class="check"><input type="checkbox" checked={editor.draft.months.includes(n)} onchange={e=>month(n,e.currentTarget.checked)} />{$t("sensors.month_082bc")} {n}</label>{/each}</div></fieldset></details>
+   <p class="notice" data-testid="sensor-month-warning">{$t("sensors.firmwareLimitationChangedMonthSelectionsMayRetainPreviouslyActive_f7884")}</p>
+   <div class="assignments-heading"><div><h2>{$t("sensors.channelAssignments_433f0")}</h2><p>{$t("sensors.responsesAtTheInclusiveMinimumAndMaximumThresholdsEdits_153dd")}</p></div><div class="channel-jump"><label for="sensor-response-jump">{$t("sensors.jumpToChannelResponse_a9e18")}</label><div class="jump-controls"><select id="sensor-response-jump" bind:value={responseJump} disabled={busy}><option value="">{$t("sensors.chooseChannel_60b53")}</option>{#each channels as channel,i}<option value={String(i+1)}>{channelDisplay(i+1,$savedChannels[i],$configurationState.revision===0?channel.name:'',$language)}</option>{/each}</select><button type="button" class="secondary" aria-label={$t("sensors.goToChannelResponse_797c1")} disabled={busy||!responseJump} onclick={()=>jumpChannel(responseJump)}>{$t("sensors.go_2e0b4")}</button></div></div></div>
+   <p class="response-help">{$t("sensors.relative0200Absolute0100BinaryOffOn_becf4")}</p><div class="service-fields sensor-responses">{#each channels as channel,i}<fieldset id={`sensor-channel-${i+1}`} class="sensor-response" tabindex="-1"><legend><ChannelIdentity number={i+1} fallback={channel.name}/></legend>
+    {#if channel.manager===0}<p>{$t("sensors.plannerInactiveSensorAssignmentsWillNotControlThisOutput_55dc3")}</p>{/if}
+    <div class="threshold-pair">{#each ['min','max'] as side}{@const s=side as 'min'|'max'}{@const a=editor.draft.channels[i][s]}{@const label=$t("sensors.channelV0V1_d0b6e",{v0: i+1,v1: s==='min'?$t("sensors.belowMinimum_f0474"):$t("sensors.aboveMaximum_62554")})}
+     <div><label class="check response-enable"><input type="checkbox" aria-label={$renderText(label)} bind:checked={a.enabled} />{s==='min'?$t("sensors.atBelowMinimum_002fc"):$t("sensors.atAboveMaximum_e26e8")}</label>
+     {#if channel.binary}{#if !['0','100'].includes(a.percent)}<p role="alert">{$t("sensors.retainedDraft_8887a")} {a.percent}{$t("sensors.chooseOnThenOffIfRequiredBinaryChannelsNeed_f0b78")}</p>{/if}<label class="check"><input type="checkbox" aria-label={$t("sensors.v0On_4be6b",{v0: label})} checked={a.percent==='100'} onchange={e=>a.percent=e.currentTarget.checked?'100':'0'} />{$t("lightingtools.on_e0049")}</label>
+     {:else}<div class="response-value-row"><div class="response-value"><label class="visually-hidden" for={`sensor-${i}-${s}`}>{$t("schedules.level_9a874")}</label><div class="sensor-level"><input class="sensor-percent" id={`sensor-${i}-${s}`} inputmode="numeric" aria-label={$t("sensors.v0Percent_ad07f",{v0: label})} aria-invalid={!/^\d+$/.test(a.percent) || Number(a.percent)>(a.absolute?100:200)} bind:value={a.percent} /><span aria-hidden="true">%</span></div></div><label class="check"><input type="checkbox" aria-label={$t("sensors.v0Absolute_85785",{v0: label})} bind:checked={a.absolute} />{$t("sensors.absolute_a6c5f")}</label></div>{/if}
     </div>{/each}</div>
    </fieldset>{/each}</div>
-   <div class="form-actions"><button type="button" class="secondary" onclick={reset}>Reset sensor draft</button><button type="button" class="secondary" onclick={()=>document.getElementById('sensor-name')?.focus()}>Back to sensor settings ↑</button></div>
-   {#if !valid}<p role="alert">Check the name, correction, ordered thresholds and channel percentages before saving.</p>{/if}
+   <div class="form-actions"><button type="button" class="secondary" onclick={reset}>{$t("sensors.resetSensorDraft_023e8")}</button><button type="button" class="secondary" onclick={()=>document.getElementById('sensor-name')?.focus()}>{$t("sensors.backToSensorSettings_f138e")}</button></div>
+   {#if !valid}<p role="alert">{$t("sensors.checkTheNameCorrectionOrderedThresholdsAndChannelPercentages_034c6")}</p>{/if}
    </fieldset>
   </form>{/if}
- {:else if ready&&catalogue[selected]}<section class="panel"><h2>{busy?'Loading selected sensor…':'Selected sensor settings unavailable'}</h2><ConfigurationNotice revision={snapshotRevision}/>{#if !busy&&configurationReconciled}<button class="secondary" onclick={()=>selectLoad(selected)}>Retry selected sensor</button><p>This read keeps other sensor drafts. Reload sensor configuration replaces all sensor drafts.</p>{/if}</section>{/if}
+ {:else if ready&&catalogue[selected]}<section class="panel"><h2>{busy?$t("sensors.loadingSelectedSensor_ede94"):$t("sensors.selectedSensorSettingsUnavailable_5ebdf")}</h2><ConfigurationNotice revision={snapshotRevision}/>{#if !busy&&configurationReconciled}<button class="secondary" onclick={()=>selectLoad(selected)}>{$t("sensors.retrySelectedSensor_ffa89")}</button><p>{$t("sensors.thisReadKeepsOtherSensorDraftsReloadSensorConfiguration_b8ee4")}</p>{/if}</section>{/if}
 </div>
 </EditorPage>
 {/if}

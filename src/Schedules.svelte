@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {t,renderText,language,source} from './i18n';
  import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
@@ -87,7 +88,7 @@ Third-party material retains its own terms.
       const viewport = window.visualViewport;
       let top = (viewport?.offsetTop ?? 0) + 12;
       let bottom = (viewport?.offsetTop ?? 0) + (viewport?.height ?? innerHeight) - 12;
-      const dock = document.querySelector<HTMLElement>('nav[aria-label="Everyday lighting"]');
+      const dock = document.querySelector<HTMLElement>('.mobile-dock');
       if (dock?.getClientRects().length) bottom = Math.min(bottom, dock.getBoundingClientRect().top - 8);
       const bar = pointsElement.closest('form')?.querySelector<HTMLElement>('.save-bar');
       if (bar && getComputedStyle(bar).position === 'sticky' && bar.getBoundingClientRect().top <= top)
@@ -110,16 +111,16 @@ Third-party material retains its own terms.
     return () => { window.removeEventListener('resize', resize); window.visualViewport?.removeEventListener('resize', resize); cancelAnimationFrame(revealFrame); };
   });
   const days = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Default program",
+    source("schedules.sunday_bc5dd"),
+    source("schedules.monday_932ee"),
+    source("schedules.tuesday_42e43"),
+    source("schedules.wednesday_5656b"),
+    source("schedules.thursday_76031"),
+    source("schedules.friday_d166e"),
+    source("schedules.saturday_17063"),
+    source("schedules.defaultProgram_afb84"),
   ];
-  const modeNames = ["No schedule", "Daily", "Weekly", "Fixed", "Other mode (preserved)"];
+  const modeNames = [source("schedules.noSchedule_15d88"), source("schedules.daily_72829"), source("schedules.weekly_158f3"), source("schedules.fixed_ab98f"), source("schedules.otherModePreserved_71c40")];
   const savedCurve = $derived(view === "program" ? baseline?.programs.find(p => p.id === program)?.points : baseline?.channels[channel - 1].points);
   const selected = $derived(book?.programs.find((p) => p.id === program));
   const curve = $derived(
@@ -128,13 +129,13 @@ Third-party material retains its own terms.
   const curveEdited = $derived(JSON.stringify(curve) !== JSON.stringify(savedCurve));
   const pointFeedback = $derived((curve ?? []).map((point, i, points) => {
     const messages: string[] = [], time = parseTime(point.time);
-    if (time === undefined) messages.push('Use HH:MM from 00:00 to 23:59.');
+    if (time === undefined) messages.push(source("schedules.useHHMMFrom0000To2359_e75fe"));
     else {
       const duplicates = points.flatMap((p, n) => n !== i && parseTime(p.time) === time ? [n + 1] : []);
-      if (duplicates.length) messages.push(`Time ${point.time} duplicates point ${duplicates.join(', ')}.`);
+      if (duplicates.length) messages.push(source("schedules.timeV0DuplicatesPointV1_59db7",{v0:point.time,v1:duplicates.join(', ')}));
     }
-    if (!inRange(point.percent, 100)) messages.push('Level must be a whole number from 0 to 100%.');
-    return messages.length ? `Point ${i + 1}: ${messages.join(' ')}` : '';
+    if (!inRange(point.percent, 100)) messages.push(source("schedules.levelMustBeAWholeNumberFrom0To_4122f"));
+    return messages.length ? $t("schedules.pointV0V1_afc85",{v0:i + 1,v1:messages.map(message=>$renderText(message)).join(' ')}) : '';
   }));
   const errors = $derived(book ? validateBook(book) : []);
   const edited = $derived(
@@ -183,9 +184,9 @@ Third-party material retains its own terms.
         if (!next.programs.some((p) => p.id === program))
           program = next.programs[0]?.id ?? 0;
       },
-      "Schedules loaded",
-      "Could not load schedules. Check the connection and stored schedule data, then Reload schedules.",
-      "Loading schedules…",
+      source("schedules.schedulesLoaded_bb031"),
+      source("schedules.couldNotLoadSchedulesCheckTheConnectionAndStored_30921"),
+      source("schedules.loadingSchedules_8ef1a"),
     );
   }
   async function save(event: SubmitEvent) {
@@ -197,9 +198,9 @@ Third-party material retains its own terms.
         await saveSchedules(baseline!, draft, firmware);
         baseline = clone(draft);
       },
-      "Saved",
-      "Could not confirm schedule save. Drafts kept; Reload schedules to check persistence or explicitly retry Save. No automatic write retry.",
-      "Saving schedules…",
+      source("app.saved_c0ae8"),
+      source("schedules.couldNotConfirmScheduleSaveDraftsKeptReloadSchedules_03ea4"),
+      source("schedules.savingSchedules_259d3"),
     );
   }
   function setCurve(points: Point[]) {
@@ -229,14 +230,14 @@ Third-party material retains its own terms.
   }
   function addProgram(duplicate = false) {
     if (!book || book.lastId >= 65535) return;
-    const source = baseline?.programs.find((p) => p.id === program);
-    if (duplicate && (!source || edited)) return;
+    const originalProgram = baseline?.programs.find((p) => p.id === program);
+    if (duplicate && (!originalProgram || edited)) return;
     const id = ++book.lastId,
-      name = duplicate ? `Copy of ${source!.name}` : `New program ${id}`;
+      name = duplicate ? $t("schedules.copyOfV0_f49ba",{v0:originalProgram!.name}) : $t("schedules.newProgramV0_3a8b4",{v0:id});
     book.programs.push({
       id,
       name,
-      points: duplicate ? clone(source!.points) : [],
+      points: duplicate ? clone(originalProgram!.points) : [],
       entry: { id, name },
     });
     program = id;
@@ -262,94 +263,94 @@ Third-party material retains its own terms.
 
 <div class="schedules" class:short-viewport={shortViewport} hidden={!active}>
   <div class="page-heading">
-    <div><h1>Schedules</h1><p>Shape the day in device-local time. <a href="#lighting-tools">Time-lapse and dimming →</a></p></div>
-    <div class="reload"><ActionButton secondary onclick={()=>load(true)} disabled={busy}>Reload schedules</ActionButton><small>Reload replaces unsaved edits.</small></div>
+    <div><h1>{$t("schedules.schedules_26d9d")}</h1><p>{$t("schedules.shapeTheDayInDeviceLocalTime_bd020")} <a href="#lighting-tools">{$t("schedules.timeLapseAndDimming_9e98f")}</a></p></div>
+    <div class="reload"><ActionButton secondary onclick={()=>load(true)} disabled={busy}>{$t("schedules.reloadSchedules_7b37d")}</ActionButton><small>{$t("schedules.reloadReplacesUnsavedEdits_83489")}</small></div>
   </div>
   {#if book}
-    <div class="schedule-workspace"><aside class="channel-roster" aria-label="Schedule channels"><h2>Channels</h2>{#each book.channels as ch,i}<button type="button" aria-label={`Select channel ${i+1}`} aria-pressed={channel===i+1 && view!=='program'} disabled={busy} onclick={()=>{channel=i+1;if(view==='program')view='day';}}><strong><ChannelIdentity number={i+1}/></strong><span>{modeNames[ch.manager]}{JSON.stringify(ch)!==JSON.stringify(baseline!.channels[i])?' · draft':''}</span></button>{/each}</aside><form novalidate onsubmit={save} oninput={onedit} onchange={onedit}>
+    <div class="schedule-workspace"><aside class="channel-roster" aria-label={$t("schedules.scheduleChannels_593d6")}><h2>{$t("lightingdashboard.channels_18e03")}</h2>{#each book.channels as ch,i}<button type="button" aria-label={$t("schedules.selectChannelV0_634d4",{v0: i+1})} aria-pressed={channel===i+1 && view!=='program'} disabled={busy} onclick={()=>{channel=i+1;if(view==='program')view='day';}}><strong><ChannelIdentity number={i+1}/></strong><span>{$renderText(modeNames[ch.manager])}{JSON.stringify(ch)!==JSON.stringify(baseline!.channels[i])?$t('common.draftSuffix'):''}</span></button>{/each}</aside><form novalidate onsubmit={save} oninput={onedit} onchange={onedit}>
       <fieldset class="editor" disabled={busy}>
-        <legend class="visually-hidden">Schedule editor</legend>
+        <legend class="visually-hidden">{$t("schedules.scheduleEditor_0b45b")}</legend>
         <div class="save-bar">
-          <div><ConfigurationNotice revision={snapshotRevision}/><StateBadge tone={edited ? 'draft' : 'neutral'}>{edited ? 'Unsaved schedule changes' : 'No unsaved schedule changes'}</StateBadge><p>Save applies all edited channels and programs.</p></div>
-          <ActionButton type="submit" disabled={!dirty || !!errors.length || rawPending || !configurationReconciled}>Save schedules</ActionButton>
+          <div><ConfigurationNotice revision={snapshotRevision}/><StateBadge tone={edited ? 'draft' : 'neutral'}>{edited ? $t("schedules.unsavedScheduleChanges_a44b4") : $t("schedules.noUnsavedScheduleChanges_725e0")}</StateBadge><p>{$t("schedules.saveAppliesAllEditedChannelsAndPrograms_04a0c")}</p></div>
+          <ActionButton type="submit" disabled={!dirty || !!errors.length || rawPending || !configurationReconciled}>{$t("schedules.saveSchedules_cb3a4")}</ActionButton>
         </div>
         <div class="schedule-identity">
         <div class="selection-context">
           {#if view !== 'program'}
             <span class="channel-number" aria-hidden="true">{String(channel).padStart(2,'0')}</span>
-            <div><h2><ChannelIdentity number={channel}/></h2><p>Saved mode: <strong>{modeNames[baseline!.channels[channel-1].manager]}</strong>{#if book.channels[channel-1].manager !== baseline!.channels[channel-1].manager}{' · Draft mode: '}<strong>{modeNames[book.channels[channel-1].manager]}</strong>{/if}</p></div>
+            <div><h2><ChannelIdentity number={channel}/></h2><p>{$t("schedules.savedMode_3ca9d")} <strong>{$renderText(modeNames[baseline!.channels[channel-1].manager])}</strong>{#if book.channels[channel-1].manager !== baseline!.channels[channel-1].manager}{' ' + $t("schedules.draftMode_c892c") + ' '}<strong>{$renderText(modeNames[book.channels[channel-1].manager])}</strong>{/if}</p></div>
           {:else}
-            <div><p class="kicker">Reusable program {program || ''}</p><h2>{selected ? selected.name.trim() || 'Unnamed program' : 'No program selected'}</h2><p>Shared by weekly assignments. Changes apply after Save.</p></div>
+            <div><p class="kicker">{$t("schedules.reusableProgram_65ba4")} {program || ''}</p><h2>{selected ? selected.name.trim() || $t("schedules.unnamedProgram_eba1a") : $t("schedules.noProgramSelected_4fd7c")}</h2><p>{$t("schedules.sharedByWeeklyAssignmentsChangesApplyAfterSave_334b8")}</p></div>
           {/if}
         </div>
         <div class="selectors">
           {#if view !== 'program'}
-            <label>Schedule channel<select bind:value={channel}>{#each book.channels as ch,i}<option value={i+1}>{channelDisplay(i+1,$savedChannels[i])}</option>{/each}</select></label>
-            <label>Planning mode<select bind:value={book.channels[channel-1].manager}><option value={0}>No schedule</option><option value={1}>Daily</option><option value={2}>Weekly</option><option value={3}>Fixed (existing value)</option>{#if book.channels[channel-1].manager===4}<option value={4} disabled>Other mode (preserved)</option>{/if}</select></label>
+            <label>{$t("schedules.scheduleChannel_0860e")}<select bind:value={channel}>{#each book.channels as ch,i}<option value={i+1}>{channelDisplay(i+1,$savedChannels[i],'',$language)}</option>{/each}</select></label>
+            <label>{$t("schedules.planningMode_20d36")}<select bind:value={book.channels[channel-1].manager}><option value={0}>{$t("schedules.noSchedule_15d88")}</option><option value={1}>{$t("schedules.daily_72829")}</option><option value={2}>{$t("schedules.weekly_158f3")}</option><option value={3}>{$t("schedules.fixedExistingValue_59fdc")}</option>{#if book.channels[channel-1].manager===4}<option value={4} disabled>{$t("schedules.otherModePreserved_71c40")}</option>{/if}</select></label>
           {:else}
-            <label class="program-picker">Program<select bind:value={program}>{#each book.programs as p}<option value={p.id}>#{p.id} {p.name}</option>{/each}</select></label>
+            <label class="program-picker">{$t("schedules.program_9d680")}<select bind:value={program}>{#each book.programs as p}<option value={p.id}>#{p.id} {p.name}</option>{/each}</select></label>
           {/if}
         </div>
         </div>
-        <div class="view-switch" role="group" aria-label="Schedule view">{#each [['day','Daily curve'],['week','Weekly assignments'],['program','Programs']] as [value,label]}<button type="button" aria-pressed={view===value} onclick={()=>view=value}>{label}</button>{/each}</div>
+        <div class="view-switch" role="group" aria-label={$t("schedules.scheduleView_1418a")}>{#each [['day',source("schedules.dailyCurve_e2d23")],['week',source("schedules.weeklyAssignments_539c2")],['program',source("schedules.programs_ab14d")]] as [value,label]}<button type="button" aria-pressed={view===value} onclick={()=>view=value}>{$renderText(label)}</button>{/each}</div>
         {#if view !== 'program'}
           <!-- Planning explanation is adjacent to the chart/weekly editor below. -->
         {:else}
           <div class="program-tools">
-            {#if selected}<label>Program name<input type="text" bind:value={selected.name} aria-invalid={!selected.name.trim()} /></label>{/if}
-            <div class="actions"><ActionButton secondary onclick={()=>addProgram()} disabled={book.lastId>=65535}>Add program</ActionButton><ActionButton secondary onclick={()=>addProgram(true)} disabled={!selected||edited||book.lastId>=65535}>Duplicate saved program</ActionButton><ActionButton secondary onclick={removeProgram} disabled={!selected||referenced||rawPending}>Delete program</ActionButton></div>
-            <p>Delete is disabled while any weekly slot references the program. Save changes before duplicating.</p>
+            {#if selected}<label>{$t("schedules.programName_69941")}<input type="text" bind:value={selected.name} aria-invalid={!selected.name.trim()} /></label>{/if}
+            <div class="actions"><ActionButton secondary onclick={()=>addProgram()} disabled={book.lastId>=65535}>{$t("schedules.addProgram_a4366")}</ActionButton><ActionButton secondary onclick={()=>addProgram(true)} disabled={!selected||edited||book.lastId>=65535}>{$t("schedules.duplicateSavedProgram_ee107")}</ActionButton><ActionButton secondary onclick={removeProgram} disabled={!selected||referenced||rawPending}>{$t("schedules.deleteProgram_f4b7b")}</ActionButton></div>
+            <p>{$t("schedules.deleteIsDisabledWhileAnyWeeklySlotReferencesThe_ce6ce")}</p>
           </div>
         {/if}
-        <div class="validation" data-testid="schedule-validation" aria-live="polite">{#if errors.length}<p>Correct these values before saving:</p><ul>{#each errors as error}<li>{error}</li>{/each}</ul>{/if}</div>
+        <div class="validation" data-testid="schedule-validation" aria-live="polite">{#if errors.length}<p>{$t("schedules.correctTheseValuesBeforeSaving_75395")}</p><ul>{#each errors as error}<li>{$renderText(error)}</li>{/each}</ul>{/if}</div>
         {#if view === 'week'}
           <section class="weekly-section">
-            <div class="section-title"><h2>Weekly assignments</h2><span>{channelDisplay(channel,$savedChannels[channel-1])} · 7 days + fallback</span></div>
-            <p data-testid="week-help">Each weekday uses its selected program. “Use default” uses the fallback program below; an empty fallback means no program. Times follow the device’s local calendar.</p>
-            <div class="week-grid">{#each days as day,i}<label class:fallback={i===7}>{day}<select bind:value={book.channels[channel-1].week[i]}><option value={0}>{i===7?'No default program':'Use default'}</option>{#each book.programs as p}<option value={p.id}>#{p.id} {p.name}</option>{/each}{#if book.channels[channel-1].week[i]!==0&&!book.programs.some(p=>p.id===book!.channels[channel-1].week[i])}<option value={book.channels[channel-1].week[i]}>Unknown program #{book.channels[channel-1].week[i]}</option>{/if}</select></label>{/each}</div>
-            <p class="mode-help">Daily or weekly mode activates that plan after Save. Fixed uses the existing fixed value; it is not copied or edited here.</p>
+            <div class="section-title"><h2>{$t("schedules.weeklyAssignments_539c2")}</h2><span>{channelDisplay(channel,$savedChannels[channel-1],'',$language)} {$t("schedules.7DaysFallback_4af28")}</span></div>
+            <p data-testid="week-help">{$t("schedules.eachWeekdayUsesItsSelectedProgramUseDefaultUses_02028")}</p>
+            <div class="week-grid">{#each days as day,i}<label class:fallback={i===7}>{$renderText(day)}<select bind:value={book.channels[channel-1].week[i]}><option value={0}>{i===7?$t("schedules.noDefaultProgram_3401e"):$t("schedules.useDefault_906d2")}</option>{#each book.programs as p}<option value={p.id}>#{p.id} {p.name}</option>{/each}{#if book.channels[channel-1].week[i]!==0&&!book.programs.some(p=>p.id===book!.channels[channel-1].week[i])}<option value={book.channels[channel-1].week[i]}>{$t("schedules.unknownProgram_4e9d0")}{book.channels[channel-1].week[i]}</option>{/if}</select></label>{/each}</div>
+            <p class="mode-help">{$t("schedules.dailyOrWeeklyModeActivatesThatPlanAfterSave_fef2c")}</p>
           </section>
         {:else if curve}
           <section class="curve-section">
-            <div class="section-title"><h2>{view==='day'?`${channelDisplay(channel,$savedChannels[channel-1])} daily curve`:`Program ${program} curve`}</h2><span>{curve.length} {curve.length===1?'point':'points'}</span></div>
-            <a class="edit-points" href="#curve-points" onclick={e=>{e.preventDefault();document.getElementById('schedule-curve-workspace')?.scrollIntoView({block:'start'});document.querySelector<HTMLInputElement>('#curve-points input')?.focus({preventScroll:true});}}>Edit points ↓</a>{#if view==='day'}<DayCycle points={curve} baseline={savedCurve??[]} draft={curveEdited} label={book.channels[channel-1].manager===1?'Saved daily rhythm':'Daily curve coordinates · check planning mode'} inspectable={false} compact/>{/if}<div class="curve-layout" id="schedule-curve-workspace"><div class="curve-graph" bind:this={chartElement}><SchedulePreview points={curve} {preview} valid={canShift} draft={curveEdited} selected={focusedPoint} disabled={busy} onselect={i=>focusedPoint=i} onpointchange={(i,p)=>setCurve(curve!.map((point,n)=>n===i?p:point))} /></div>
+            <div class="section-title"><h2>{view==='day'?$t("schedules.v0DailyCurve_a210b",{v0: channelDisplay(channel,$savedChannels[channel-1],'',$language)}):$t("schedules.programV0Curve_f1618",{v0: program})}</h2><span>{curve.length} {curve.length===1?$t('common.point'):$t('common.points')}</span></div>
+            <a class="edit-points" href="#curve-points" onclick={e=>{e.preventDefault();document.getElementById('schedule-curve-workspace')?.scrollIntoView({block:'start'});document.querySelector<HTMLInputElement>('#curve-points input')?.focus({preventScroll:true});}}>{$t("schedules.editPoints_29d0b")}</a>{#if view==='day'}<DayCycle points={curve} baseline={savedCurve??[]} draft={curveEdited} label={book.channels[channel-1].manager===1?$t("schedules.savedDailyRhythm_48511"):$t("schedules.dailyCurveCoordinatesCheckPlanningMode_438db")} inspectable={false} compact/>{/if}<div class="curve-layout" id="schedule-curve-workspace"><div class="curve-graph" bind:this={chartElement}><SchedulePreview points={curve} {preview} valid={canShift} draft={curveEdited} selected={focusedPoint} disabled={busy} onselect={i=>focusedPoint=i} onpointchange={(i,p)=>setCurve(curve!.map((point,n)=>n===i?p:point))} /></div>
             <div class="curve-editor" id="curve-points">
-            <div class="points-heading"><h3>Curve points</h3><p>HH:MM · 0–100% · Save sorts by time</p></div>
-            <div class="point-columns" aria-hidden="true"><span>#</span><span>Time</span><span>Level %</span><span></span></div>
+            <div class="points-heading"><h3>{$t("schedules.curvePoints_df812")}</h3><p>{$t("schedules.hhMM0100SaveSortsByTime_85c4b")}</p></div>
+            <div class="point-columns" aria-hidden="true"><span>#</span><span>{$t("schedules.time_6c82e")}</span><span>{$t("schedules.level_e928d")}</span><span></span></div>
             <div class="points" bind:this={pointsElement}>{#each curve as point,i}
               <div class="point" onfocusin={e=>{focusedPoint=i;queuePointReveal(e.target);}} onfocusout={()=>focusedPoint=-1}>
                 <span class="point-number" aria-hidden="true">{String(i+1).padStart(2,'0')}</span>
-                <label><span class="visually-hidden">Time</span><input type="text" placeholder="HH:MM" aria-label={`Point ${i+1} time`} aria-describedby={pointFeedback[i]?`point-error-${i}`:undefined} bind:value={point.time} aria-invalid={parseTime(point.time)===undefined || curve.filter(p=>p.time===point.time).length>1} spellcheck="false" /></label>
-                <label><span class="visually-hidden">Level (%)</span><input type="number" min="0" max="100" step="1" aria-label={`Point ${i+1} percent`} aria-describedby={pointFeedback[i]?`point-error-${i}`:undefined} bind:value={point.percent} aria-invalid={!inRange(point.percent,100)} /></label>
-                <ActionButton secondary label={`Remove point ${i+1}`} onclick={()=>setCurve(curve!.filter((_,n)=>n!==i))}>Remove</ActionButton>
-                {#if pointFeedback[i]}<p class="point-error" id={`point-error-${i}`} aria-live="polite">{pointFeedback[i]}</p>{/if}
+                <label><span class="visually-hidden">{$t("schedules.time_6c82e")}</span><input type="text" placeholder={$t("schedules.hhMM_a4c7e")} aria-label={$t("schedules.pointV0Time_eda51",{v0: i+1})} aria-describedby={pointFeedback[i]?`point-error-${i}`:undefined} bind:value={point.time} aria-invalid={parseTime(point.time)===undefined || curve.filter(p=>p.time===point.time).length>1} spellcheck="false" /></label>
+                <label><span class="visually-hidden">{$t("schedules.level_9a874")}</span><input type="number" min="0" max="100" step="1" aria-label={$t("schedules.pointV0Percent_2cb23",{v0: i+1})} aria-describedby={pointFeedback[i]?`point-error-${i}`:undefined} bind:value={point.percent} aria-invalid={!inRange(point.percent,100)} /></label>
+                <ActionButton secondary label={$t("schedules.removePointV0_0b98b",{v0: i+1})} onclick={()=>setCurve(curve!.filter((_,n)=>n!==i))}>{$t("schedules.remove_e9639")}</ActionButton>
+                {#if pointFeedback[i]}<p class="point-error" id={`point-error-${i}`} aria-live="polite">{$renderText(pointFeedback[i])}</p>{/if}
               </div>
             {/each}</div>
-            {#if !curve.length}<p class="empty-note">No points. Add a point to begin.{view==='day'?' An empty daily curve is off.':''}</p>{/if}
-            <ActionButton secondary onclick={addPoint}>Add point</ActionButton>
-            <p class="curve-help">Daily curves repeat at midnight; one point is constant. Weekly output also depends on surrounding assigned days. The device applies its own dimming and fades.</p>
-            {#if view==='day'}<p class="mode-help">Daily or weekly mode activates that plan after Save. Fixed uses the existing fixed value; it is not copied or edited here.</p>{/if}
+            {#if !curve.length}<p class="empty-note">{$t("schedules.noPointsAddAPointToBegin_1173c")}{view==='day'?$t("schedules.anEmptyDailyCurveIsOff_ab1df"):''}</p>{/if}
+            <ActionButton secondary onclick={addPoint}>{$t("schedules.addPoint_81cb2")}</ActionButton>
+            <p class="curve-help">{$t("schedules.dailyCurvesRepeatAtMidnightOnePointIsConstant_00564")}</p>
+            {#if view==='day'}<p class="mode-help">{$t("schedules.dailyOrWeeklyModeActivatesThatPlanAfterSave_fef2c")}</p>{/if}
             </div></div>
           </section>
           <section class="shift-section">
-            <div class="section-title"><h2>Shift this curve</h2><span>Edits the draft</span></div>
+            <div class="section-title"><h2>{$t("schedules.shiftThisCurve_bd312")}</h2><span>{$t("schedules.editsTheDraft_d593d")}</span></div>
             <div class="shift-grid">
-              <div class="shift-group"><label>Shift minutes<input type="number" min="1" max="720" step="1" bind:value={minutes} /></label><ActionButton secondary onclick={()=>shift(-1)} disabled={!canShift||!inRange(minutes,720)||minutes===0}>Shift earlier</ActionButton><ActionButton secondary onclick={()=>shift(1)} disabled={!canShift||!inRange(minutes,720)||minutes===0}>Shift later</ActionButton></div>
-              <div class="shift-group"><label>Shift percent<input type="number" min="1" max="100" step="1" bind:value={percent} /></label><ActionButton secondary onclick={()=>shift(-1,true)} disabled={!canShift||!inRange(percent,100)||percent===0}>Shift darker</ActionButton><ActionButton secondary onclick={()=>shift(1,true)} disabled={!canShift||!inRange(percent,100)||percent===0}>Shift brighter</ActionButton></div>
-            </div><p>Time shifts wrap at midnight. Level shifts clamp at 0–100%; points already at zero remain off.</p>
+              <div class="shift-group"><label>{$t("schedules.shiftMinutes_3ffd6")}<input type="number" min="1" max="720" step="1" bind:value={minutes} /></label><ActionButton secondary onclick={()=>shift(-1)} disabled={!canShift||!inRange(minutes,720)||minutes===0}>{$t("schedules.shiftEarlier_1fd55")}</ActionButton><ActionButton secondary onclick={()=>shift(1)} disabled={!canShift||!inRange(minutes,720)||minutes===0}>{$t("schedules.shiftLater_0abb6")}</ActionButton></div>
+              <div class="shift-group"><label>{$t("schedules.shiftPercent_ce302")}<input type="number" min="1" max="100" step="1" bind:value={percent} /></label><ActionButton secondary onclick={()=>shift(-1,true)} disabled={!canShift||!inRange(percent,100)||percent===0}>{$t("schedules.shiftDarker_66865")}</ActionButton><ActionButton secondary onclick={()=>shift(1,true)} disabled={!canShift||!inRange(percent,100)||percent===0}>{$t("schedules.shiftBrighter_f96dc")}</ActionButton></div>
+            </div><p>{$t("schedules.timeShiftsWrapAtMidnightLevelShiftsClampAt_1ac37")}</p>
           </section>
-        {:else}<section class="empty-programs"><h2>No programs yet</h2><p>Add a program to build a reusable curve for weekly assignments.</p></section>{/if}
+        {:else}<section class="empty-programs"><h2>{$t("schedules.noProgramsYet_17ed6")}</h2><p>{$t("schedules.addAProgramToBuildAReusableCurveFor_8deea")}</p></section>{/if}
         {#if view !== 'program'}
-          <section class="copy-section"><div class="section-title"><h2>Copy saved plan from {channelDisplay(channel,$savedChannels[channel-1])}</h2><span>Save first, then copy</span></div><p>Copies daily points, weekly assignments and planning mode. Fixed value, channel identity, dimming, service and weather settings stay unchanged. Copying creates a new draft.</p>
-            <div class="targets">{#each book.channels as ch,i}<label><input type="checkbox" bind:checked={targets[i]} disabled={i===channel-1} aria-label={`Copy target ${i+1}`} />{channelDisplay(i+1,$savedChannels[i])}</label>{/each}</div>
-            <ActionButton secondary onclick={copyPlan} disabled={!!edited||!!errors.length||book.channels[channel-1].manager>3||!targets.some((v,i)=>v&&i!==channel-1)}>Copy saved plan</ActionButton>
+          <section class="copy-section"><div class="section-title"><h2>{$t("schedules.copySavedPlanFrom_c4c41")} {channelDisplay(channel,$savedChannels[channel-1],'',$language)}</h2><span>{$t("schedules.saveFirstThenCopy_4ba0b")}</span></div><p>{$t("schedules.copiesDailyPointsWeeklyAssignmentsAndPlanningModeFixed_c8408")}</p>
+            <div class="targets">{#each book.channels as ch,i}<label><input type="checkbox" bind:checked={targets[i]} disabled={i===channel-1} aria-label={$t("schedules.copyTargetV0_7146e",{v0: i+1})} />{channelDisplay(i+1,$savedChannels[i],'',$language)}</label>{/each}</div>
+            <ActionButton secondary onclick={copyPlan} disabled={!!edited||!!errors.length||book.channels[channel-1].manager>3||!targets.some((v,i)=>v&&i!==channel-1)}>{$t("schedules.copySavedPlan_f3250")}</ActionButton>
           </section>
         {/if}
       <ScheduleTools {book} curve={view==='week'?undefined:curve} curveKey={view==='program'?`program:${program}`:`day:${channel}`} showDaily={view!=='program'} {busy} reset={toolsReset} bind:pending={rawPending} oncurve={setCurve} onbook={next=>{book=next;onedit();}} onselect={key=>{if(key.startsWith('day:')){channel=Number(key.slice(4));view='day';}else{program=Number(key.slice(8));view='program';}}}/>
       </fieldset>
     </form></div>
   {:else}
-    <div class="unavailable"><h2>{busy ? 'Loading schedules…' : 'Schedules unavailable'}</h2><p>{busy ? 'Reading saved channels and programs from the device.' : 'Check the connection and use Reload schedules to try again. No schedule values have been changed.'}</p></div>
+    <div class="unavailable"><h2>{busy ? $t("schedules.loadingSchedules_8ef1a") : $t("schedules.schedulesUnavailable_c3cb0")}</h2><p>{busy ? $t("schedules.readingSavedChannelsAndProgramsFromTheDevice_d7412") : $t("schedules.checkTheConnectionAndUseReloadSchedulesToTry_0d144")}</p></div>
   {/if}
 </div>
 

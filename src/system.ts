@@ -1,3 +1,4 @@
+import {source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -21,28 +22,28 @@ export const clockKeys = [
 ];
 export const networkFields = [
   { key: "ntpserver", label: "NTP server", type: "text", max: 128 },
-  { key: "nofinder", label: "Disable vendor Finder", type: "bool" },
-  { key: "enforcenet", label: "Keep trying DHCP", type: "bool" },
-  { key: "useip4", label: "Use static LAN IPv4", type: "bool" },
-  { key: "ip4", label: "LAN IPv4", type: "ip" },
+  { key: "nofinder", label: source("system.disableVendorFinder_d7b6d"), type: "bool" },
+  { key: "enforcenet", label: source("system.keepTryingDHCP_df6fb"), type: "bool" },
+  { key: "useip4", label: source("system.useStaticLANIPv4_d38f1"), type: "bool" },
+  { key: "ip4", label: source("system.lanIPv4_1ae4a"), type: "ip" },
   { key: "ip4_netmask", label: "LAN netmask", type: "ip" },
   { key: "ip4_gateway", label: "LAN gateway", type: "ip" },
   { key: "ip4_dns", label: "LAN DNS", type: "ip" },
-  { key: "webport", label: "Web port", type: "port" },
-  { key: "nowifi", label: "Disable Wi-Fi", type: "bool", wifi: true },
-  { key: "wifi_connect", label: "Connect to Wi-Fi", type: "bool", wifi: true },
-  { key: "wifi_ssid", label: "Wi-Fi SSID", type: "text", max: 32, wifi: true },
+  { key: "webport", label: source("system.webPort_4822a"), type: "port" },
+  { key: "nowifi", label: source("system.disableWiFi_1baea"), type: "bool", wifi: true },
+  { key: "wifi_connect", label: source("system.connectToWiFi_0825f"), type: "bool", wifi: true },
+  { key: "wifi_ssid", label: source("system.wiFiSSID_97bad"), type: "text", max: 32, wifi: true },
   {
     key: "wifi_pass",
-    label: "Wi-Fi password",
+    label: source("system.wiFiPassword_ad4a3"),
     type: "password",
     max: 64,
     wifi: true,
   },
-  { key: "wifi_ip4", label: "Wi-Fi IPv4", type: "ip", wifi: true },
-  { key: "wifi_ip4_netmask", label: "Wi-Fi netmask", type: "ip", wifi: true },
-  { key: "wifi_ip4_gateway", label: "Wi-Fi gateway", type: "ip", wifi: true },
-  { key: "wifi_ip4_dns", label: "Wi-Fi DNS", type: "ip", wifi: true },
+  { key: "wifi_ip4", label: source("system.wiFiIPv4_a835b"), type: "ip", wifi: true },
+  { key: "wifi_ip4_netmask", label: source("system.wiFiNetmask_6bd72"), type: "ip", wifi: true },
+  { key: "wifi_ip4_gateway", label: source("system.wiFiGateway_cf02d"), type: "ip", wifi: true },
+  { key: "wifi_ip4_dns", label: source("system.wiFiDNS_59919"), type: "ip", wifi: true },
 ] as const;
 export const fieldsFor = (wifi: boolean) =>
   networkFields.filter((f) => !("wifi" in f) || wifi);
@@ -85,10 +86,10 @@ export function validTimezone(value: string): boolean {
 export function parseIPv4(s: string): number[] | null {
   if (s === "") return null;
   if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(s))
-    throw Error("Use four IPv4 octets from 0 to 255.");
+    throw Error(source("system.useFourIPv4OctetsFrom0To255_bf691"));
   const v = s.split(".").map(Number);
   if (v.some((n) => n > 255))
-    throw Error("Use four IPv4 octets from 0 to 255.");
+    throw Error(source("system.useFourIPv4OctetsFrom0To255_bf691"));
   return v;
 }
 export function recoveryURL(s: string): string {
@@ -144,7 +145,7 @@ export async function loadSettings(
       const flag = key === "summertime" && (value === 0 || value === 1)
         ? value === 1 : value;
       if (flag != null && typeof flag !== "boolean")
-        throw Error(`Invalid Boolean setting: ${key}`);
+        throw Error(source("system.invalidBooleanSettingV0_8773f",{v0:key}));
       draft[key] = flag ?? false;
     } else if (field?.type === "ip") {
       if (key === "wifi_ip4" && typeof value === "boolean") draft[key] = "";
@@ -155,18 +156,18 @@ export async function loadSettings(
         value.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)
       )
         draft[key] = value.join(".");
-      else throw Error(`Invalid IPv4 setting: ${key}`);
+      else throw Error(source("system.invalidIPv4SettingV0_f27c7",{v0:key}));
     } else if (
       key === "timezone" ||
       key === "gmtoff" ||
       field?.type === "port"
     ) {
       if (typeof value !== "number" || !Number.isInteger(value))
-        throw Error(`Invalid integer setting: ${key}`);
+        throw Error(source("system.invalidIntegerSettingV0_dc350",{v0:key}));
       draft[key] = String(value);
     } else {
       if (value != null && typeof value !== "string")
-        throw Error(`Invalid text setting: ${key}`);
+        throw Error(source("system.invalidTextSettingV0_ce36a",{v0:key}));
       draft[key] = (value ?? "") as string;
     }
   }
@@ -191,17 +192,17 @@ export function validation(
 ): string {
   if (route === "clock") {
     if (!validTimezone(String(draft.tz)))
-      return "Use a valid POSIX timezone rule of at most 64 ASCII characters.";
+      return source("system.useAValidPOSIXTimezoneRuleOfAtMost_41df0");
     if (!zones.legacy.some((z) => String(z.id) === draft.timezone))
-      return "Choose a supported legacy timezone.";
+      return source("system.chooseASupportedLegacyTimezone_1fc78");
   } else {
     for (const f of fieldsFor(wifi)) {
       const v = draft[f.key];
       if (f.type === "bool") {
-        if (typeof v !== "boolean") return "Invalid Boolean setting";
+        if (typeof v !== "boolean") return source("api.invalidBooleanSetting_0481f");
         continue;
       }
-      if (typeof v !== "string") return "Invalid text setting";
+      if (typeof v !== "string") return source("system.invalidTextSetting_a8009");
       if (f.type === "ip") {
         try {
           parseIPv4(v);
@@ -210,17 +211,17 @@ export function validation(
         }
       }
       if (f.type === "port" && (!/^\d+$/.test(v) || +v < 1 || +v > 65534))
-        return "Web port must be an integer from 1 to 65534.";
+        return source("system.webPortMustBeAnIntegerFrom1To_ae34a");
       if ("max" in f && new TextEncoder().encode(v).length > f.max)
-        return `${f.label} must be at most ${f.max} UTF-8 bytes.`;
+        return source("system.v0MustBeAtMostV1UTF8Bytes_47401",{v0:f.label,v1:f.max});
       if (/[\x00-\x1f\x7f]/.test(v))
-        return "Control characters are not allowed.";
+        return source("system.controlCharactersAreNotAllowed_4f369");
     }
     if (
       draft.useip4 &&
       ["ip4", "ip4_netmask", "ip4_gateway", "ip4_dns"].some((k) => !draft[k])
     )
-      return "Static LAN addressing requires all four IPv4 fields.";
+      return source("system.staticLANAddressingRequiresAllFourIPv4Fields_f34d6");
     if (
       wifi &&
       draft.wifi_ip4 &&
@@ -228,9 +229,9 @@ export function validation(
         (k) => !draft[k],
       )
     )
-      return "Stored Wi-Fi addressing requires all four IPv4 fields.";
+      return source("system.storedWiFiAddressingRequiresAllFourIPv4Fields_95b20");
     if (wifi && draft.wifi_connect && !draft.nowifi && !draft.wifi_ssid)
-      return "Enter an SSID before enabling Wi-Fi connection.";
+      return source("system.enterAnSSIDBeforeEnablingWiFiConnection_1be52");
   }
   return "";
 }

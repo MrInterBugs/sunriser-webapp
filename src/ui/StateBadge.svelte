@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {t,renderText,language} from '../i18n';
   import type {Snippet} from 'svelte';
   let {children, tone='neutral'}: {children:Snippet; tone?:'neutral'|'draft'|'active'|'error'}=$props();
 </script>

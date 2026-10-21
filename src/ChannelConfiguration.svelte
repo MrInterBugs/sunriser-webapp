@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {presetName} from "./channel-presets";
+ import {t,renderText,language,source} from './i18n';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
  import {tick} from 'svelte';
@@ -22,31 +24,31 @@ Third-party material retains its own terms.
  const dirty=$derived(Object.keys(patch).length>0);
  $effect(()=>{if(active&&!attempted&&!busy&&!$configurationState.recovery)void load();});
  export async function show(){await tick();const heading=document.getElementById('channel-configuration-title');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start'});}
- async function load(refresh=false){attempted=true;loading=true;loadFailed=false;try{loadFailed=!await perform(async()=>{const c=await readChannels(firmware.pwm_count,refresh);baseline=structuredClone(c);draft=c;snapshotRevision=configurationRevision();savedChannels.set(structuredClone(c));},'Channel configuration loaded','Could not load channel configuration. Existing draft kept.','Reading channel configuration…');}finally{loading=false;}}
- async function save(event:SubmitEvent){event.preventDefault();if(!draft||!dirty||!configurationCurrent(snapshotRevision))return;await perform(async()=>{await saveConfiguration(patch,firmware);baseline=JSON.parse(JSON.stringify(draft));savedChannels.set(baseline);onsaved(baseline);},'Channel configuration saved and verified','Could not confirm channel configuration. Draft kept; reload to verify or explicitly retry Save.','Saving channel configuration…');}
+ async function load(refresh=false){attempted=true;loading=true;loadFailed=false;try{loadFailed=!await perform(async()=>{const c=await readChannels(firmware.pwm_count,refresh);baseline=structuredClone(c);draft=c;snapshotRevision=configurationRevision();savedChannels.set(structuredClone(c));},source("channelconfiguration.channelConfigurationLoaded_3cfd3"),source("channelconfiguration.couldNotLoadChannelConfigurationExistingDraftKept_d400f"),source("channelconfiguration.readingChannelConfiguration_3592f"));}finally{loading=false;}}
+ async function save(event:SubmitEvent){event.preventDefault();if(!draft||!dirty||!configurationCurrent(snapshotRevision))return;await perform(async()=>{await saveConfiguration(patch,firmware);baseline=JSON.parse(JSON.stringify(draft));savedChannels.set(baseline);onsaved(baseline);},source("channelconfiguration.channelConfigurationSavedAndVerified_28dd1"),source("channelconfiguration.couldNotConfirmChannelConfigurationDraftKeptReloadTo_f1a4c"),source("channelconfiguration.savingChannelConfiguration_509e4"));}
  function select(index:number,value:string){if(!draft)return;choosePreset(draft,index,value);onedit();}
 </script>
-<section hidden={!active} class="channel-configuration" aria-label="Channel configuration">
- <div class="title"><div><h2 id="channel-configuration-title" tabindex="-1">Channel configuration</h2><p>Saved display colours and binary output settings. Commands above are separate.</p></div>{#if draft||loadFailed}<ActionButton secondary onclick={()=>load(true)} disabled={busy}>{draft?'Reload channel configuration':'Retry channel configuration'}</ActionButton>{/if}</div>
+<section hidden={!active} class="channel-configuration" aria-label={$t("channelconfiguration.channelConfiguration_98b61")}>
+ <div class="title"><div><h2 id="channel-configuration-title" tabindex="-1">{$t("channelconfiguration.channelConfiguration_98b61")}</h2><p>{$t("channelconfiguration.savedDisplayColoursAndBinaryOutputSettingsCommandsAbove_43f0f")}</p></div>{#if draft||loadFailed}<ActionButton secondary onclick={()=>load(true)} disabled={busy}>{draft?$t("channelconfiguration.reloadChannelConfiguration_a0da7"):$t("channelconfiguration.retryChannelConfiguration_688c6")}</ActionButton>{/if}</div>
  {#if draft}
- <p>Display colour does not change the physical light spectrum. Multi-channel presets expand into subsequent channels, up to the last available output.</p>
+ <p>{$t("channelconfiguration.displayColourDoesNotChangeThePhysicalLightSpectrum_5d638")}</p>
  <form onsubmit={save}>
- <DraftBar {snapshotRevision} {feedback} {dirty} {busy} disabled={!dirty} label="Save channel configuration" scope="channel " detail="Only changed colour and binary keys are saved. Reported output remains independent."/>
+ <DraftBar {snapshotRevision} feedback={$renderText(feedback)} {dirty} {busy} disabled={!dirty} label={$t("channelconfiguration.saveChannelConfiguration_90956")} scope={$language==='en'?$t("channelconfiguration.channel_fbe7d")+' ':$t("channelconfiguration.channel_fbe7d")} detail={$t("channelconfiguration.onlyChangedColourAndBinaryKeysAreSavedReported_27624")}/>
  <div class="configuration-grid">
  {#each draft as channel,i}
  <fieldset disabled={busy}><legend><ChannelIdentity number={i+1}/></legend>
- <label for={`channel-colour-${i}`}>Channel {i+1} display colour</label>
+ <label for={`channel-colour-${i}`}>{$t("channelconfiguration.channel_879f0")} {i+1} {$t("channelconfiguration.displayColour_cdefb")}</label>
  <select id={`channel-colour-${i}`} value={channel.color==null?'__absent__':typeof channel.color==='string'?channel.color:'__unknown__'} onchange={e=>select(i,e.currentTarget.value)}>
- {#if channel.color==null}<option value="__absent__" disabled>Not configured</option>{:else if typeof channel.color!=='string'||(channel.color!==''&&!presets.some(p=>p.id===channel.color))}<option value={typeof channel.color==='string'?channel.color:'__unknown__'} disabled>Unknown value — preserved: {JSON.stringify(channel.color)}</option>{/if}
- <option value="">Not used</option>{#each presets as p}<option value={p.id}>{p.name.trim()}{p.replace_me_with?' · multi-channel preset':''}</option>{/each}
+ {#if channel.color==null}<option value="__absent__" disabled>{$t("channelconfiguration.notConfigured_81193")}</option>{:else if typeof channel.color!=='string'||(channel.color!==''&&!presets.some(p=>p.id===channel.color))}<option value={typeof channel.color==='string'?channel.color:'__unknown__'} disabled>{$t("channelconfiguration.unknownValuePreserved_dc58b")} {JSON.stringify(channel.color)}</option>{/if}
+ <option value="">{$t("channelconfiguration.notUsed_72a86")}</option>{#each presets as p}<option value={p.id}>{presetName(p,$language)}{p.replace_me_with?$t("channelconfiguration.multiChannelPreset_879fc"):''}</option>{/each}
  </select>
- {#if typeof channel.binary==='boolean'}<label class="binary"><input type="checkbox" bind:checked={channel.binary} oninput={onedit}/>Channel {i+1} binary on/off</label>
- {:else}<p>Unknown binary value retained: {JSON.stringify(channel.binary)}. Choose an explicit replacement only if intended.</p><select aria-label={`Channel ${i+1} binary on/off`} value="unknown" onchange={e=>{channel.binary=e.currentTarget.value==='true';onedit();}}><option value="unknown" disabled>Unknown — preserved</option><option value="false">Dimming</option><option value="true">Binary on/off</option></select>{/if}
+ {#if typeof channel.binary==='boolean'}<label class="binary"><input type="checkbox" bind:checked={channel.binary} oninput={onedit}/>{$t("channelconfiguration.channel_879f0")} {i+1} {$t("channelconfiguration.binaryOnOff_0f4b1")}</label>
+ {:else}<p>{$t("channelconfiguration.unknownBinaryValueRetained_7948a")} {JSON.stringify(channel.binary)}{$t("channelconfiguration.chooseAnExplicitReplacementOnlyIfIntended_806ad")}</p><select aria-label={$t("channelconfiguration.channelV0BinaryOnOff_d3e71",{v0: i+1})} value="unknown" onchange={e=>{channel.binary=e.currentTarget.value==='true';onedit();}}><option value="unknown" disabled>{$t("channelconfiguration.unknownPreserved_d5e08")}</option><option value="false">{$t("channelconfiguration.dimming_c71eb")}</option><option value="true">{$t("channelconfiguration.binaryOnOff_b7593")}</option></select>{/if}
  </fieldset>{/each}</div>
- <p>Pump / CO₂ selections set binary mode when entering that category; leaving it restores dimming. Manual overrides are retained when switching within a category. The legacy DEEP-BLUE expansion leaves its uppercase UVA entry unchanged; select UVA explicitly if intended.</p>
- <p>Reload replaces unsaved channel-configuration edits. Binary changes affect controller interpretation; review retained service and sensor drafts. Existing saved names are displayed and preserved; this editor does not create a new name field.</p>
- </form>{:else}<p class:error={loadFailed} aria-live="polite">{loading?'Reading channel configuration…':loadFailed?'Could not load channel configuration. Retry the read; no settings were written.':$configurationState.recovery?'Configuration not verified. Check device readback in Recovery before loading.':'Waiting to read saved channel configuration…'}</p>{/if}
- <div class="links"><a href="#schedules">Schedule modes and planning →</a><a href="#service">Service levels and channel exclusions →</a></div>
+ <p>{$t("channelconfiguration.pumpCOSelectionsSetBinaryModeWhenEnteringThat_05b00")}</p>
+ <p>{$t("channelconfiguration.reloadReplacesUnsavedChannelConfigurationEditsBinaryChangesAffect_2d892")}</p>
+ </form>{:else}<p class:error={loadFailed} aria-live="polite">{loading?$t("channelconfiguration.readingChannelConfiguration_3592f"):loadFailed?$t("channelconfiguration.couldNotLoadChannelConfigurationRetryTheReadNo_d08ec"):$configurationState.recovery?$t("channelconfiguration.configurationNotVerifiedCheckDeviceReadbackInRecoveryBefore_89f43"):$t("channelconfiguration.waitingToReadSavedChannelConfiguration_5685a")}</p>{/if}
+ <div class="links"><a href="#schedules">{$t("channelconfiguration.scheduleModesAndPlanning_1cb61")}</a><a href="#service">{$t("channelconfiguration.serviceLevelsAndChannelExclusions_88f68")}</a></div>
 </section>
 <style>
  .channel-configuration{border-top:1px solid var(--sr-line);margin-top:28px;padding-top:24px}

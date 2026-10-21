@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {timezoneLabel} from "./i18n";
+ import {source,t,renderText,language} from './i18n';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
   import ClockReadout from "./ui/ClockReadout.svelte";
@@ -75,7 +77,7 @@ Third-party material retains its own terms.
       seconds > 4294967295
     ) {
       clockInputError =
-        "Browser time is outside the device clock range (100001–4294967295 UTC seconds). Correct the browser clock first.";
+        source("systemsettings.browserTimeIsOutsideTheDeviceClockRange100001_e97f1");
       return;
     }
     clockInputError = "";
@@ -105,11 +107,11 @@ Third-party material retains its own terms.
     try{await perform(
       async () => {
         try{editor = await loadSettings(kind, wifi);snapshotRevision=configurationRevision();}
-        catch(e){loadFailure=e instanceof Error?e.message:'Configuration read failed';throw e;}
+        catch(e){loadFailure=e instanceof Error?e.message:source("systemsettings.configurationReadFailed_c5b59");throw e;}
       },
-      `${title} settings loaded`,
-      `Could not load ${title} settings. Retry Reload ${title} settings.`,
-      `Loading ${title} settings…`,
+      source("systemsettings.v0SettingsLoaded_41a17",{v0:title}),
+      source("systemsettings.couldNotLoadV0SettingsRetryReloadV1Settings_d7768",{v0:title,v1:$language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title}),
+      source("systemsettings.loadingV0Settings_ffcfc",{v0:title}),
     );}finally{loadingSettings=false;}
   }
   async function save(e: SubmitEvent) {
@@ -128,9 +130,9 @@ Third-party material retains its own terms.
         }
         current.baseline = { ...current.draft };
       },
-      "Saved",
-      `Could not confirm ${title} save. The device may have applied it. Draft kept. Verify saved settings before another Save; no automatic write retry.`,
-      `Saving ${title} settings…`,
+      source("app.saved_c0ae8"),
+      source("systemsettings.couldNotConfirmV0SaveTheDeviceMayHave_8fa1e",{v0:title}),
+      source("systemsettings.savingV0Settings_bc9de",{v0:title}),
     );
   }
   async function verify() {
@@ -141,9 +143,9 @@ Third-party material retains its own terms.
         editor!.saved = await readConfig(keysFor(kind, wifi));
         showReadback = true;
       },
-      "Verified saved settings; drafts kept.",
-      `Could not verify ${title} settings at this address. Draft kept. Check the device address; no write was retried.`,
-      "Verifying saved settings…",
+      source("systemsettings.verifiedSavedSettingsDraftsKept_a7de5"),
+      source("systemsettings.couldNotVerifyV0SettingsAtThisAddressDraft_ce343",{v0:title}),
+      source("systemsettings.verifyingSavedSettings_d8ee3"),
     );
   }
   function summary() {
@@ -152,87 +154,83 @@ Third-party material retains its own terms.
       .filter(([key]) => key !== "time")
       .map(
         ([key, v]) =>
-          `${key}: ${key === "wifi_pass" ? (v ? "[stored]" : "[empty]") : Array.isArray(v) ? v.join(".") : v === null ? "unset" : String(v)}`,
+          source("systemsettings.v0V1_98b58",{v0:key,v1:key === "wifi_pass" ? (v ? $t('common.stored') : $t('common.empty')) : Array.isArray(v) ? v.join(".") : v === null ? $t('common.unset') : String(v)}),
       )
       .join(" · ");
   }
   const networkGroups = [
-    {title:'LAN addressing',keys:['useip4','ip4','ip4_netmask','ip4_gateway','ip4_dns','enforcenet']},
-    {title:'Network services',keys:['ntpserver','webport','nofinder']},
-    {title:'Wi-Fi · SunRiser 10',keys:['nowifi','wifi_connect','wifi_ssid','wifi_pass','wifi_ip4','wifi_ip4_netmask','wifi_ip4_gateway','wifi_ip4_dns']}
+    {title:source("network.lanAddressing"),keys:['useip4','ip4','ip4_netmask','ip4_gateway','ip4_dns','enforcenet']},
+    {title:source("network.services"),keys:['ntpserver','webport','nofinder']},
+    {title:source("network.wifiSR10"),keys:['nowifi','wifi_connect','wifi_ssid','wifi_pass','wifi_ip4','wifi_ip4_netmask','wifi_ip4_gateway','wifi_ip4_dns']}
   ];
 </script>
 
 {#if active}
 <EditorPage>
-  <section class="system-page" class:clock-page={kind==='clock'} aria-label={`${title} settings`}>
+  <section class="system-page" class:clock-page={kind==='clock'} aria-label={$t("systemsettings.v0Settings_2e59c",{v0: $language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title})}>
     <div class="heading">
       <div>
 
-        <h1>{kind === "clock" ? "Clock and timezone" : "Network"}</h1>
+        <h1>{kind === "clock" ? $t("systemsettings.clockAndTimezone_798fe") : $t("help.network_53ebc")}</h1>
       </div>
       <button class="secondary" onclick={refresh} disabled={busy}
-        >Refresh {title} state</button
+        >{kind==='clock'?$t('clock.refreshState'):$t('network.refreshState')}</button
       >
     </div>
-    {#if stale}<p class="stale">Last snapshot · stale</p>{/if}
+    {#if stale}<p class="stale">{$t("app.lastSnapshotStale_329af")}</p>{/if}
     {#if kind === "clock"}
       <section class="panel readback">
         <dl class="facts">
           <div>
-            <dt>Device time (UTC)</dt>
+            <dt>{$t("app.deviceTimeUTC_99f56")}</dt>
             <dd><ClockReadout text={utc(snapshot.time)}/></dd>
           </div>
           <div>
-            <dt>Device local time</dt>
+            <dt>{$t("systemsettings.deviceLocalTime_50001")}</dt>
             <dd data-testid="clock-local">
-              <ClockReadout text={snapshot.localtime ?? "Not reported"}/>
+              <ClockReadout text={snapshot.localtime ?? source("systemsettings.notReported_98e85")}/>
             </dd>
           </div>
           <div>
-            <dt>UTC offset</dt>
+            <dt>{$t("systemsettings.utcOffset_c545d")}</dt>
             <dd data-testid="clock-offset">
               {snapshot.utc_offset === undefined
-                ? "Not reported"
-                : `${snapshot.utc_offset} minutes`}
+                ? $t("systemsettings.notReported_98e85")
+                : $t("systemsettings.v0Minutes_5e99e",{v0: snapshot.utc_offset})}
             </dd>
           </div>
         </dl>
         <p>
-          Device readback, not your browser's timezone. Clock
-          and timezone changes affect schedules. Refresh after saving to read
-          the updated clock; an immediate read can precede the next RTC tick.
-          Planner time may transition gradually.
+          {$t("systemsettings.deviceReadbackNotYourBrowserSTimezoneClockAnd_86e1c")}
         </p>
       </section>
     {:else}
-      <section class="panel readback"><h2>Reported addresses</h2><p>Current LAN: <strong>{snapshot.lan_ip}</strong>{#if wifi} · Wi-Fi: <strong>{snapshot.wifi_ip ?? 'Not reported'}</strong>{/if}</p><p>Save stores settings. A later restart can change the address or disconnect this page. This interface does not restart the device.</p></section>
+      <section class="panel readback"><h2>{$t("systemsettings.reportedAddresses_343af")}</h2><p>{$t("systemsettings.currentLAN_949e8")} <strong>{snapshot.lan_ip}</strong>{#if wifi} {$t("systemsettings.wiFi_de13c")} <strong>{snapshot.wifi_ip ?? $t("systemsettings.notReported_98e85")}</strong>{/if}</p><p>{$t("systemsettings.saveStoresSettingsALaterRestartCanChangeThe_538a0")}</p></section>
     {/if}
 
     <div class="form-actions">
       <button class="secondary" onclick={reload} disabled={busy}
-        >Reload {title} settings</button
+        >{kind==='clock'?$t('clock.reloadSettings'):$t('network.reloadSettings')}</button
       >
       <button class="secondary" onclick={verify} disabled={busy || !editor}
-        >Verify saved settings</button
+        >{$t("systemsettings.verifySavedSettings_8b41f")}</button
       >
     </div>
     <p>
-      Reload replaces unsaved edits. State refresh and verification keep drafts.
-      Configuration is not polled; reload before editing after another client.
+      {$t("systemsettings.reloadReplacesUnsavedEditsStateRefreshAndVerificationKeep_f19ab")}
     </p>
-    {#if loadFailure}<p class="notice" role="note">Saved {title} configuration unavailable: {loadFailure}. {kind==='clock'?'Live clock readback is independent of this settings request.':'Reported addresses are independent of this settings request.'} Reload retries the read; it does not write settings.</p>{/if}
+    {#if loadFailure}<p class="notice" role="note">{$t("app.saved_c0ae8")} {$language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title} {$t("systemsettings.configurationUnavailable_faba5")} {$renderText(loadFailure)}. {kind==='clock'?$t("systemsettings.liveClockReadbackIsIndependentOfThisSettingsRequest_d4b64"):$t("systemsettings.reportedAddressesAreIndependentOfThisSettingsRequest_d5a07")} {$t("systemsettings.reloadRetriesTheReadItDoesNotWriteSettings_aaef7")}</p>{/if}
     <div class="configuration-workspace">{#if editor}
       <form class="panel settings system-editor" onsubmit={save} oninput={onedit}>
-        <DraftBar {snapshotRevision} {feedback} {dirty} {busy} disabled={!!invalid||!dirty} label={`Save ${title} settings`} scope="" detail="Saved values are verified independently. Reload replaces drafts; Verify keeps them." />
+        <DraftBar {snapshotRevision} feedback={$renderText(feedback)} {dirty} {busy} disabled={!!invalid||!dirty} label={$t("systemsettings.saveV0Settings_f4607",{v0: $language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title})} scope="" detail={$t("systemsettings.savedValuesAreVerifiedIndependentlyReloadReplacesDraftsVerify_5cbd7")} />
         <fieldset disabled={busy}>
           <legend
             >{kind === "clock"
-              ? "Time configuration"
-              : "Network configuration"}</legend
+              ? $t("systemsettings.timeConfiguration_9569d")
+              : $t("systemsettings.networkConfiguration_cc38b")}</legend
           >
           {#if kind === "clock"}
-            <label for="timezone-preset">Timezone preset</label>
+            <label for="timezone-preset">{$t("systemsettings.timezonePreset_6f4bb")}</label>
             <select
               id="timezone-preset"
               value={zones.presets.some((z) => z.tz === editor!.draft.tz)
@@ -246,29 +244,26 @@ Third-party material retains its own terms.
                 onedit();
               }}
             >
-              <option value="">Legacy UTC offset and summer time</option>
-              {#each zones.presets as z}<option value={z.tz}>{z.label}</option
+              <option value="">{$t("systemsettings.legacyUTCOffsetAndSummerTime_9f88c")}</option>
+              {#each zones.presets as z}<option value={z.tz}>{timezoneLabel(z.label,$language)}</option
                 >{/each}
-              <option value="__custom__">Custom POSIX rule below</option>
+              <option value="__custom__">{$t("systemsettings.customPOSIXRuleBelow_d9e18")}</option>
             </select>
-            <label for="timezone-rule">POSIX timezone rule</label><input
+            <label for="timezone-rule">{$t("systemsettings.posixTimezoneRule_3ec79")}</label><input
               id="timezone-rule"
               type="text"
               bind:value={editor.draft.tz}
               spellcheck="false"
             />
             <p>
-              Up to 64 ASCII characters. For example {berlin}, UTC0, or
-              NPT-5:45. POSIX offset signs are reversed: -5:45 means UTC+05:45.
-              Custom DST uses Mmonth.week.weekday rules; no timezone data is
-              downloaded.
+              {$t("systemsettings.upTo64ASCIICharactersForExample_dc06e")} {berlin}{$t("systemsettings.utc0OrNPT545POSIXOffsetSignsAre_647b7")}
             </p>
             {#if editor.draft.tz === ""}
-              <label for="legacy-timezone">Legacy timezone</label><select
+              <label for="legacy-timezone">{$t("systemsettings.legacyTimezone_45325")}</label><select
                 id="legacy-timezone"
                 bind:value={editor.draft.timezone}
                 >{#each zones.legacy as z}<option value={String(z.id)}
-                    >{z.label}</option
+                    >{timezoneLabel(z.label,$language)}</option
                   >{/each}</select
               >
               <label class="check"
@@ -277,13 +272,10 @@ Third-party material retains its own terms.
                   checked={editor.draft.summertime === true}
                   onchange={(e) =>
                     (editor!.draft.summertime = e.currentTarget.checked)}
-                />Legacy summer time</label
+                />{$t("systemsettings.legacySummerTime_8d9b2")}</label
               >
               <p>
-                Legacy regions with no DST ignore the summer switch. Legacy
-                UTC+1 with DST allowed follows automatic Berlin even with an
-                empty rule; use the fixed UTC+01:00 preset for no seasonal
-                change.
+                {$t("systemsettings.legacyRegionsWithNoDSTIgnoreTheSummerSwitch_0d4d3")}
               </p>
             {/if}
             <label class="check"
@@ -292,20 +284,16 @@ Third-party material retains its own terms.
                 checked={editor.draft.usentp === true}
                 onchange={(e) =>
                   (editor!.draft.usentp = e.currentTarget.checked)}
-              />Use NTP</label
+              />{$t("systemsettings.useNTP_5bc8b")}</label
             >
             <p>
-              NTP requires a reachable time server. The server is configured on
-              Network. Saving this flag does not prove synchronization; network
-              services may need device reinitialization.
+              {$t("systemsettings.ntpRequiresAReachableTimeServerTheServerIs_59b4c")}
             </p>
           {:else}
             <p>
-              Hostname identity is edited in <a href="#settings">Settings</a>.
-              IPv4 fields use four decimal octets, each 0–255. Blank optional
-              fields clear stored values. Static LAN requires all four fields.
+              {$t("systemsettings.hostnameIdentityIsEditedIn_71425")} <a href="#settings">{$t("app.settings_c7f73")}</a>{$t("systemsettings.ipv4FieldsUseFourDecimalOctetsEach0255_6a2d2")}
             </p>
-            <div class="network-groups">{#each networkGroups as group}{#if fieldsFor(wifi).some(f=>group.keys.includes(f.key))}<fieldset class="network-group"><legend>{group.title}</legend><div class="field-grid network-fields">
+            <div class="network-groups">{#each networkGroups as group}{#if fieldsFor(wifi).some(f=>group.keys.includes(f.key))}<fieldset class="network-group"><legend>{$renderText(group.title)}</legend><div class="field-grid network-fields">
             {#each fieldsFor(wifi).filter(f=>group.keys.includes(f.key)) as f}
               <div class:network-wide={f.type === "bool" || f.key === "ntpserver" || f.key === "wifi_ssid" || f.type === "password"}>
               {#if f.type === "bool"}<label class="check"
@@ -314,9 +302,9 @@ Third-party material retains its own terms.
                     checked={editor.draft[f.key] === true}
                     onchange={(e) =>
                       (editor!.draft[f.key] = e.currentTarget.checked)}
-                  />{f.label}</label
+                  />{$renderText(f.label)}</label
                 >
-              {:else}<label for={`network-${f.key}`}>{f.label}</label><input
+              {:else}<label for={`network-${f.key}`}>{$renderText(f.label)}</label><input
                   id={`network-${f.key}`}
                   type={f.type === "password" ? "password" : "text"}
                   inputmode={f.type === "port" ? "numeric" : undefined}
@@ -325,80 +313,60 @@ Third-party material retains its own terms.
                   bind:value={editor.draft[f.key]}
                 />
                 {#if "max" in f}<p class="field-help">
-                    Maximum {f.max} UTF-8 bytes{f.key === "ntpserver"
-                      ? "; blank restores pool.ntp.org on reload"
+                    {$t("systemsettings.maximum_a8df2")} {f.max} {$t("systemsettings.utf8Bytes_83134")}{f.key === "ntpserver"
+                      ? $t("systemsettings.blankRestoresPoolNtpOrgOnReload_777ca")
                       : ""}.
                   </p>{/if}
               {/if}
             </div>{/each}</div></fieldset>{/if}{/each}</div>
             <p>
-              Keep trying DHCP prevents the firmware from falling back to its
-              static rescue address after repeated DHCP failure. It may reset
-              the network interface while trying again. Web port: 1–65534. Save
-              does not validate subnet reachability, DNS or the time server.
-              Enabling vendor Finder allows the firmware's vendor service; this
-              UI never contacts it.
+              {$t("systemsettings.keepTryingDHCPPreventsTheFirmwareFromFallingBack_4222e")}
             </p>
             {#if wifi}<p>
-                SR10 supports 2.4 GHz Wi-Fi. A reported address alone does not
-                prove a working connection. Blank Wi-Fi IPv4 records no static
-                address. These static Wi-Fi fields store configuration only:
-                this firmware enables DHCP without applying a static-address
-                command. Do not rely on them to change the active Wi-Fi address.
+                {$t("systemsettings.sr10Supports24GHzWiFiAReported_40a81")}
               </p>{/if}
             {#if editor.legacyWifi}<p role="note">
-                Legacy Wi-Fi address was stored as a Boolean because of an old
-                web schema defect. Shown unset; preserved until you explicitly
-                enter an address.
+                {$t("systemsettings.legacyWiFiAddressWasStoredAsABoolean_a0624")}
               </p>{/if}
           {/if}
-          {#if invalid}<p class="notice" role="note">{invalid}</p>{/if}
+          {#if invalid}<p class="notice" role="note">{$renderText(invalid)}</p>{/if}
         </fieldset>
       </form>
-      {#if kind === "clock"}<section class="panel clock-command"><h2>Set device time</h2>
+      {#if kind === "clock"}<section class="panel clock-command"><h2>{$t("systemsettings.setDeviceTime_8355e")}</h2>
           <button
             onclick={setClock}
             disabled={busy || dirty || editor.saved.usentp !== false}
-            >Set clock from browser</button
+            >{$t("systemsettings.setClockFromBrowser_cdbf5")}</button
           >
-          <p data-testid="clock-input-error">{clockInputError}</p>
+          <p data-testid="clock-input-error">{$renderText(clockInputError)}</p>
           <p>
-            Uses your browser's current UTC seconds. Save any edits and disable
-            NTP first. This writes once, then reads device state; it never
-            retries automatically.
+            {$t("systemsettings.usesYourBrowserSCurrentUTCSecondsSaveAny_3a6ba")}
           </p>
         </section>{/if}
       <details class="panel configuration-readback" bind:open={showReadback}>
-        <summary>Last configuration readback</summary>{#if dirty}<p>
+        <summary>{$t("systemsettings.lastConfigurationReadback_530f1")}</summary>{#if dirty}<p>
             {verifiedMatch
-              ? "Edited values match the saved configuration."
-              : "Device values differ from this draft. Review readback before saving again."}
+              ? $t("systemsettings.editedValuesMatchTheSavedConfiguration_c62e9")
+              : $t("systemsettings.deviceValuesDifferFromThisDraftReviewReadbackBefore_d4f3c")}
           </p>{/if}
-        <p class="config-readback" data-testid={`${title}-readback`}>
+        <p class="config-readback" data-testid={`${$language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title}-readback`}>
           {summary()}
         </p>
       </details>
-    {:else}<div class="empty-state"><h2>{loadingSettings?`Loading ${title} settings…`:'Settings unavailable'}</h2><p>{loadingSettings?'Reading saved configuration.':`Use Reload ${title} settings to try again.`}</p></div>{/if}
+    {:else}<div class="empty-state"><h2>{loadingSettings?$t("systemsettings.loadingV0Settings_ffcfc",{v0: $language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title}):$t("systemsettings.settingsUnavailable_4b7b1")}</h2><p>{loadingSettings?$t("systemsettings.readingSavedConfiguration_e2dcf"):$t("systemsettings.useReloadV0SettingsToTryAgain_9b5c9",{v0: $language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title})}</p></div>{/if}
     {#if kind === 'network'}      <section class="panel readback network-recovery" data-testid="network-recovery">
-        <h2>Connection and recovery</h2>
+        <h2>{$t("systemsettings.connectionAndRecovery_8f4bf")}</h2>
         <p>
-          Current LAN: {snapshot.lan_ip}{#if wifi}
-            · Reported Wi-Fi address: {snapshot.wifi_ip ?? "Not reported"}{/if}
+          {$t("systemsettings.currentLAN_949e8")} {snapshot.lan_ip}{#if wifi}
+            {$t("systemsettings.reportedWiFiAddress_a6973")} {snapshot.wifi_ip ?? $t("systemsettings.notReported_98e85")}{/if}
         </p>
         <p>
-          Save stores network settings. A later device restart or network
-          reinitialization may disconnect this page or change its address and
-          port. This interface does not restart the device. A failed response
-          does not prove that a save failed.
+          {$t("systemsettings.saveStoresNetworkSettingsALaterDeviceRestartOr_e2df8")}
         </p>
         <p>
-          Keep this tab open to retain drafts. First use Verify saved settings
-          at the current address. If disconnected, obtain the assigned address
-          from your existing network information, then open it explicitly below.
-          No scanning or write retries occur. Disabling Wi-Fi can require LAN
-          access. Finder assumes port 80.
+          {$t("systemsettings.keepThisTabOpenToRetainDraftsFirstUse_1dec5")}
         </p>
-        <label for="recovery-address">Device address</label><input
+        <label for="recovery-address">{$t("systemsettings.deviceAddress_5feb5")}</label><input
           id="recovery-address"
           type="url"
           placeholder="http://192.0.2.42:8080"
@@ -407,20 +375,18 @@ Third-party material retains its own terms.
         {#if recovery}<a
             href={recovery}
             target="_blank"
-            rel="noopener noreferrer">Open device address</a
+            rel="noopener noreferrer">{$t("systemsettings.openDeviceAddress_94e80")}</a
           >{/if}
         <p>
-          Enter an HTTP(S) origin only, without a path, credentials or query.
-          Opening it leaves this draft in the original tab. Reads and writes in
-          either tab use that tab's own origin.
+          {$t("systemsettings.enterAnHTTPSOriginOnlyWithoutAPath_a41d3")}
         </p>
       </section>{/if}
-    </div><details class="reading-details"><summary>Reading details</summary>    <p class:stale>
-      {stale ? "Last snapshot · stale" : "Device snapshot"} · {utc(
+    </div><details class="reading-details"><summary>{$t("app.readingDetails_28520")}</summary>    <p class:stale>
+      {stale ? $t("app.lastSnapshotStale_329af") : $t("sensors.deviceSnapshot_35538")} · {utc(
         snapshot.time,
       )}
     </p>
-<p>State refreshes every 30 seconds while visible; failures back off to 60 then 120 seconds.</p></details>
+<p>{$t("systemsettings.stateRefreshesEvery30SecondsWhileVisibleFailuresBack_318d2")}</p></details>
   </section>
 </EditorPage>
 {/if}

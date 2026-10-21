@@ -1,3 +1,4 @@
+import {source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -6,7 +7,7 @@
  * Frontend adaptation (2026); see LICENSING.md and LICENSE.
  * Third-party material retains its own terms.
  */
-export const metadataText=(value:unknown)=>value==null?'Not reported':typeof value==='string'?value:JSON.stringify(value);
+export const metadataText=(value:unknown)=>value==null?source("systemsettings.notReported_98e85"):typeof value==='string'?value:JSON.stringify(value);
 export function macText(value:unknown){
  return Array.isArray(value)&&value.length===6&&value.every(n=>Number.isInteger(n)&&n>=0&&n<=255)?value.map(n=>n.toString(16).padStart(2,'0')).join(':').toUpperCase():metadataText(value);
 }

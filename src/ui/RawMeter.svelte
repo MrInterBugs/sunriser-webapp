@@ -7,13 +7,15 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {t,renderText,language} from '../i18n';
+  import {PWM_RAW_MAX,rawMeterPercent} from "../pwm";
   // Redundant visual reference only. Preserve exact device readback in the caller.
   let {value, stale=false}: {value:number; stale?:boolean}=$props();
 </script>
 <div class="raw-meter" class:stale aria-hidden="true" data-testid="raw-meter" data-value={value}>
-  <span class="fill" style:width={`${Math.max(0,Math.min(1000,value))/10}%`}></span>
+  <span class="fill" style:width={`${rawMeterPercent(value)}%`}></span>
   <span class="ticks"></span>
-  {#if value>1000}<span class="over">+</span>{/if}
+  {#if value>PWM_RAW_MAX||value<0}<span class="over">+</span>{/if}
 </div>
 <style>
   .raw-meter { position:relative; height:8px; width:100%; background:var(--sr-meter-track); border-radius:1px; margin:8px 0; }

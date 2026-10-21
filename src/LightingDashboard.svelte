@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {t,renderText,language} from './i18n';
+  import {PWM_RAW_MAX, PWM_DEFAULT_DIMMER_MAX} from "./pwm";
   import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
   import RawMeter from './ui/RawMeter.svelte';
@@ -25,63 +27,63 @@ Third-party material retains its own terms.
 </script>
 <div class="lighting">
   <div class="page-heading">
-    <div><h1>{service?'Service':'Channels'}</h1><p class="identity"><span data-testid="model">{firmware.sunriser}</span><span aria-hidden="true"> / </span>{persisted}</p></div>
-    <div class="actions">{#if !service}<ActionButton secondary onclick={onconfigure} disabled={busy}>Configure channels</ActionButton>{/if}<ActionButton secondary onclick={refresh} disabled={busy}>Refresh state</ActionButton></div>
+    <div><h1>{service?$t("lightingdashboard.service_329cb"):$t("lightingdashboard.channels_18e03")}</h1><p class="identity"><span data-testid="model">{firmware.sunriser}</span><span aria-hidden="true"> / </span>{persisted}</p></div>
+    <div class="actions">{#if !service}<ActionButton secondary onclick={onconfigure} disabled={busy}>{$t("lightingdashboard.configureChannels_9f9cf")}</ActionButton>{/if}<ActionButton secondary onclick={refresh} disabled={busy}>{$t("app.refreshState_0a7bf")}</ActionButton></div>
   </div>
   {#if service}
-    <div class="service-workflow"><section class="service-command" aria-label="Service controls">
-      <div class="service-summary"><div><p class="kicker">Reported service state{stale ? ' · stale' : ''}</p><strong data-testid="service" class="service-state">{active?(snapshot.blackout?'Blackout active':'Active'):'Off'}</strong></div><div class="actions"><ActionButton onclick={()=>command({service_mode:1})} disabled={busy}>Start service</ActionButton><ActionButton secondary onclick={()=>command({service_mode:0})} disabled={busy}>Stop service</ActionButton></div></div>
-      <p>Start fades outputs to your saved service settings. Stop returns to normal planning and also ends an active blackout.</p><a class="service-output-link" href="#channels">Inspect reported channel output →</a>
-      <div class="blackout-controls"><h3>Blackout</h3><p>Turn off participating outputs, including binary channels. Ignored channels continue planning. Blackout uses the saved service timeout. Resume returns to normal planning only when blackout is active; it does not stop service mode.</p><div class="actions"><ActionButton secondary onclick={()=>command({blackout:1})} disabled={busy || typeof snapshot.blackout !== 'boolean'}>Start blackout</ActionButton><ActionButton secondary onclick={()=>command({blackout:0})} disabled={busy || typeof snapshot.blackout !== 'boolean'}>Resume from blackout</ActionButton></div>{#if typeof snapshot.blackout !== 'boolean'}<p>Blackout state is unavailable from this firmware; controls are disabled.</p>{/if}</div>
-      <details><summary>Fading and command behaviour</summary><p>Off can still mean fading out. A Start during fade-out may be ignored; wait for outputs to settle before explicitly starting again. Save settings before starting. Commands are never retried automatically.</p></details>
+    <div class="service-workflow"><section class="service-command" aria-label={$t("lightingdashboard.serviceControls_5b4e6")}>
+      <div class="service-summary"><div><p class="kicker">{$t("lightingdashboard.reportedServiceState_03341")}{stale ? $t("app.readbackStale_e56ed") : ''}</p><strong data-testid="service" class="service-state">{active?(snapshot.blackout?$t("lightingdashboard.blackoutActive_01b9f"):$t("lightingdashboard.active_a733b")):$t("lightingdashboard.off_e3de5")}</strong></div><div class="actions"><ActionButton onclick={()=>command({service_mode:1})} disabled={busy}>{$t("lightingdashboard.startService_41b25")}</ActionButton><ActionButton secondary onclick={()=>command({service_mode:0})} disabled={busy}>{$t("lightingdashboard.stopService_98fa1")}</ActionButton></div></div>
+      <p>{$t("lightingdashboard.startFadesOutputsToYourSavedServiceSettingsStop_974b3")}</p><a class="service-output-link" href="#channels">{$t("lightingdashboard.inspectReportedChannelOutput_7902d")}</a>
+      <div class="blackout-controls"><h3>{$t("lightingdashboard.blackout_92de6")}</h3><p>{$t("lightingdashboard.turnOffParticipatingOutputsIncludingBinaryChannelsIgnoredChannels_8d92c")}</p><div class="actions"><ActionButton secondary onclick={()=>command({blackout:1})} disabled={busy || typeof snapshot.blackout !== 'boolean'}>{$t("lightingdashboard.startBlackout_8b964")}</ActionButton><ActionButton secondary onclick={()=>command({blackout:0})} disabled={busy || typeof snapshot.blackout !== 'boolean'}>{$t("lightingdashboard.resumeFromBlackout_a8e5a")}</ActionButton></div>{#if typeof snapshot.blackout !== 'boolean'}<p>{$t("lightingdashboard.blackoutStateIsUnavailableFromThisFirmwareControlsAre_8b391")}</p>{/if}</div>
+      <details><summary>{$t("lightingdashboard.fadingAndCommandBehaviour_f53d5")}</summary><p>{$t("lightingdashboard.offCanStillMeanFadingOutAStartDuring_3a865")}</p></details>
     </section>
     <section aria-labelledby="service-settings-title" class="service-settings">
-      <div class="section-title"><div><h2 id="service-settings-title">Service settings</h2><p>Set the light levels to use while you care for your aquarium.</p></div>{#if serviceSettings}<StateBadge tone={serviceDirty?'draft':'neutral'}>{serviceDirty?'Unsaved changes':'Settings saved'}</StateBadge>{/if}</div>
+      <div class="section-title"><div><h2 id="service-settings-title">{$t("lightingdashboard.serviceSettings_4cb38")}</h2><p>{$t("lightingdashboard.setTheLightLevelsToUseWhileYouCare_0745e")}</p></div>{#if serviceSettings}<StateBadge tone={serviceDirty?'draft':'neutral'}>{serviceDirty?$t("lightingdashboard.unsavedChanges_29267"):$t("lightingdashboard.settingsSaved_aef97")}</StateBadge>{/if}</div>
       {#if serviceSettings}
         <ConfigurationNotice revision={serviceRevision}/><form onsubmit={saveServiceForm} oninput={onedit}>
-          <div class="service-configuration"><div class="timeout"><div><label for="service-timeout">Timeout minutes</label><p id="timeout-help">0 means no automatic end. Maximum 10080 minutes (one week).</p></div><input id="service-timeout" type="number" min="0" max="10080" step="1" bind:value={serviceSettings.timeout} disabled={busy} aria-describedby="timeout-help" aria-invalid={!inRange(serviceSettings.timeout,10080)} /></div>
-          <p class="footnote">Readback meters: 0–1000 raw reference; + marks higher values. Service settings below use percent.</p>
+          <div class="service-configuration"><div class="timeout"><div><label for="service-timeout">{$t("lightingdashboard.timeoutMinutes_eae06")}</label><p id="timeout-help">{$t("lightingdashboard.0MeansNoAutomaticEndMaximum10080MinutesOne_94e9a")}</p></div><input id="service-timeout" type="number" min="0" max="10080" step="1" bind:value={serviceSettings.timeout} disabled={busy} aria-describedby="timeout-help" aria-invalid={!inRange(serviceSettings.timeout,10080)} /></div>
+          <p class="footnote">{$t("lightingdashboard.readbackMeters01000RawReferenceMarksHigherValues_9c2c2")}</p>
 
           </div><div class="service-list">
             {#each serviceSettings.channels as channel,i}
-              <fieldset class="service-row" disabled={busy} data-testid="channel"><legend class="sr-only">Channel {i+1}</legend>
-                <div class="channel-identity"><div><h3><ChannelIdentity number={i+1}/></h3><p class:stale><strong>{snapshot.pwms[String(i+1)]}</strong> raw <span>· {stale?'stale':'reported'}</span></p><RawMeter value={snapshot.pwms[String(i+1)]} {stale}/></div></div>
-                <div class="service-inputs"><span class="command-label">Service setting · %</span>
-                  {#if channel.binary}<div class="binary"><label for={`service-${i}`}>Channel {i+1} service percent</label><select id={`service-${i}`} bind:value={channel.percent} disabled={channel.ignore}>{#if channel.percent!==0 && channel.percent!==100}<option value={channel.percent} disabled>{channel.percent ?? 'Invalid'}% draft — choose Off or On</option>{/if}<option value={0}>Off (0%)</option><option value={100}>On (100%)</option></select></div>
-                  {:else}<LevelControl id={`service-${i}`} label={`Channel ${i+1} service percent`} bind:value={channel.percent} max={100} unit="%" disabled={busy || channel.ignore}/>{/if}
-                  <label class="ignore"><input type="checkbox" bind:checked={channel.ignore}/><span>Ignore channel {i+1} during service</span></label>
+              <fieldset class="service-row" disabled={busy} data-testid="channel"><legend class="sr-only">{$t("channelconfiguration.channel_879f0")} {i+1}</legend>
+                <div class="channel-identity"><div><h3><ChannelIdentity number={i+1}/></h3><p class:stale><strong>{snapshot.pwms[String(i+1)]}</strong> {$t("app.raw_ce158")} <span>· {stale?$t("app.readbackStale_e56ed"):$t("lightingtools.reported_73c20")}</span></p><RawMeter value={snapshot.pwms[String(i+1)]} {stale}/></div></div>
+                <div class="service-inputs"><span class="command-label">{$t("lightingdashboard.serviceSetting_5721d")}</span>
+                  {#if channel.binary}<div class="binary"><label for={`service-${i}`}>{$t("channelconfiguration.channel_879f0")} {i+1} {$t("lightingdashboard.servicePercent_e918e")}</label><select id={`service-${i}`} bind:value={channel.percent} disabled={channel.ignore}>{#if channel.percent!==0 && channel.percent!==100}<option value={channel.percent} disabled>{channel.percent ?? $t("lightingdashboard.invalid_54e07")}{$t("lightingdashboard.draftChooseOffOrOn_020d6")}</option>{/if}<option value={0}>{$t("lightingdashboard.off0_4dd63")}</option><option value={100}>{$t("lightingdashboard.on100_bebe2")}</option></select></div>
+                  {:else}<LevelControl id={`service-${i}`} label={$t("lightingdashboard.channelV0ServicePercent_32f7e",{v0: i+1})} bind:value={channel.percent} max={100} unit="%" disabled={busy || channel.ignore}/>{/if}
+                  <label class="ignore"><input type="checkbox" bind:checked={channel.ignore}/><span>{$t("lightingdashboard.ignoreChannel_bdaa9")} {i+1} {$t("lightingdashboard.duringService_a8971")}</span></label>
                 </div>
               </fieldset>
             {/each}
           </div>
-          {#if !serviceValid}<p role="alert">Use whole percentages from 0 to 100; binary channels must be 0 or 100. Check your retained draft after a channel-type change.</p>{/if}
-          <div class="save-bar"><div><strong>{serviceDirty?'Save your changes':'Ready for service'}</strong><p>{serviceDirty?'Save to use these levels the next time service starts.':'Edit levels above, then save before starting service.'}</p></div><div class="actions"><ActionButton secondary onclick={loadService} disabled={busy}>Reload service settings</ActionButton><ActionButton type="submit" disabled={busy || !serviceValid || !serviceDirty || !serviceReconciled}>Save service settings</ActionButton></div></div>
-          <p class="footnote">Reload replaces unsaved service edits. Saving settings does not start service mode.</p>
+          {#if !serviceValid}<p role="alert">{$t("lightingdashboard.useWholePercentagesFrom0To100BinaryChannels_aabe4")}</p>{/if}
+          <div class="save-bar"><div><strong>{serviceDirty?$t("lightingdashboard.saveYourChanges_c4a1d"):$t("lightingdashboard.readyForService_376fe")}</strong><p>{serviceDirty?$t("lightingdashboard.saveToUseTheseLevelsTheNextTimeService_9f3e9"):$t("lightingdashboard.editLevelsAboveThenSaveBeforeStartingService_ae4ce")}</p></div><div class="actions"><ActionButton secondary onclick={loadService} disabled={busy}>{$t("lightingdashboard.reloadServiceSettings_8a6ea")}</ActionButton><ActionButton type="submit" disabled={busy || !serviceValid || !serviceDirty || !serviceReconciled}>{$t("lightingdashboard.saveServiceSettings_37e83")}</ActionButton></div></div>
+          <p class="footnote">{$t("lightingdashboard.reloadReplacesUnsavedServiceEditsSavingSettingsDoesNot_7bd91")}</p>
         </form>
       {:else}
-        <div class="empty"><h3>{busy?'Reading service settings…':'Service settings unavailable'}</h3><p>{busy?'Your saved levels will appear here.':'No levels have been loaded. Check the connection and reload to try again.'}</p><ActionButton secondary onclick={loadService} disabled={busy}>Reload service settings</ActionButton></div>
+        <div class="empty"><h3>{busy?$t("lightingdashboard.readingServiceSettings_7a192"):$t("lightingdashboard.serviceSettingsUnavailable_ac0b1")}</h3><p>{busy?$t("lightingdashboard.yourSavedLevelsWillAppearHere_c7f29"):$t("lightingdashboard.noLevelsHaveBeenLoadedCheckTheConnectionAnd_f25ee")}</p><ActionButton secondary onclick={loadService} disabled={busy}>{$t("lightingdashboard.reloadServiceSettings_8a6ea")}</ActionButton></div>
       {/if}
     </section></div>
   {:else}
-    <div class="section-title"><div><p>{firmware.pwm_count} outputs · Apply sends the command draft. Reported output updates independently.</p></div><StateBadge tone={active?'active':'neutral'}>Service: <span data-testid="service">{active?(snapshot.blackout?'Blackout active':'Active'):'Off'}</span></StateBadge></div>
+    <div class="section-title"><div><p>{firmware.pwm_count} {$t("lightingdashboard.outputsApplySendsTheCommandDraftReportedOutputUpdates_b98c4")}</p></div><StateBadge tone={active?'active':'neutral'}>{$t("lightingdashboard.service_e5bc1")} <span data-testid="service">{active?(snapshot.blackout?$t("lightingdashboard.blackoutActive_01b9f"):$t("lightingdashboard.active_a733b")):$t("lightingdashboard.off_e3de5")}</span></StateBadge></div>
 
     <ol class="channel-list">
       {#each Array.from({length:firmware.pwm_count},(_,i)=>i+1) as channel}
         <li data-testid="channel" class="channel-row">
-          <div class="channel-identity"><div><h3><ChannelIdentity number={channel}/></h3><p class:stale><strong>{snapshot.pwms[String(channel)]}</strong> raw <span>· {stale?'stale':'reported'}</span></p><RawMeter value={snapshot.pwms[String(channel)]} {stale}/></div></div>
-          <div class="command-inputs"><span class="command-label">Local command draft · raw</span><LevelControl id={`raw-${channel}`} label={`Channel ${channel} raw`} bind:value={raw[channel]} max={1000} disabled={busy}/><ActionButton secondary label={`Apply channel ${channel}`} onclick={()=>applyRaw(channel)} disabled={busy || !inRange(raw[channel],1000)}>Apply</ActionButton></div>
+          <div class="channel-identity"><div><h3><ChannelIdentity number={channel}/></h3><p class:stale><strong>{snapshot.pwms[String(channel)]}</strong> {$t("app.raw_ce158")} <span>· {stale?$t("app.readbackStale_e56ed"):$t("lightingtools.reported_73c20")}</span></p><RawMeter value={snapshot.pwms[String(channel)]} {stale}/></div></div>
+          <div class="command-inputs"><span class="command-label">{$t("lightingdashboard.localCommandDraftRaw_b051b")}</span><LevelControl id={`raw-${channel}`} label={$t("lightingdashboard.channelV0Raw_f1db0",{v0: channel})} bind:value={raw[channel]} max={PWM_RAW_MAX} disabled={busy}/><ActionButton secondary label={$t("lightingdashboard.applyChannelV0_04fed",{v0: channel})} onclick={()=>applyRaw(channel)} disabled={busy || !inRange(raw[channel],PWM_RAW_MAX)}>{$t("lightingdashboard.apply_cfea4")}</ActionButton></div>
         </li>
       {/each}
     </ol>
-    <div class="all-channels"><div><h3>All channels</h3><p>One command to all {firmware.pwm_count} outputs.</p></div><div class="command-inputs"><span class="command-label">Local command draft · raw</span><LevelControl id="raw-all" label="All channels raw" bind:value={allRaw} max={1000} disabled={busy}/><ActionButton label="Apply all channels" onclick={()=>applyRaw('all')} disabled={busy || !inRange(allRaw,1000)}>Apply all</ActionButton></div></div>
-    <p class="footnote">Raw values are not brightness percentages. Meter reference 0–1000 raw; + marks higher readback.</p>
-    <p><a href="#lighting-tools">Minimum output, time-lapse and expert dimming →</a></p><details class="behaviour"><summary>How raw commands affect your lighting</summary><p>Planning usually resumes after about a minute. Fixed-value channels retain changes, including after restart. Raw tests do not stop service mode. Outputs may still be fading after a command; binary outputs can report 1024 raw.</p></details>
+    <div class="all-channels"><div><h3>{$t("lightingdashboard.allChannels_844df")}</h3><p>{$t("lightingdashboard.oneCommandToAll_b3646")} {firmware.pwm_count} {$t("lightingdashboard.outputs_9cb67")}</p></div><div class="command-inputs"><span class="command-label">{$t("lightingdashboard.localCommandDraftRaw_b051b")}</span><LevelControl id="raw-all" label={$t("lightingdashboard.allChannelsRaw_44821")} bind:value={allRaw} max={PWM_RAW_MAX} disabled={busy}/><ActionButton label={$t("lightingdashboard.applyAllChannels_d7a36")} onclick={()=>applyRaw('all')} disabled={busy || !inRange(allRaw,PWM_RAW_MAX)}>{$t("lightingdashboard.applyAll_fbcb3")}</ActionButton></div></div>
+    <p class="footnote">{$t("lightingdashboard.rawValuesAreNotBrightnessPercentagesMeterReference0_4b848")}</p>
+    <p><a href="#lighting-tools">{$t("lightingdashboard.minimumOutputTimeLapseAndExpertDimming_be532")}</a></p><details class="behaviour"><summary>{$t("lightingdashboard.howRawCommandsAffectYourLighting_6449d")}</summary><p>{$t("lightingdashboard.planningUsuallyResumesAfterAboutAMinuteFixedValue_f3b21")}</p></details>
   {/if}
-  <details class="device-details"><summary>Device details{stale?' · stale':''} <span>Firmware {firmware.version} · {firmware.pwm_count} channels</span></summary>  <div class="readback" class:uncertain={stale}>
-    <div class="readback-top"><span class="snapshot" data-testid="snapshot">{stale?'Last snapshot · stale':'Snapshot'} · {utc(snapshot.time)}</span><StateBadge tone={stale?'draft':'neutral'}>{stale?'Check connection':'Device readback'}</StateBadge></div>
-    <p>Refreshes every 30 seconds while visible; failures back off to 120 seconds.</p>
+  <details class="device-details"><summary>{$t("lightingdashboard.deviceDetails_39c27")}{stale?$t("app.readbackStale_e56ed"):''} <span>{$t("app.firmware_0dc5f")} {firmware.version} · {firmware.pwm_count} {$t("lightingdashboard.channels_3536f")}</span></summary>  <div class="readback" class:uncertain={stale}>
+    <div class="readback-top"><span class="snapshot" data-testid="snapshot">{stale?$t("app.lastSnapshotStale_329af"):$t("app.snapshot_b08ae")} · {utc(snapshot.time)}</span><StateBadge tone={stale?'draft':'neutral'}>{stale?$t("lightingdashboard.checkConnection_14cae"):$t("lightingdashboard.deviceReadback_207fa")}</StateBadge></div>
+    <p>{$t("lightingdashboard.refreshesEvery30SecondsWhileVisibleFailuresBackOff_1c09c")}</p>
   </div>
-<dl><div><dt>Firmware</dt><dd data-testid="version">{firmware.version}</dd></div><div><dt>LAN address</dt><dd data-testid="lan">{snapshot.lan_ip}</dd></div><div><dt>Device time (UTC)</dt><dd data-testid="utc">{utc(snapshot.time)}</dd></div><div><dt>Uptime</dt><dd data-testid="uptime">{snapshot.uptime} s</dd></div><div><dt>Wi-Fi capability</dt><dd data-testid="wifi">{firmware.wifi?'Available':'Not available'}</dd></div></dl></details>
+<dl><div><dt>{$t("app.firmware_0dc5f")}</dt><dd data-testid="version">{firmware.version}</dd></div><div><dt>{$t("app.lanAddress_99741")}</dt><dd data-testid="lan">{snapshot.lan_ip}</dd></div><div><dt>{$t("app.deviceTimeUTC_99f56")}</dt><dd data-testid="utc">{utc(snapshot.time)}</dd></div><div><dt>{$t("app.uptime_6aafa")}</dt><dd data-testid="uptime">{snapshot.uptime} s</dd></div><div><dt>{$t("app.wiFiCapability_28a30")}</dt><dd data-testid="wifi">{firmware.wifi?$t("app.available_7c62a"):$t("app.notAvailable_d1a17")}</dd></div></dl></details>
 </div>
 <style>
   .blackout-controls { border-top:1px solid var(--sr-line); padding-top:16px; margin-top:16px; }

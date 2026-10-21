@@ -7,6 +7,9 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {t,renderText,language,source} from './i18n';
+  import {PWM_RAW_MAX, PWM_DEFAULT_DIMMER_MAX} from "./pwm";
+  import {preferredReportedAddress} from './network-address';
   import OverviewLighting from "./ui/OverviewLighting.svelte";
   import {savedDailyPlans,loadDailyPlan,resetSavedDailyPlans} from "./schedules";
   import {configurationState,configurationRevision,configurationCurrent,configurationChanged,configurationVerified,configurationReconnected,configurationConnection} from './configuration-state';
@@ -54,6 +57,7 @@ Third-party material retains its own terms.
   let channelConfiguration = $state<{show:()=>Promise<void>}>();
   let firmware = $state<Firmware>();
   let snapshot = $state<DeviceState>();
+  const reportedAddress=$derived(snapshot&&firmware?preferredReportedAddress(snapshot,firmware.wifi):undefined);
   let hostname = $state("");
   let persisted = $state("");
   let loaded = $state(false);
@@ -144,7 +148,7 @@ Third-party material retains its own terms.
     if (loaded && route === "service" && !serviceAttempted && !busy && !$configurationState.recovery)
       void loadService();
   });
-  const identityPage=()=>['index','channels','service','schedules','weather','sensors','lighting-tools'].includes(route);
+  const identityPage=()=>['index',"channels",'service','schedules',"weather",'sensors','lighting-tools'].includes(route);
   // A successful editor Retry/Reload can also provide the shared identities.
   // Only a new saved-map publication clears a previous label-load error.
   $effect(()=>{const channels=$savedChannels;if(channels.length===firmware?.pwm_count&&!$configurationState.recovery)untrack(()=>{if(labelsPhase!=='loading')labelsPhase='ready';});});
@@ -199,12 +203,12 @@ Third-party material retains its own terms.
     status = "";
   }
   async function reloadHostname(){
-    await perform(async()=>{const name=await getHostname();hostname=persisted=name;hostnameStale=false;hostnameRevision=configurationRevision();},'Hostname loaded; draft replaced.','Could not reload hostname. Draft kept.','Reading saved hostname…');
+    await perform(async()=>{const name=await getHostname();hostname=persisted=name;hostnameStale=false;hostnameRevision=configurationRevision();},source("app.hostnameLoadedDraftReplaced_b7d3e"),source("app.couldNotReloadHostnameDraftKept_db9b1"),source("app.readingSavedHostname_bb39a"));
   }
   async function load() {
     if (!begin()) return;
     error = "";
-    status = "Loading device…";
+    status = source("app.loadingDevice_f8d0a");
     loaded = false;
     invalidateConfiguration();
     try {
@@ -221,9 +225,9 @@ Third-party material retains its own terms.
       loaded = true;
       stale = false;
       hostnameRevision=configurationRevision();
-      status = "Device loaded";
+      status = source("app.deviceLoaded_eb386");
     } catch {
-      error = "Could not load device. Check the connection, then retry.";
+      error = source("app.couldNotLoadDeviceCheckTheConnectionThenRetry_a39ae");
       status = "";
     } finally {
       end();
@@ -233,16 +237,16 @@ Third-party material retains its own terms.
     if (!firmware || !begin()) return;
     if (!background) {
       error = "";
-      status = "Refreshing state…";
+      status = source("app.refreshingState_66f03");
     }
     try {
       await readState();
-      if (!background) status = "State refreshed";
-      if (error.startsWith("State refresh failed")) error = "";
+      if (!background) status = source("app.stateRefreshed_0e050");
+      if (error.startsWith(source("app.stateRefreshFailed_7ccca"))) error = "";
     } catch {
       uncertain();
       error =
-        "State refresh failed. The last snapshot is stale. Reconnecting with bounded read-only refresh.";
+        source("app.stateRefreshFailedTheLastSnapshotIsStaleReconnecting_d1a6a");
       if (!background) status = "";
     } finally {
       end();
@@ -258,29 +262,29 @@ Third-party material retains its own terms.
   }) {
     if (!begin()) return;
     error = "";
-    status = "Sending command…";
+    status = source("app.sendingCommand_49557");
     try {
       await putState(value);
       await readState();
       status = value.timewarp !== undefined
-        ? "Time-lapse command acknowledged; displaying independent controller readback. Physical output is not verified."
+        ? source("app.timeLapseCommandAcknowledgedDisplayingIndependentControllerReadbackPhysical_87775")
         : value.time !== undefined
-        ? "Command acknowledged; displaying device readback."
+        ? source("app.commandAcknowledgedDisplayingDeviceReadback_263df")
         : value.thunder !== undefined
-        ? "Command acknowledged; displaying device readback. Weather effects are not verified."
-        : "Command acknowledged; displaying device readback. Outputs may still be fading.";
+        ? source("app.commandAcknowledgedDisplayingDeviceReadbackWeatherEffectsAreNot_02d8e")
+        : source("app.commandAcknowledgedDisplayingDeviceReadbackOutputsMayStillBe_b94e1");
     } catch {
       uncertain();
       status = "";
       error =
-        "Could not confirm command. The device may have applied it. Draft kept; refresh to check. No automatic write retry.";
+        source("app.couldNotConfirmCommandTheDeviceMayHaveApplied_8fe0f");
     } finally {
       end();
     }
   }
   async function applyRaw(channel: number | "all") {
     const value = channel === "all" ? allRaw : raw[channel];
-    if (!inRange(value, 1000) || !firmware) return;
+    if (!inRange(value, PWM_RAW_MAX) || !firmware) return;
     const pwms =
       channel === "all"
         ? Object.fromEntries(
@@ -293,14 +297,14 @@ Third-party material retains its own terms.
     if (!firmware || !begin()) return;
     serviceAttempted = true;
     error = "";
-    status = "Loading service settings…";
+    status = source("app.loadingServiceSettings_04eec");
     try {
       serviceSettings = await getService(firmware.pwm_count);
       serviceBaseline = JSON.stringify(serviceSettings);
       serviceRevision=configurationRevision();
-      status = "Service settings loaded";
+      status = source("app.serviceSettingsLoaded_aa5d1");
     } catch {
-      error = "Could not load service settings. Retry Reload service settings.";
+      error = source("app.couldNotLoadServiceSettingsRetryReloadServiceSettings_62d50");
       status = "";
     } finally {
       end();
@@ -318,14 +322,14 @@ Third-party material retains its own terms.
     )
       return;
     error = "";
-    status = "Saving…";
+    status = source("app.saving_56a22");
     try {
       await saveService(serviceSettings, firmware);
       serviceBaseline = JSON.stringify(serviceSettings);
-      status = "Saved";
+      status = source("app.saved_c0ae8");
     } catch {
       error =
-        "Could not confirm save. Draft kept; reload settings to check persistence or explicitly retry Save.";
+        source("app.couldNotConfirmSaveDraftKeptReloadSettingsTo_9484c");
       status = "";
     } finally {
       end();
@@ -335,18 +339,18 @@ Third-party material retains its own terms.
     event.preventDefault();
     if (!firmware || !valid || !dirty || !configurationCurrent(hostnameRevision) || !begin()) return;
     error = "";
-    status = "Saving…";
+    status = source("app.saving_56a22");
     const draft = hostname;
     try {
       await putHostname(draft, firmware);
       const actual = await getHostname();
-      if (actual !== draft) throw new Error("Readback mismatch");
+      if (actual !== draft) throw new Error(source("app.readbackMismatch_2cf0d"));
       persisted = actual;
-      status = "Saved";
+      status = source("app.saved_c0ae8");
     } catch {
       status = "";
       error =
-        "Could not confirm save. Your draft is kept. Reload to check the saved value, or explicitly retry Save hostname.";
+        source("app.couldNotConfirmSaveYourDraftIsKeptReload_bbbe1");
     } finally {
       end();
     }
@@ -369,89 +373,89 @@ Third-party material retains its own terms.
 <AppShell {route}>
   <main id="main-content" tabindex="-1" aria-busy={busy}>
     <div class="feedback" class:stale>
-      <span class="connection-state">{busy?'Operation pending':stale?'Readback stale':loaded?'Readback available':'No readback'}</span>
-      <div class="operation-status">{#if status}<span aria-hidden="true">Last operation:</span>{/if}<p role="status" aria-label="Last operation" aria-live="polite">{status}</p></div>
-      {#if error}<p role="alert">{error}</p>{/if}
+      <span class="connection-state">{busy?$t("app.operationPending_c929e"):stale?$t("app.readbackStale_e56ed"):loaded?$t("app.readbackAvailable_465ca"):$t("app.noReadback_429db")}</span>
+      <div class="operation-status">{#if status}<span aria-hidden="true">{$t("app.lastOperation_ab986")}</span>{/if}<p role="status" aria-label={$t("app.lastOperation_961a2")} aria-live="polite">{$renderText(status)}</p></div>
+      {#if error}<p role="alert">{$renderText(error)}</p>{/if}
     </div>
-    {#if loaded&&$configurationState.recovery}<div class="configuration-recovery" aria-live="polite"><strong>{$configurationState.recovery==='acknowledged'?'Configuration change acknowledged · verification required':'Configuration outcome uncertain'}</strong><p>Saved labels and planning are not verified. Retained editor snapshots and drafts must be reconciled before saving. <a href="#recovery">Check device readback in Recovery →</a></p></div>{/if}
-    {#if loaded&&$configurationConnection>0&&!$configurationState.recovery}<p class="reconnect-notice" role="note">Device reconnected. Editors retain their last-loaded configuration snapshots and local drafts. Reload an editor to check changes from another client; Reload replaces its drafts. Reported state is independent.</p>{/if}
-    {#if loaded&&identityPage()&&labelsPhase!=='ready'&&!$configurationState.recovery}<div class="label-status" aria-live="polite"><p>{labelsPhase==='error'?'Saved channel labels unavailable. Numbered channels remain usable.':labelsPhase==='loading'?'Loading saved channel labels…':'Channel labels waiting for the current operation.'}</p>{#if labelsPhase==='error'}<button class="secondary" disabled={busy} onclick={()=>loadLabels(true)}>Retry channel labels</button>{/if}</div>{/if}
+    {#if loaded&&$configurationState.recovery}<div class="configuration-recovery" aria-live="polite"><strong>{$configurationState.recovery==='acknowledged'?$t("app.configurationChangeAcknowledgedVerificationRequired_defa1"):$t("app.configurationOutcomeUncertain_d08a6")}</strong><p>{$t("app.savedLabelsAndPlanningAreNotVerifiedRetainedEditor_d87f3")} <a href="#recovery">{$t("app.checkDeviceReadbackInRecovery_3826c")}</a></p></div>{/if}
+    {#if loaded&&$configurationConnection>0&&!$configurationState.recovery}<p class="reconnect-notice" role="note">{$t("app.deviceReconnectedEditorsRetainTheirLastLoadedConfigurationSnapshots_9083c")}</p>{/if}
+    {#if loaded&&identityPage()&&labelsPhase!=='ready'&&!$configurationState.recovery}<div class="label-status" aria-live="polite"><p>{labelsPhase==='error'?$t("app.savedChannelLabelsUnavailableNumberedChannelsRemainUsable_27ac9"):labelsPhase==='loading'?$t("app.loadingSavedChannelLabels_80d2e"):$t("app.channelLabelsWaitingForTheCurrentOperation_4325c")}</p>{#if labelsPhase==='error'}<button class="secondary" disabled={busy} onclick={()=>loadLabels(true)}>{$t("app.retryChannelLabels_9f856")}</button>{/if}</div>{/if}
     {#if !loaded}
       {#if route === 'help'}
-        <section aria-label="Controller connection" class="help-connection"><p>{busy?'Connecting to controller… Local help is available below.':'Controller unavailable. Local help remains available; reconnect to read configured state.'}</p>{#if !busy}<ActionButton secondary onclick={load}>Retry connection</ActionButton>{/if}</section>
+        <section aria-label={$t("app.controllerConnection_dddeb")} class="help-connection"><p>{busy?$t("app.connectingToControllerLocalHelpIsAvailableBelow_38750"):$t("app.controllerUnavailableLocalHelpRemainsAvailableReconnectToRead_b81d3")}</p>{#if !busy}<ActionButton secondary onclick={load}>{$t("app.retryConnection_a3512")}</ActionButton>{/if}</section>
       {:else}
       <section class="connection">
         <div class="connection-mark" aria-hidden="true">◒</div>
-        <p class="eyebrow">Device connection</p>
-        <h1>{busy ? 'Connecting to SunRiser' : 'Connection unavailable'}</h1>
-        <p>{busy ? "Reading device information and saved settings. Your controls will appear when the connection is ready." : "No device readings are available. Check the connection, then retry to load your controls."}</p>
-        {#if !busy}<ActionButton onclick={load}>Retry connection</ActionButton>{/if}
+        <p class="eyebrow">{$t("app.deviceConnection_d8f7f")}</p>
+        <h1>{busy ? $t("app.connectingToSunRiser_aae6d") : $t("app.connectionUnavailable_ff33d")}</h1>
+        <p>{busy ? $t("app.readingDeviceInformationAndSavedSettingsYourControlsWill_a5c3f") : $t("app.noDeviceReadingsAreAvailableCheckTheConnectionThen_6b8a4")}</p>
+        {#if !busy}<ActionButton onclick={load}>{$t("app.retryConnection_a3512")}</ActionButton>{/if}
       </section>
       {/if}
     {:else if firmware && snapshot}
-      {#if route === 'channels' || route === 'service'}
+      {#if route === "channels" || route === 'service'}
         <LightingDashboard onconfigure={()=>channelConfiguration?.show()} {serviceRevision} {serviceReconciled} {route} {firmware} {snapshot} {persisted} {stale} {busy} bind:raw bind:allRaw bind:serviceSettings {serviceDirty} {serviceValid} refresh={() => refresh()} {applyRaw} {command} {loadService} {saveServiceForm} onedit={clearFeedback} />
       {:else if route === 'index'}
         <EditorPage>
         <div class="heading">
-          <div><h1>Overview</h1></div>
-          <div class="overview-heading-actions"><button class="secondary" onclick={() => refresh()} disabled={busy}>Refresh state</button></div>
+          <div><h1>{$t("app.overview_0efc2")}</h1></div>
+          <div class="overview-heading-actions"><button class="secondary" onclick={() => refresh()} disabled={busy}>{$t("app.refreshState_0a7bf")}</button></div>
         </div>
         <OverviewLighting {firmware} {snapshot} hostname={persisted} {hostnameStale} {stale} {busy} unverified={!!$configurationState.recovery} plan={$savedDailyPlans[overviewChannel]} onretry={()=>readDaily(true)} bind:selected={overviewChannel} unsaved={scheduleUnsaved}/>
         <div class="monitor-workspace living-monitor"><section class="overview-outputs" aria-labelledby="channels-title">
-          <div class="overview-top"><h2 id="channels-title">Reported channel output</h2><span>Raw counts</span></div>
+          <div class="overview-top"><h2 id="channels-title">{$t("app.reportedChannelOutput_656b2")}</h2><span>{$t("app.rawCounts_d9b8b")}</span></div>
           <ol class="channels">
             {#each Array.from({ length: firmware.pwm_count }, (_, i) => i + 1) as channel}
-              <li data-testid="channel"><button type="button" class="output-select" aria-label={`Inspect ${channelLabel($savedChannels[channel-1])?channelLabel($savedChannels[channel-1])+' · ':''}channel ${channel} saved schedule`} aria-pressed={overviewChannel===channel} onclick={()=>overviewChannel=channel}><span class="output-name"><ChannelIdentity number={channel}/></span><strong>{snapshot.pwms[String(channel)]} <small>raw</small></strong></button><RawMeter value={snapshot.pwms[String(channel)]} {stale}/></li>
+              <li data-testid="channel"><button type="button" class="output-select" aria-label={$t("app.inspectV0ChannelV1SavedSchedule_327d9",{v0: channelLabel($savedChannels[channel-1],$language)?channelLabel($savedChannels[channel-1],$language)+' · ':'',v1: channel})} aria-pressed={overviewChannel===channel} onclick={()=>overviewChannel=channel}><span class="output-name"><ChannelIdentity number={channel}/></span><strong>{snapshot.pwms[String(channel)]} <small>{$t("app.raw_ce158")}</small></strong></button><RawMeter value={snapshot.pwms[String(channel)]} {stale}/></li>
             {/each}
           </ol>
-          <p class="meter-key">Reported raw counts, not brightness percentages. Meter reference: 0–1000 raw; + marks higher readback.</p>
-          <div class="overview-links"><a href="#channels">Open channel controls <span aria-hidden="true">→</span></a><a href="#schedules">Edit schedules <span aria-hidden="true">→</span></a><a href="#help">Getting started and help <span aria-hidden="true">→</span></a></div>
+          <p class="meter-key">{$t("app.reportedRawCountsNotBrightnessPercentagesMeterReference0_26f24")}</p>
+          <div class="overview-links"><a href="#channels">{$t("app.openChannelControls_7799e")} <span aria-hidden="true">→</span></a><a href="#schedules">{$t("app.editSchedules_8a533")} <span aria-hidden="true">→</span></a><a href="#help">{$t("app.gettingStartedAndHelp_915dc")} <span aria-hidden="true">→</span></a></div>
         </section>
         <OperatingState {snapshot} {stale} loading={readingState}/></div>
-        <section class="overview-details" aria-label="Device state">
-          <h2>Controller</h2>
+        <section class="overview-details" aria-label={$t("app.deviceState_a8de1")}>
+          <h2>{$t("app.controller_a36a5")}</h2>
           <dl class="facts">
 
-            <div><dt>Firmware</dt><dd data-testid="version">{firmware.version}</dd></div>
-            <div><dt>LAN address</dt><dd data-testid="lan">{snapshot.lan_ip}</dd></div>
-            <div><dt>Device time (UTC)</dt><dd data-testid="utc">{utc(snapshot.time)}</dd></div>
-            <div><dt>Uptime</dt><dd data-testid="uptime">{snapshot.uptime} s</dd></div>
-            <div><dt>Wi-Fi capability</dt><dd data-testid="wifi">{firmware.wifi ? 'Available' : 'Not available'}</dd></div>
+            <div><dt>{$t("app.firmware_0dc5f")}</dt><dd data-testid="version">{firmware.version}</dd></div>
+            <div><dt>{$t(reportedAddress?.interface==='lan'?"networkAddress.lanAddress":reportedAddress?.interface==='wifi'?"networkAddress.wifiAddress":"networkAddress.reportedAddress")}</dt><dd data-testid="lan">{reportedAddress?.address??$t("networkAddress.unavailable")}</dd></div>
+            <div><dt>{$t("app.deviceTimeUTC_99f56")}</dt><dd data-testid="utc">{utc(snapshot.time)}</dd></div>
+            <div><dt>{$t("app.uptime_6aafa")}</dt><dd data-testid="uptime">{snapshot.uptime} s</dd></div>
+            <div><dt>{$t("app.wiFiCapability_28a30")}</dt><dd data-testid="wifi">{firmware.wifi ? $t("app.available_7c62a") : $t("app.notAvailable_d1a17")}</dd></div>
           </dl>
         </section>
-        <details class="reading-details"><summary>Reading details{stale?' · stale':''}</summary>
-        <p class:stale data-testid="snapshot">{stale ? 'Last snapshot · stale' : 'Snapshot'} · {utc(snapshot.time)} · refreshes every 30 seconds while visible; failures back off to 120 seconds</p>
+        <details class="reading-details"><summary>{$t("app.readingDetails_28520")}{stale?$t("app.readbackStale_e56ed"):''}</summary>
+        <p class:stale data-testid="snapshot">{stale ? $t("app.lastSnapshotStale_329af") : $t("app.snapshot_b08ae")} · {utc(snapshot.time)} {$t("app.refreshesEvery30SecondsWhileVisibleFailuresBackOff_809d6")}</p>
         </details>
         </EditorPage>
-      {:else if route === 'help' || route === 'lighting-tools' || route === 'diagnostics' || route === 'recovery' || route === 'schedules' || route === 'sensors' || route === 'weather' || route === 'clock' || route === 'network'}
+      {:else if route === 'help' || route === 'lighting-tools' || route === 'diagnostics' || route === 'recovery' || route === 'schedules' || route === 'sensors' || route === "weather" || route === 'clock' || route === 'network'}
         <!-- The retained editor below owns drafts across navigation. -->
-      {:else if route === 'settings'}
+      {:else if route === source("systemsettings.settings_3cc1d")}
         <EditorPage>
-        <div class="heading"><div><h1>Settings</h1><p>Controller identity and device preferences.</p></div></div>
+        <div class="heading"><div><h1>{$t("app.settings_c7f73")}</h1><p>{$t("app.controllerIdentityAndDevicePreferences_603f4")}</p></div></div>
         <div class="hostname-workspace"><form class="panel settings hostname-form" onsubmit={save}>
-          <h2>Hostname</h2><p class="saved-hostname">Saved hostname{hostnameStale?' · last loaded, refresh unavailable':''}<strong>{persisted}</strong></p>
-          <label for="device-name">Hostname</label>
+          <h2>{$t("app.hostname_c983a")}</h2><p class="saved-hostname">{$t("app.savedHostname_e0495")}{hostnameStale?$t("app.lastLoadedRefreshUnavailable_51d3e"):''}<strong>{persisted}</strong></p>
+          <label for="device-name">{$t("app.hostname_c983a")}</label>
           <input id="device-name" name="hostname" type="text" bind:value={hostname} oninput={() => { status = ''; error = ''; }} disabled={busy} aria-describedby="name-help" aria-invalid={!valid} autocomplete="off" spellcheck="false" />
-          <p id="name-help">Use 1–63 letters, numbers or hyphens. Start and end with a letter or number.</p>
-          <DraftBar snapshotRevision={hostnameRevision} feedback={error} {dirty} {busy} disabled={!dirty||!valid} label="Save hostname" scope="" />
-        {#if hostnameStale||hostnameRevision!==$configurationState.revision}<button type="button" class="secondary" disabled={busy||!!$configurationState.recovery} onclick={reloadHostname}>Reload hostname · replace draft</button>{/if}
-        </form><aside class="hostname-guidance"><h2>After changing the hostname</h2><p>A changed network hostname may take effect after device restart. Saving here does not restart the device.</p><p>If access changes, network recovery provides explicit read-only verification and address recovery.</p><a href="#network">Network and connection guidance →</a></aside></div></EditorPage>
+          <p id="name-help">{$t("app.use163LettersNumbersOrHyphensStartAnd_b6f89")}</p>
+          <DraftBar snapshotRevision={hostnameRevision} feedback={$renderText(error)} {dirty} {busy} disabled={!dirty||!valid} label={$t("app.saveHostname_2dd43")} scope="" />
+        {#if hostnameStale||hostnameRevision!==$configurationState.revision}<button type="button" class="secondary" disabled={busy||!!$configurationState.recovery} onclick={reloadHostname}>{$t("app.reloadHostnameReplaceDraft_c5476")}</button>{/if}
+        </form><aside class="hostname-guidance"><h2>{$t("app.afterChangingTheHostname_f73cb")}</h2><p>{$t("app.aChangedNetworkHostnameMayTakeEffectAfterDevice_558be")}</p><p>{$t("app.ifAccessChangesNetworkRecoveryProvidesExplicitReadOnly_b185e")}</p><a href="#network">{$t("app.networkAndConnectionGuidance_8a165")}</a></aside></div></EditorPage>
       {:else}
-        <EditorPage><section class="empty-state"><h1>Page unavailable</h1><p>Choose a destination from Lighting or Device navigation, or open local Help.</p><a href="#index">Return to overview</a></section></EditorPage>
+        <EditorPage><section class="empty-state"><h1>{$t("app.pageUnavailable_0687f")}</h1><p>{$t("app.chooseADestinationFromLightingOrDeviceNavigationOr_fe862")}</p><a href="#index">{$t("app.returnToOverview_b401f")}</a></section></EditorPage>
       {/if}
     {/if}
     <Help active={route === 'help'} {busy} {firmware} {perform}/>
     {#if loaded && firmware && snapshot}
-      <LightingTools active={route === 'lighting-tools'} {busy} {firmware} {snapshot} {stale} feedback={error} {perform} {command} refresh={()=>refresh()} readback={async()=>{try{await readState();}catch(e){uncertain();throw e;}}} onedit={clearFeedback}/>
+      <LightingTools active={route === 'lighting-tools'} {busy} {firmware} {snapshot} {stale} feedback={$renderText(error)} {perform} {command} refresh={()=>refresh()} readback={async()=>{try{await readState();}catch(e){uncertain();throw e;}}} onedit={clearFeedback}/>
       <Diagnostics active={route === 'diagnostics'} {busy} {firmware} {perform}/>
       <Recovery active={route === 'recovery'} {busy} {firmware} {perform} onconfigurationchange={recoveryChanged} onread={(next, info, name) => { ++revision; snapshot=next; firmware=info; configurationVerified(); if(hostname===persisted){hostname=name;hostnameRevision=configurationRevision();} persisted=name; hostnameStale=false;stale=false; overviewChannel=Math.min(overviewChannel,info.pwm_count); invalidateConfiguration(); }} />
-      <SystemSettings feedback={error} active={route === 'clock'} kind="clock" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
-      <SystemSettings feedback={error} active={route === 'network'} kind="network" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
+      <SystemSettings feedback={$renderText(error)} active={route === 'clock'} kind="clock" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
+      <SystemSettings feedback={$renderText(error)} active={route === 'network'} kind="network" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
     {/if}
-    {#if loaded && firmware && snapshot}<Weather feedback={error} active={route === 'weather'} {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />{/if}
-    {#if loaded && firmware && snapshot}<Sensors feedback={error} active={route === 'sensors'} {busy} {firmware} {snapshot} {stale} {perform} refresh={() => refresh()} onedit={clearFeedback} />{/if}
-    {#if loaded && firmware}<ChannelConfiguration feedback={error} bind:this={channelConfiguration} active={route === 'channels'} {busy} {firmware} {perform} onedit={clearFeedback} onsaved={(channels)=>{
+    {#if loaded && firmware && snapshot}<Weather feedback={$renderText(error)} active={route === 'weather'} {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />{/if}
+    {#if loaded && firmware && snapshot}<Sensors feedback={$renderText(error)} active={route === 'sensors'} {busy} {firmware} {snapshot} {stale} {perform} refresh={() => refresh()} onedit={clearFeedback} />{/if}
+    {#if loaded && firmware}<ChannelConfiguration feedback={$renderText(error)} bind:this={channelConfiguration} active={route === 'channels'} {busy} {firmware} {perform} onedit={clearFeedback} onsaved={(channels)=>{
       if(serviceSettings){
         const accepted=JSON.parse(serviceBaseline) as ServiceSettings;
         serviceSettings.channels.forEach((c,i)=>{
@@ -465,7 +469,7 @@ Third-party material retains its own terms.
         serviceBaseline=JSON.stringify(accepted);
       }
     }}/>{/if}
-    {#if loaded && firmware}<DevicePreferences active={route === 'settings'} {busy} {firmware} feedback={error} {perform} onedit={clearFeedback}/>{/if}
+    {#if loaded && firmware}<DevicePreferences active={route === 'settings'} {busy} {firmware} feedback={$renderText(error)} {perform} onedit={clearFeedback}/>{/if}
     {#if loaded && firmware}<Schedules ondraftview={value=>scheduleUnsaved=value} active={route === 'schedules'} {busy} {firmware} {perform} onedit={clearFeedback} />{/if}
   </main>
 </AppShell>
@@ -496,7 +500,7 @@ Third-party material retains its own terms.
   .overview-outputs :global(.meter-key) { font-size:12px; margin:12px 0 0; }
   .overview-links { display:flex; flex-wrap:wrap; gap:8px 24px; }
   .overview-links a { min-height:44px; display:flex; align-items:center; gap:12px; font-size:14px; font-weight:600; }
-  .overview-details { margin-top:28px; padding-top:20px; border-top:1px solid var(--sr-line); }
+  .overview-details { margin-top:18px; padding-top:16px; border-top:1px solid var(--sr-line); }
   .overview-details :global(h2) { font-size:15px; }
   .overview-details :global(.facts) { grid-template-columns:1fr 1fr 1.7fr .7fr 1fr; gap:16px; }
   .overview-details :global(dd) { font-size:13px; font-weight:500; }

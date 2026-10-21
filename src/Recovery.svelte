@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import FilePicker from "./ui/FilePicker.svelte";
+ import {t,renderText,language,source} from './i18n';
   import EditorPage from './ui/EditorPage.svelte';
   import StateBadge from './ui/StateBadge.svelte';
   import type { Firmware, DeviceState } from "./api";
@@ -48,13 +50,13 @@ Third-party material retains its own terms.
   let backup = $state<Uint8Array>(),
     values = $state<Record<string, unknown>>(),
     backupName = $state(""),
-    backupMessage = $state("Select one MessagePack backup."),
+    backupMessage = $state(source("recovery.selectOneMessagePackBackup_41830")),
     image = $state<Uint8Array>(),
     imageInfo = $state<BeeInfo>(),
     imageName = $state(""),
-    imageMessage = $state("Select one local BEE file.");
+    imageMessage = $state(source("recovery.selectOneLocalBEEFile_37a4d"));
   let confirm = $state<Operation>(),
-    result = $state("No recovery operation requested."),
+    result = $state(source("recovery.noRecoveryOperationRequested_b80e1")),
     progress = $state(""),
     selecting = $state(false),
     demo = $state<keyof typeof demos>("standard");
@@ -68,11 +70,11 @@ Third-party material retains its own terms.
     node.querySelector<HTMLButtonElement>("[data-cancel]")?.focus();
   }
   const labels: Record<Operation, string> = {
-    restore: "Restore configuration",
-    firmware: "Install firmware",
-    factory: "Replace factory image and clear configuration",
-    reset: "Clear configuration",
-    reboot: "Reboot device",
+    restore: source("recovery.restoreConfiguration"),
+    firmware: source("recovery.installFirmware"),
+    factory: source("recovery.replaceFactory"),
+    reset: source("recovery.clearConfiguration"),
+    reboot: source("recovery.rebootDevice"),
   };
   async function selectFile(event: Event, kind: "backup" | "firmware") {
     const file = (event.currentTarget as HTMLInputElement).files?.[0];
@@ -89,20 +91,20 @@ Third-party material retains its own terms.
     }
     try {
       if (file.size > (kind === "backup" ? BACKUP_LIMIT : BEE_LIMIT))
-        throw Error("File exceeds local size limit");
+        throw Error(source("recovery.fileExceedsLocalSizeLimit_9aa65"));
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (kind === "backup") {
         values = validateBackup(bytes, firmware.pwm_count);
         backup = bytes;
-        backupMessage = `${file.name}: ${Object.keys(values).length} keys, ${bytes.length} bytes. Format valid; setting semantics are not fully validated.`;
+        backupMessage = source("recovery.v0V1KeysV2BytesFormatValidSettingSemantics_6cdba",{v0:file.name,v1:Object.keys(values).length,v2:bytes.length});
       } else {
         imageInfo = await validateBee(bytes, firmware.pwm_count);
         image = bytes;
-        imageMessage = `${file.name}: ${bytes.length} bytes. ${imageInfo.filename} — ${imageInfo.description}`;
+        imageMessage = source("recovery.v0V1BytesV2V3_7cb37",{v0:file.name,v1:bytes.length,v2:imageInfo.filename,v3:imageInfo.description});
       }
     } catch (e) {
-      if (kind === "backup") backupMessage = `Invalid backup: ${String(e)}`;
-      else imageMessage = `Invalid firmware: ${String(e)}`;
+      if (kind === "backup") backupMessage = source("recovery.invalidBackupV0_5f6e4",{v0:String(e)});
+      else imageMessage = source("recovery.invalidFirmwareV0_acb6c",{v0:String(e)});
     } finally {
       selecting = false;
     }
@@ -113,11 +115,11 @@ Third-party material retains its own terms.
       values = validateBackup(bytes, firmware.pwm_count);
       backup = bytes;
       backupName = demo + ".mp";
-      backupMessage = `${backupName}: ${Object.keys(values).length} keys, ${bytes.length} bytes. Example will merge its supplied settings.`;
+      backupMessage = source("recovery.v0V1KeysV2BytesExampleWillMergeIts_0164b",{v0:backupName,v1:Object.keys(values).length,v2:bytes.length});
     } catch (e) {
       backup = undefined;
       values = undefined;
-      backupMessage = "Invalid example: " + String(e);
+      backupMessage = source("recovery.invalidExampleDetail",{v0:String(e)});
     }
   }
   async function exportBackup(factory = false) {
@@ -133,13 +135,13 @@ Third-party material retains its own terms.
           factory ? "factory-reset-backup.mp" : "sunriser-backup.mp",
         );
       },
-      "Backup downloaded.",
-      "Backup download failed.",
-      "Downloading backup…",
+      source("recovery.backupDownloaded_2e9e2"),
+      source("recovery.backupDownloadFailed_5313c"),
+      source("recovery.downloadingBackup_42e9c"),
     );
     result = ok
-      ? "Backup downloaded. Stored overrides only; protect any credentials in this file."
-      : "Download failed. The backup may be missing or empty, or the connection unavailable. No configuration was changed.";
+      ? source("recovery.backupDownloadedStoredOverridesOnlyProtectAnyCredentialsIn_b4b92")
+      : source("recovery.downloadFailedTheBackupMayBeMissingOrEmpty_3d2f7");
   }
   async function execute() {
     const op = confirm;
@@ -147,17 +149,17 @@ Third-party material retains its own terms.
     confirm = undefined;
     expected = op === "restore" ? backup : undefined;
     readbackFailed=false;
-    result = "Operation in progress…";
+    result = source("recovery.operationInProgress_c80f6");
     progress =
       op === "restore"
-        ? `Sending ${backup!.length} backup bytes…`
+        ? source("recovery.sendingV0BackupBytes_1fce9",{v0:backup!.length})
         : op === "factory"
-          ? `Sending ${image!.length} factory image bytes…`
+          ? source("recovery.sendingV0FactoryImageBytes_2dc9d",{v0:image!.length})
           : op === "reset"
-            ? "Requesting deletion of stored configuration…"
+            ? source("recovery.requestingDeletionOfStoredConfiguration_4514b")
             : op === "reboot"
-              ? "Requesting reboot; the connection may close…"
-              : "Preparing firmware upload…";
+              ? source("recovery.requestingRebootTheConnectionMayClose_65b90")
+              : source("recovery.preparingFirmwareUpload_c5ea7");
     let failure: unknown;
     const framing = op === "restore" && restoreFraming;
     const ok = await perform(
@@ -171,24 +173,24 @@ Third-party material retains its own terms.
           throw e;
         }
       },
-      "Recovery request acknowledged. Check device readback.",
-      "Recovery request failed or outcome uncertain. No automatic retry.",
-      "Sending recovery request…",
+      source("recovery.recoveryRequestAcknowledgedCheckDeviceReadback_4286b"),
+      source("recovery.recoveryRequestFailedOrOutcomeUncertainNoAutomaticRetry_70175"),
+      source("recovery.sendingRecoveryRequest_3cd5b"),
     );
     progress = "";
     if (ok && op === "restore") restoreFraming = false;
     result = ok
       ? {
           restore:
-            "Restore accepted for processing. Values are not yet verified.",
+            source("recovery.restoreAccepted"),
           firmware:
-            "Installation requested. Upload acceptance is not proof of installation or boot.",
+            source("recovery.installRequested"),
           factory:
-            "Factory replacement requested. Configuration may be cleared; installation and boot are not proven.",
+            source("recovery.factoryRequested"),
           reset:
-            "Reset accepted. Stored overrides were requested to be deleted; active settings may remain until explicit reboot.",
+            source("recovery.resetAccepted"),
           reboot:
-            "Reboot requested. A disconnect is expected; successful boot is not proven.",
+            source("recovery.rebootRequested"),
         }[op]
       : failureText(op, failure, framing);
   }
@@ -197,15 +199,15 @@ Third-party material retains its own terms.
     if (e instanceof RecoveryError && e.stage === "upload") {
       if (op === "restore" && e.status === 413 && !framing) {
         restoreFraming = true;
-        return `${what}: upload rejected by the device with HTTP 413 before it was accepted. The device did not acknowledge a restore. This firmware can misread a request whose headers end exactly at a network packet boundary, which depends on headers your browser adds. Nothing was retried. Treat the outcome as uncertain until device readback confirms it. You may review and submit the same backup again: the next attempt adds a small header to change the request's framing.`;
+        return source("recovery.v0UploadRejectedByTheDeviceWithHTTP413_cd6ac",{v0:what});
       }
-      return `${what}: the device answered HTTP ${e.status} instead of an acknowledgement. The outcome is uncertain: part of the operation may have been applied. Do not assume it was rolled back. No write was retried. Check device readback before deciding to submit again.`;
+      return source("recovery.v0TheDeviceAnsweredHTTPV1InsteadOfAn_29214",{v0:what,v1:e.status});
     }
     if (e instanceof RecoveryError && e.stage === "acknowledgement")
-      return `${what}: the device answered without the expected acknowledgement. The outcome is uncertain. Do not assume it was applied or rolled back. No write was retried. Check device readback before deciding to submit again.`;
+      return source("recovery.v0TheDeviceAnsweredWithoutTheExpectedAcknowledgementThe_86c49",{v0:what});
     if (e instanceof RecoveryError && e.stage === "connection")
-      return `${what}: no complete response from the device (${e.message.split(": ").pop()}). The outcome is uncertain. Do not assume it was applied or rolled back. No write was retried. Check device readback before deciding to submit again.`;
-    return "Operation failed or outcome uncertain. Do not assume it was rolled back. No write was retried. Check device readback before deciding to submit again.";
+      return source("recovery.v0NoCompleteResponseFromTheDeviceV1The_6fd86",{v0:what,v1:e.message.split(": ").pop()});
+    return source("recovery.operationFailedOrOutcomeUncertainDoNotAssumeIt_7a4d6");
   }
   async function run(op: Operation, framing: boolean) {
     if (op === "restore")
@@ -223,99 +225,89 @@ Third-party material retains its own terms.
       async () => {
         const read = await readRecovery(firmware, expected);
         onread(read.state, read.firmware, read.hostname);
-        text = `${expected ? "Restored values verified. " : ""}Device reachable: ${read.firmware.sunriser}, firmware ${read.firmware.version}, timestamp ${read.firmware.timestamp ?? "unavailable"}, uptime ${read.state.uptime} s, hostname: ${read.hostname}. Installation and successful physical boot are not proven. Reload other editors explicitly to reconcile their retained drafts.`;
+        text = source("recovery.v0DeviceReachableV1FirmwareV2TimestampV3Uptime_b254d",{v0:expected ? source("recovery.restoredValuesVerified_3f019")+" " : "",v1:read.firmware.sunriser,v2:read.firmware.version,v3:read.firmware.timestamp ?? "unavailable",v4:read.state.uptime,v5:read.hostname});
       },
-      "Recovery readback complete.",
-      "Recovery readback not verified.",
-      "Checking device readback…",
+      source("recovery.recoveryReadbackComplete_f8e8b"),
+      source("recovery.recoveryReadbackNotVerified_d63fe"),
+      source("recovery.checkingDeviceReadback_762a2"),
     );
     readbackFailed=!!expected&&!ok;
     result = ok
       ? text
-      : "Device or values not verified. It may still be processing or unavailable. This check sent reads only; check again explicitly when ready. No write was retried.";
+      : source("recovery.deviceOrValuesNotVerifiedItMayStillBe_676ab");
   }
   async function inspectCurrent() {
     const ok=await perform(async()=>{
       const read=await readRecovery(firmware);
       onread(read.state,read.firmware,read.hostname);
-    },'Current device readback checked; restore remains unverified.','Current device readback unavailable. No write was retried.','Reading current device state…');
-    result=ok?'Current device readback checked. The restore outcome is still unverified. Saved configuration will be read again as pages need it. Retained editor drafts require explicit reconciliation before saving. No restore or other write was repeated.':'Current device readback unavailable. Check the known device address and connection, then explicitly check again. The restore remains unverified. No write was retried.';
+    },source("recovery.currentDeviceReadbackCheckedRestoreRemainsUnverified_b87ac"),source("recovery.currentDeviceReadbackUnavailableNoWriteWasRetried_f07ae"),source("recovery.readingCurrentDeviceState_d43e5"));
+    result=ok?source("recovery.currentDeviceReadbackCheckedTheRestoreOutcomeIsStill_2bf8c"):source("recovery.currentDeviceReadbackUnavailableCheckTheKnownDeviceAddress_eb1c8");
   }
 
 </script>
 
 {#if active}
 <EditorPage>
-  <div class="heading"><div><h1 id="recovery-title">Recovery</h1><p>Back up, restore and verify your device.</p></div>    <button class="secondary" onclick={verify} disabled={busy || selecting}
-      >Check device readback</button
+  <div class="heading"><div><h1 id="recovery-title">{$t("help.recovery_ea924")}</h1><p>{$t("recovery.backUpRestoreAndVerifyYourDevice_e0ecc")}</p></div>    <button class="secondary" onclick={verify} disabled={busy || selecting}
+      >{$t("recovery.checkDeviceReadback_bdde8")}</button
     ></div>
   <section class="panel readback recovery-status" aria-labelledby="recovery-title">
-    <StateBadge tone={busy||selecting?'draft':'neutral'}>{selecting?'Checking local file':busy?'Operation pending':'Recovery status'}</StateBadge>
+    <StateBadge tone={busy||selecting?'draft':'neutral'}>{selecting?$t("recovery.checkingLocalFile_7ff31"):busy?$t("app.operationPending_c929e"):$t("recovery.recoveryStatus_8cbaf")}</StateBadge>
     <p>
-      Local files and same-origin device operations only. Back up before
-      changing configuration or firmware. Files may contain Wi-Fi credentials.
-      Operations can interrupt lighting and connectivity.
+      {$t("recovery.localFilesAndSameOriginDeviceOperationsOnlyBack_fb3a5")}
     </p>
     <p>
-      Unsaved edits on other pages remain in this tab. After recovery, reload or
-      reconcile each editor explicitly before saving old drafts. A browser
-      reload discards drafts.
+      {$t("recovery.unsavedEditsOnOtherPagesRemainInThisTab_4bfe3")}
     </p>
-    <p data-testid="recovery-result" aria-live="polite">{result}</p>
-    {#if progress}<p aria-live="polite">{progress}</p>{/if}
-    {#if readbackFailed}<p>The restored values could not be confirmed. You can inspect the controller's current state without confirming or repeating the restore. Saved settings will be read again; retained drafts still need reconciliation.</p><button class="secondary" onclick={inspectCurrent} disabled={busy||selecting}>Inspect current device state</button>{/if}
+    <p data-testid="recovery-result" aria-live="polite">{$renderText(result)}</p>
+    {#if progress}<p aria-live="polite">{$renderText(progress)}</p>{/if}
+    {#if readbackFailed}<p>{$t("recovery.theRestoredValuesCouldNotBeConfirmedYouCan_0ce81")}</p><button class="secondary" onclick={inspectCurrent} disabled={busy||selecting}>{$t("recovery.inspectCurrentDeviceState_ac453")}</button>{/if}
 
 
   </section>
   <div class="recovery-layout"><section class="panel backups">
-    <h2>Backups and restore</h2>
+    <h2>{$t("recovery.backupsAndRestore_3b5bb")}</h2>
     <p>
-      Backups contain stored overrides, not every factory default. Factory-reset
-      backup means the configuration saved by a previous bootloader factory
-      reset; it may not exist. Configuration reset and factory replacement below
-      do not create that backup.
+      {$t("recovery.backupsContainStoredOverridesNotEveryFactoryDefaultFactory_32402")}
     </p>
     <div class="form-actions">
       <button onclick={() => exportBackup()} disabled={busy || selecting}
-        >Download backup</button
+        >{$t("recovery.downloadBackup_feddb")}</button
       ><button onclick={() => exportBackup(true)} disabled={busy || selecting}
-        >Download factory-reset backup</button
+        >{$t("recovery.downloadFactoryResetBackup_dad09")}</button
       >
     </div>
-    <label for="backup-file">Backup file</label><input
-      id="backup-file"
-      type="file"
+    <label for="backup-file">{$t("recovery.backupFile_67b33")}</label><FilePicker id="backup-file" label={$t("recovery.backupFile_67b33")}
+
       accept=".mp,application/octet-stream"
       onchange={(e) => selectFile(e, "backup")}
       disabled={busy || selecting}
     />
-    <p data-testid="recovery-validation">{backupMessage}</p>
+    <p data-testid="recovery-validation">{$renderText(backupMessage)}</p>
     {#if values}<details>
-        <summary>Keys to merge ({Object.keys(values).length})</summary>
+        <summary>{$t("recovery.keysToMerge_ffba5")}{Object.keys(values).length})</summary>
         <p class="recovery-keys">{Object.keys(values).join(", ")}</p>
       </details>{/if}
     <p>
-      Restore merges supplied keys and retains other settings. It can change the
-      network address. It is not transactional; a failure can leave partial
-      changes. Unknown settings and binary values are preserved.
+      {$t("recovery.restoreMergesSuppliedKeysAndRetainsOtherSettingsIt_390fa")}
     </p>
     <button
       onclick={() => (confirm = "restore")}
-      disabled={busy || selecting || !backup}>Review restore</button
+      disabled={busy || selecting || !backup}>{$t("recovery.reviewRestore_fcf3c")}</button
     >
-    <div class="panel"><h3>Bundled examples</h3><p>Preview prepares a local restore draft. Only a confirmed restore writes to the device.</p>
-    <label for="example">Example configuration</label><select
+    <div class="panel"><h3>{$t("recovery.bundledExamples_c484b")}</h3><p>{$t("recovery.previewPreparesALocalRestoreDraftOnlyAConfirmed_227fd")}</p>
+    <label for="example">{$t("recovery.exampleConfiguration_7c784")}</label><select
       id="example"
       bind:value={demo}
       disabled={busy || selecting}
-      ><option value="standard">Standard</option><option value="african_sun"
+      ><option value="standard">{$t("recovery.standard_2dfa6")}</option><option value="african_sun"
         >aquaLUMix AFRICAN-SUN</option
       ><option value="amazon_grow">aquaLUMix AMAZON-GROW</option><option
         value="deepblue">aquaLUMix DEEP-BLUE</option
       ><option value="spotbeam">spotBEAM</option></select
     >
     <button onclick={previewDemo} disabled={busy || selecting}
-      >Preview example</button
+      >{$t("recovery.previewExample_69356")}</button
     >
     <button
       class="secondary"
@@ -324,57 +316,45 @@ Third-party material retains its own terms.
           Uint8Array.from(atob(demos[demo]), (c) => c.charCodeAt(0)),
           demo + ".mp",
         )}
-      disabled={busy || selecting}>Download example</button
+      disabled={busy || selecting}>{$t("recovery.downloadExample_ae8b8")}</button
     ></div>
   </section>
   <section class="panel">
-    <h2>Local firmware</h2>    <p>
-      Check device readback sends reads only, with no automatic polling or write retries.
-      If the address changes, use <a href="#network">network recovery</a>. Do
-      not power off during installation. The uploaded bundle may replace this
-      website; reload the browser only after checking the device.
+    <h2>{$t("recovery.localFirmware_69ac6")}</h2>    <p>
+      {$t("recovery.checkDeviceReadbackSendsReadsOnlyWithNoAutomatic_66671")} <a href="#network">{$t("recovery.networkRecovery_1b0e2")}</a>{$t("recovery.doNotPowerOffDuringInstallationTheUploadedBundle_68137")}
     </p>
     <p>
-      Use a trusted BEE file for {firmware.sunriser}. Structural checks and a
-      checksum do not authenticate its source or prove executable safety. No
-      online catalogue or download is used.
+      {$t("recovery.useATrustedBEEFileFor_8383f")} {firmware.sunriser}{$t("recovery.structuralChecksAndAChecksumDoNotAuthenticateIts_ef31e")}
     </p>
-    <label for="firmware-file">Firmware BEE file</label><input
-      id="firmware-file"
-      type="file"
+    <label for="firmware-file">{$t("recovery.firmwareBEEFile_8e65b")}</label><FilePicker id="firmware-file" label={$t("recovery.firmwareBEEFile_8e65b")}
+
       accept=".bee,.BEE"
       onchange={(e) => selectFile(e, "firmware")}
       disabled={busy || selecting}
     />
-    <p data-testid="firmware-validation">{imageMessage}</p>
+    <p data-testid="firmware-validation">{$renderText(imageMessage)}</p>
     {#if imageInfo}<p>
-        Timestamp: {imageInfo.timestamp}. SHA-256:
+        {$t("recovery.timestamp_a9c75")} {imageInfo.timestamp}{$t("recovery.sha256_df745")}
         <code class="recovery-keys">{imageInfo.sha256}</code>
       </p>{/if}
     <button
       onclick={() => (confirm = "firmware")}
-      disabled={busy || selecting || !image}>Review firmware update</button
+      disabled={busy || selecting || !image}>{$t("recovery.reviewFirmwareUpdate_52509")}</button
     >
   </section>
   <section class="panel danger-zone">
-    <h2>Reset and restart</h2><p>These operations can remove settings or interrupt the device. Each requires a separate confirmation.</p>
+    <h2>{$t("recovery.resetAndRestart_b406a")}</h2><p>{$t("recovery.theseOperationsCanRemoveSettingsOrInterruptTheDevice_98962")}</p>
     <p>
-      Configuration reset deletes all stored overrides, including network
-      settings. Defaults become visible in storage immediately; active settings
-      may require a separate reboot. Firmware is retained. Physical bootloader
-      rescue is not available here.
+      {$t("recovery.configurationResetDeletesAllStoredOverridesIncludingNetworkSettings_30a2c")}
     </p>
     <button class="danger" onclick={() => (confirm = "reset")} disabled={busy || selecting}
-      >Review configuration reset</button
+      >{$t("recovery.reviewConfigurationReset_c5c18")}</button
     >
     <button onclick={() => (confirm = "reboot")} disabled={busy || selecting}
-      >Review reboot</button
+      >{$t("recovery.reviewReboot_88341")}</button
     >
-    <div class="panel"><h3>Replace the factory recovery image</h3>    <p>
-      Factory replacement also clears configuration and replaces the recovery
-      image. It does not preserve a configuration backup. The selected timestamp
-      must match the running firmware; no claim about the latest vendor release
-      is made.
+    <div class="panel"><h3>{$t("recovery.replaceTheFactoryRecoveryImage_ddcd2")}</h3>    <p>
+      {$t("recovery.factoryReplacementAlsoClearsConfigurationAndReplacesTheRecovery_0351a")}
     </p>
     <button class="danger"
       onclick={() => (confirm = "factory")}
@@ -382,7 +362,7 @@ Third-party material retains its own terms.
         selecting ||
         !image ||
         imageInfo?.timestamp !== firmware.timestamp}
-      >Review factory replacement</button
+      >{$t("recovery.reviewFactoryReplacement_7948d")}</button
     >
 </div>
   </section>
@@ -394,37 +374,31 @@ Third-party material retains its own terms.
       oncancel={() => (confirm = undefined)}
       aria-labelledby="confirm-title"
     >
-      <h2 id="confirm-title">{labels[confirm]}</h2>
-      <p>Target: {firmware.sunriser} at this browser origin.</p>
+      <h2 id="confirm-title">{$renderText(labels[confirm])}</h2>
+      <p>{$t("recovery.target_652ac")} {firmware.sunriser} {$t("recovery.atThisBrowserOrigin_701b8")}</p>
       {#if confirm === "restore"}<p>
-          Merge {backupName} ({Object.keys(values ?? {}).length} keys). Existing
-          supplied keys will be overwritten. Other keys remain. Network access and
-          lighting can change.
+          {$t("recovery.merge_ea8f0")} {backupName} ({Object.keys(values ?? {}).length} {$t("recovery.keysExistingSuppliedKeysWillBeOverwrittenOtherKeys_5f16f")}
         </p>
       {:else if confirm === "firmware" || confirm === "factory"}<p>
-          Send {imageName}: {imageInfo?.filename}. {confirm === "factory"
-            ? "This replaces the factory recovery image and clears configuration."
-            : "This installs firmware and may replace the website."} Installation
-          can disconnect this browser. Do not power off.
+          {$t("recovery.send_9bc25")} {imageName}: {imageInfo?.filename}. {confirm === "factory"
+            ? $t("recovery.thisReplacesTheFactoryRecoveryImageAndClearsConfiguration_bf4cb")
+            : $t("recovery.thisInstallsFirmwareAndMayReplaceTheWebsite_153d1")} {$t("recovery.installationCanDisconnectThisBrowserDoNotPowerOff_29292")}
         </p>
       {:else if confirm === "reset"}<p>
-          Delete every stored configuration override. This cannot be undone
-          without a backup. No automatic reboot.
+          {$t("recovery.deleteEveryStoredConfigurationOverrideThisCannotBeUndone_14b25")}
         </p>
       {:else}<p>
-          Interrupt operation and request a device reboot. Network settings may
-          take effect and change its address.
+          {$t("recovery.interruptOperationAndRequestADeviceRebootNetworkSettings_6a51d")}
         </p>{/if}
       <p>
-        No automatic retry. A lost response is an uncertain outcome, not
-        success.
+        {$t("recovery.noAutomaticRetryALostResponseIsAnUncertain_12d02")}
       </p>
       <div class="form-actions">
-        <button class="danger" onclick={execute} disabled={busy}>Confirm operation</button
+        <button class="danger" onclick={execute} disabled={busy}>{$t("recovery.confirmOperation_84d7c")}</button
         ><button
           class="secondary"
           data-cancel
-          onclick={() => (confirm = undefined)}>Cancel</button
+          onclick={() => (confirm = undefined)}>{$t("recovery.cancel_77dfd")}</button
         >
       </div>
     </dialog>

@@ -1,3 +1,4 @@
+import {source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -19,7 +20,7 @@ export function parseSensorState(value: unknown) {
   const readings: Record<string, Reading> = {};
   const errors: string[] = [];
   if (value == null) return { readings, errors };
-  if (!object(value)) return { readings, errors: ["Invalid sensor state map"] };
+  if (!object(value)) return { readings, errors: [source("sensors.invalidSensorStateMap_083aa")] };
   for (const [rom, v] of Object.entries(value)) {
     if (
       !romPattern.test(rom) ||
@@ -32,7 +33,7 @@ export function parseSensorState(value: unknown) {
       v[1] < -32768 ||
       v[1] > 32767
     )
-      errors.push(`Invalid sensor reading: ${rom}`);
+      errors.push(source("sensors.invalidSensorReadingV0_1aea1",{v0:rom}));
     else readings[rom] = { device: v[0], value: v[1] };
   }
   return { readings, errors };
@@ -61,9 +62,9 @@ export async function loadSensorIndex(count: number) {
   let catalogue: Catalogue = {};
   if (values["sensors#web"] != null && values["sensors#web"] !== "") {
     if (typeof values["sensors#web"] !== "string")
-      throw Error("Invalid sensor catalogue");
+      throw Error(source("sensors.invalidSensorCatalogue_cd8df"));
     const parsed: unknown = JSON.parse(values["sensors#web"]);
-    if (!object(parsed)) throw Error("Invalid sensor catalogue");
+    if (!object(parsed)) throw Error(source("sensors.invalidSensorCatalogue_cd8df"));
     for (const [rom, entry] of Object.entries(parsed)) {
       if (
         !romPattern.test(rom) ||
@@ -72,7 +73,7 @@ export async function loadSensorIndex(count: number) {
         typeof entry.name !== "string" ||
         !Number.isInteger(entry.device)
       )
-        throw Error("Invalid sensor catalogue entry");
+        throw Error(source("sensors.invalidSensorCatalogueEntry_77a80"));
     }
     catalogue = parsed as Catalogue;
   }
@@ -88,7 +89,7 @@ export async function loadSensorIndex(count: number) {
       manager > 4 ||
       typeof name !== "string"
     )
-      throw Error("Invalid sensor channel metadata");
+      throw Error(source("sensors.invalidSensorChannelMetadata_7eea4"));
     return { binary, manager, name };
   });
   return { catalogue, channels };
@@ -174,26 +175,26 @@ export async function loadSensor(
       n < -32768 ||
       n > 32767
     )
-      throw Error("Invalid sensor number");
+      throw Error(source("sensors.invalidSensorNumber_b5357"));
     return n;
   };
   const bool = (f: string) => {
     const b = value(f, false);
-    if (typeof b !== "boolean") throw Error("Invalid sensor flag");
+    if (typeof b !== "boolean") throw Error(source("sensors.invalidSensorFlag_cc359"));
     return b;
   };
   const name = value("name", entry.name);
-  if (typeof name !== "string") throw Error("Invalid sensor name");
+  if (typeof name !== "string") throw Error(source("sensors.invalidSensorName_c0407"));
   const min = num("min", 150),
     max = num("max", 350);
-  if (min > max) throw Error("Invalid sensor bounds");
+  if (min > max) throw Error(source("sensors.invalidSensorBounds_1bb8f"));
   const months = value("months", []);
   if (
     !Array.isArray(months) ||
     months.some((m) => !Number.isInteger(m) || m < 1 || m > 12) ||
     new Set(months).size !== months.length
   )
-    throw Error("Invalid sensor months");
+    throw Error(source("sensors.invalidSensorMonths_6d03f"));
   const draft = defaults(channels.length, name, min, max);
   Object.assign(draft, {
     active: bool("active"),
@@ -213,7 +214,7 @@ export async function loadSensor(
             percent > 200 ||
             (ch.binary && percent !== 0 && percent !== 100)
           )
-            throw Error("Invalid sensor percent");
+            throw Error(source("sensors.invalidSensorPercent_dfaa3"));
           return [
             side,
             {

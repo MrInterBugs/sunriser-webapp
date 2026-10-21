@@ -2,6 +2,8 @@
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
  * Part of the modern SunRiser frontend; see LICENSING.md and LICENSE.
  */
+import {en} from './locales/en.js';
+import {de} from './locales/de.js';
 import {createHash} from 'node:crypto';
 import type {Plugin} from 'vite';
 
@@ -23,18 +25,25 @@ export function sequentialStartup(): Plugin {
         if (!/^\.\/a\/[A-Za-z0-9_-]+\.(js|css)$/.test(url)) throw Error('Unexpected startup asset path');
       // No automatic resource retry or API work. On failure, keep the application
       // unmounted and offer an ordinary, explicitly chosen reload.
+      const startupMessages=Object.fromEntries(['en','de'].map(locale=>{const catalogue=locale==='de'?de:en;return [locale,Object.fromEntries(['loading','starting','failed','reload','label'].map(name=>[name,catalogue[('startup.'+name) as keyof typeof en]]))];}));
       const source = `/* SunRiser sequential startup; GPL-3.0-or-later */
+let locale='en';try{if(localStorage.getItem('sunriser.language')==='de')locale='de';}catch{}
+document.documentElement.lang=locale;
+const messages=${JSON.stringify(startupMessages)}[locale];
 const status=document.getElementById('startup-status');
+status.textContent=messages.loading;
+document.getElementById('startup').setAttribute('aria-label',messages.label);
+document.querySelector('#startup a').textContent=messages.reload;
 try {
  const css=document.createElement('link');css.rel='stylesheet';css.href=new URL(${JSON.stringify(style[1].replace('./a/','./'))},import.meta.url).href;
  await new Promise((resolve,reject)=>{css.onload=resolve;css.onerror=()=>reject(Error('stylesheet'));document.head.append(css)});
  if(!css.sheet||css.sheet.cssRules.length===0)throw Error('stylesheet');
- status.textContent='Starting interface…';
+ status.textContent=messages.starting;
  await import(${JSON.stringify(script[1].replace('./a/','./'))});
  if(!document.getElementById('app')?.childElementCount)throw Error('application');
  document.getElementById('startup')?.remove();
 } catch {
- status.textContent='The interface could not load. Check the connection, then reload the interface.';
+ status.textContent=messages.failed;
  status.setAttribute('role','alert');
 }
 `;

@@ -1,3 +1,4 @@
+import {source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -37,11 +38,11 @@ export function validateBackup(
   encodedValues?: Map<string, Uint8Array>,
 ): Record<string, unknown> {
   if (!bytes.length || bytes.length > BACKUP_LIMIT)
-    fail("Backup size must be 1 byte to 8 MiB");
+    fail(source("recovery.backupSizeMustBe1ByteTo8MiB_fc1a5"));
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let pos = 0;
   const take = (n: number) => {
-    if (n < 0 || pos + n > bytes.length) fail("Truncated MessagePack");
+    if (n < 0 || pos + n > bytes.length) fail(source("recovery.truncatedMessagePack_96a79"));
     const start = pos;
     pos += n;
     return start;
@@ -55,7 +56,7 @@ export function validateBackup(
         : view.getUint32(at);
   };
   function scan(depth: number, key = false, root = false): string | undefined {
-    if (depth > 9) fail("Value nesting exceeds C limit of eight");
+    if (depth > 9) fail(source("recovery.valueNestingExceedsCLimitOfEight_4a7db"));
     const t = number(1);
     let len = -1,
       map = -1,
@@ -65,22 +66,22 @@ export function validateBackup(
       len = number(t === 0xd9 ? 1 : t === 0xda ? 2 : 4);
     if (len >= 0) {
       const at = take(len);
-      if (root) fail("Expected map");
+      if (root) fail(source("recovery.expectedMap_69230"));
       // Canonical BEE/backup records can use STR for opaque binary values.
       // Only map keys require UTF-8. Never decode/re-encode the upload payload.
       return key ? utf8.decode(bytes.subarray(at, at + len)) : undefined;
     }
-    if (key) fail("Map keys must be strings");
+    if (key) fail(source("recovery.mapKeysMustBeStrings_afd68"));
     if ((t & 0xf0) === 0x80) map = t & 15;
     else if (t === 0xde || t === 0xdf) map = number(t === 0xde ? 2 : 4);
     if (map >= 0) {
-      if (root && map === 0) fail("Empty backup");
+      if (root && map === 0) fail(source("recovery.emptyBackup_e51b5"));
       const keys = new Set<string>(),
         hashes = new Set<number>();
       for (let i = 0; i < map; i++) {
         const k = scan(depth + 1, true)!;
         if (keys.has(k) || k === "__proto__")
-          fail("Duplicate or unsafe map key");
+          fail(source("recovery.duplicateOrUnsafeMapKey_83fcf"));
         keys.add(k);
         if (root) {
           const encoded = new TextEncoder().encode(k);
@@ -91,7 +92,7 @@ export function validateBackup(
             k.includes("\0") ||
             hashes.has(h)
           )
-            fail("Invalid or colliding configuration key");
+            fail(source("recovery.invalidOrCollidingConfigurationKey_83661"));
           hashes.add(h);
         }
         const start = pos;
@@ -100,7 +101,7 @@ export function validateBackup(
       }
       return;
     }
-    if (root) fail("Expected MessagePack map");
+    if (root) fail(source("recovery.expectedMessagePackMap_bd78e"));
     if ((t & 0xf0) === 0x90) array = t & 15;
     else if (t === 0xdc || t === 0xdd) array = number(t === 0xdc ? 2 : 4);
     if (array >= 0) {
@@ -128,17 +129,17 @@ export function validateBackup(
       take(sizes[t]);
       return;
     }
-    fail("Unsupported MessagePack type");
+    fail(source("recovery.unsupportedMessagePackType_98aab"));
   }
   scan(0, false, true);
-  if (pos !== bytes.length) fail("Trailing bytes");
+  if (pos !== bytes.length) fail(source("recovery.trailingBytes_a3935"));
   const value = decode(bytes) as Record<string, unknown>;
   function finite(v: unknown) {
     if (
       typeof v === "number" &&
       (!Number.isFinite(v) || (Number.isInteger(v) && !Number.isSafeInteger(v)))
     )
-      fail("Unsupported numeric precision");
+      fail(source("recovery.unsupportedNumericPrecision_5f010"));
     if (v && typeof v === "object" && !(v instanceof Uint8Array))
       Object.values(v).forEach(finite);
   }
@@ -148,7 +149,7 @@ export function validateBackup(
     value.save_sunriser !== undefined &&
     value.save_sunriser !== `SunRiser${board}`
   )
-    fail("Backup belongs to another board");
+    fail(source("recovery.backupBelongsToAnotherBoard_8130e"));
   return value;
 }
 export interface BeeInfo {
@@ -163,10 +164,10 @@ export async function validateBee(
   board: number,
 ): Promise<BeeInfo> {
   if (bytes.length < 2048 || bytes.length > BEE_LIMIT)
-    fail("BEE size must be 2048 bytes to 32 MiB");
+    fail(source("recovery.beeSizeMustBe2048BytesTo32MiB_0c9dc"));
   const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const u32 = (p: number) => {
-    if (p < 0 || p + 4 > bytes.length) fail("Truncated CDB");
+    if (p < 0 || p + 4 > bytes.length) fail(source("recovery.truncatedCDB_31bc6"));
     return v.getUint32(p, true);
   };
   const tables = Array.from({ length: 256 }, (_, i) => ({
@@ -174,7 +175,7 @@ export async function validateBee(
     count: u32(i * 8 + 4),
   }));
   const end = Math.min(...tables.map((t) => t.start));
-  if (end < 2048 || end > bytes.length) fail("Invalid CDB index");
+  if (end < 2048 || end > bytes.length) fail(source("recovery.invalidCDBIndex_2bf6f"));
   const records = new Map<
       number,
       { hash: number; key: string; data: Uint8Array }
@@ -186,22 +187,22 @@ export async function validateBee(
       k = u32(p),
       n = u32(p + 4);
     p += 8;
-    if (!k || p + k + n > end) fail("Invalid CDB record");
+    if (!k || p + k + n > end) fail(source("recovery.invalidCDBRecord_5efcf"));
     const kb = bytes.subarray(p, p + k),
       key = utf8.decode(kb);
     p += k;
     const data = bytes.subarray(p, p + n);
     p += n;
-    if (byKey.has(key)) fail("Duplicate CDB key");
+    if (byKey.has(key)) fail(source("recovery.duplicateCDBKey_c481e"));
     byKey.set(key, data);
     records.set(at, { hash: hash(kb), key, data });
   }
-  if (p !== end) fail("Invalid CDB boundary");
+  if (p !== end) fail(source("recovery.invalidCDBBoundary_57154"));
   let tableEnd = end;
   const seen = new Set<number>();
   tables.forEach((t, bucket) => {
     if (t.start !== tableEnd || t.start + t.count * 8 > bytes.length)
-      fail("Invalid CDB table bounds");
+      fail(source("recovery.invalidCDBTableBounds_66abb"));
     tableEnd += t.count * 8;
     for (let slot = 0; slot < t.count; slot++) {
       const at = t.start + slot * 8,
@@ -210,25 +211,25 @@ export async function validateBee(
       if (!offset) continue;
       const r = records.get(offset);
       if (!r || r.hash !== h || (h & 255) !== bucket || seen.has(offset))
-        fail("Invalid CDB index entry");
+        fail(source("recovery.invalidCDBIndexEntry_6b35f"));
       seen.add(offset);
       let probe = (h >>> 8) % t.count;
       while (probe !== slot) {
-        if (!u32(t.start + probe * 8 + 4)) fail("Unreachable CDB entry");
+        if (!u32(t.start + probe * 8 + 4)) fail(source("recovery.unreachableCDBEntry_a83e9"));
         probe = (probe + 1) % t.count;
       }
     }
   });
   if (tableEnd !== bytes.length || seen.size !== records.size)
-    fail("Incomplete CDB index");
+    fail(source("recovery.incompleteCDBIndex_8a1ad"));
   if (!byKey.get(board === 8 ? "___firmware" : "___firmware10")?.length)
-    fail("Missing selected board firmware");
+    fail(source("recovery.missingSelectedBoardFirmware_2a6c4"));
   const text = (key: string, max: number) => {
     const b = byKey.get("___firmware_" + key);
     if (!b?.length || b.length >= max)
-      fail("Missing or invalid firmware " + key);
+      fail(source("recovery.invalidFirmwareDetail",{v0:key}));
     const s = utf8.decode(b!);
-    if (s.includes("\0")) fail("Invalid metadata");
+    if (s.includes("\0")) fail(source("recovery.invalidMetadata_aee53"));
     return s;
   };
   const filename = text("filename", 32),
@@ -236,7 +237,7 @@ export async function validateBee(
   text("author", 64);
   const ts = text("timestamp", 11);
   if (!/^\d{1,10}$/.test(ts) || Number(ts) > 4294967295)
-    fail("Invalid firmware timestamp");
+    fail(source("recovery.invalidFirmwareTimestamp_8ac2c"));
   return {
     filename,
     description,
@@ -294,14 +295,14 @@ export async function recoveryRequest(
       throw new RecoveryError(
         "connection",
         undefined,
-        `${method} ${path}: no response (${controller.signal.aborted ? "timed out" : "connection failed"})`,
+        source("recovery.v0V1NoResponseV2_acb82",{v0:method,v1:path,v2:controller.signal.aborted ? source("recovery.timedOut_d6f17") : source("recovery.connectionFailed_00472")}),
       );
     }
     if (!response.ok)
       throw new RecoveryError(
         "upload",
         response.status,
-        `${method} ${path} rejected with HTTP ${response.status}`,
+        source("recovery.v0V1RejectedWithHTTPV2_008b8",{v0:method,v1:path,v2:response.status}),
       );
     try {
       return new Uint8Array(await response.arrayBuffer());
@@ -309,7 +310,7 @@ export async function recoveryRequest(
       throw new RecoveryError(
         "connection",
         response.status,
-        `${method} ${path}: response interrupted`,
+        source("recovery.v0V1ResponseInterrupted_e78ae",{v0:method,v1:path}),
       );
     }
   } finally {
@@ -329,18 +330,18 @@ export async function acknowledged(
     throw new RecoveryError(
       "acknowledgement",
       200,
-      "Unexpected acknowledgement for " + path,
+      source("recovery.unexpectedAcknowledgementDetail",{v0:path}),
     );
 }
 export async function uploadFirmware(
   bytes: Uint8Array,
   progress: (message: string) => void,
 ) {
-  progress("Initializing upload…");
+  progress(source("recovery.initializingUpload_04d65"));
   await acknowledged("PUT", "/firmware-init", "INIT");
   for (let offset = 0; offset < bytes.length; offset += 8192) {
     const end = Math.min(offset + 8192, bytes.length);
-    progress(`Uploading ${offset} / ${bytes.length} bytes`);
+    progress(source("recovery.uploadingV0V1Bytes_f1d33",{v0:offset,v1:bytes.length}));
     await acknowledged(
       "PUT",
       "/firmware-chunk",
@@ -349,7 +350,7 @@ export async function uploadFirmware(
       offset,
     );
   }
-  progress("Upload accepted. Requesting installation…");
+  progress(source("recovery.uploadAcceptedRequestingInstallation_d0e47"));
   await acknowledged("PUT", "/firmware-install", "INSTALL");
 }
 export function equalValue(a: unknown, b: unknown): boolean {
@@ -392,7 +393,7 @@ export async function readRecovery(
 ) {
   await acknowledged("GET", "/ok", "OK");
   const firmware = await getFirmware();
-  if (firmware.sunriser !== board.sunriser) fail("Different board responded");
+  if (firmware.sunriser !== board.sunriser) fail(source("recovery.differentBoardResponded_a0139"));
   const state = await getState(board.pwm_count);
   if (expectedBytes) {
     const expected = backupValueBytes(expectedBytes),
@@ -402,7 +403,7 @@ export async function readRecovery(
       const actual = backupValueBytes(await readConfigBytes(batch));
       for (const key of batch)
         if (!equalValue(actual.get(key), expected.get(key)))
-          fail("Readback mismatch: " + key);
+          fail(source("recovery.readbackMismatchDetail",{v0:key}));
     }
   }
   const name = await readConfig(["hostname"]);

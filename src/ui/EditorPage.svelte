@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {t,renderText,language} from '../i18n';
   import type { Snippet } from 'svelte';
   let { children }: { children: Snippet } = $props();
 </script>
@@ -18,6 +19,8 @@ Third-party material retains its own terms.
   .editor-page :global(h2), .editor-page :global(.section-title) { font-size:var(--sr-section); font-weight:650; line-height:1.4; margin:0 0 12px; }
   .editor-page :global(h3) { font-size:15px; margin:0 0 12px; }
   .editor-page :global(p) { font-size:13px; color:var(--sr-muted); margin:8px 0 12px; max-width:85ch; overflow-wrap:anywhere; }
+  .editor-page :global(.heading > div) { min-width:0; }
+  .editor-page :global(h1), .editor-page :global(h2), .editor-page :global(h3) { overflow-wrap:anywhere; hyphens:auto; }
   .editor-page :global(.heading) { margin:12px 0 20px; gap:16px; }
   .editor-page :global(.heading p) { margin:4px 0; }
   .editor-page :global(.panel) { border:0; border-radius:0; background:transparent; padding:16px 0; margin:16px 0 0; box-shadow:none; }
