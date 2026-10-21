@@ -21,14 +21,14 @@ export const clockKeys = [
   "usentp",
 ];
 export const networkFields = [
-  { key: "ntpserver", label: "NTP server", type: "text", max: 128 },
+  { key: "ntpserver", label: source("system.ntpServer"), type: "text", max: 128 },
   { key: "nofinder", label: source("system.disableVendorFinder_d7b6d"), type: "bool" },
   { key: "enforcenet", label: source("system.keepTryingDHCP_df6fb"), type: "bool" },
   { key: "useip4", label: source("system.useStaticLANIPv4_d38f1"), type: "bool" },
   { key: "ip4", label: source("system.lanIPv4_1ae4a"), type: "ip" },
-  { key: "ip4_netmask", label: "LAN netmask", type: "ip" },
-  { key: "ip4_gateway", label: "LAN gateway", type: "ip" },
-  { key: "ip4_dns", label: "LAN DNS", type: "ip" },
+  { key: "ip4_netmask", label: source("system.lanNetmask"), type: "ip" },
+  { key: "ip4_gateway", label: source("system.lanGateway"), type: "ip" },
+  { key: "ip4_dns", label: source("system.lanDns"), type: "ip" },
   { key: "webport", label: source("system.webPort_4822a"), type: "port" },
   { key: "nowifi", label: source("system.disableWiFi_1baea"), type: "bool", wifi: true },
   { key: "wifi_connect", label: source("system.connectToWiFi_0825f"), type: "bool", wifi: true },

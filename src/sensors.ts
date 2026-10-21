@@ -39,7 +39,7 @@ export function parseSensorState(value: unknown) {
   return { readings, errors };
 }
 export const formatReading = (v: Reading) =>
-  v.device === 1 ? `${v.value / 10}°C` : `${v.value} raw (device ${v.device})`;
+  v.device === 1 ? `${v.value / 10} °C` : `${v.value} raw (device ${v.device})`;
 export function tenths(text: string): number | undefined {
   if (!/^-?\d+(?:\.\d)?$/.test(text)) return;
   const value = Number(text) * 10;

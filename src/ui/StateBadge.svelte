@@ -13,7 +13,7 @@ Third-party material retains its own terms.
 </script>
 <span class="badge" class:draft={tone==='draft'} class:active={tone==='active'} class:error={tone==='error'}>{@render children()}</span>
 <style>
-  .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border:1px solid var(--sr-line); border-radius:5px; color:var(--sr-muted); background:var(--sr-surface); font-size:12px; font-weight:600; line-height:1.5; }
+  .badge { max-width:100%; overflow-wrap:anywhere; display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border:1px solid var(--sr-line); border-radius:5px; color:var(--sr-muted); background:var(--sr-surface); font-size:12px; font-weight:600; line-height:1.5; }
   .draft { color:var(--sr-amber); background:var(--sr-amber-bg); border-color:var(--sr-control-line); }
   .active { color:var(--sr-active); background:var(--sr-soft); border-color:var(--sr-control-line); }
   .error { color:var(--sr-error); background:var(--sr-error-bg); border-color:var(--sr-control-line); }

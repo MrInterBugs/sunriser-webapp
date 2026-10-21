@@ -430,7 +430,7 @@ Third-party material retains its own terms.
         </EditorPage>
       {:else if route === 'help' || route === 'lighting-tools' || route === 'diagnostics' || route === 'recovery' || route === 'schedules' || route === 'sensors' || route === "weather" || route === 'clock' || route === 'network'}
         <!-- The retained editor below owns drafts across navigation. -->
-      {:else if route === source("systemsettings.settings_3cc1d")}
+      {:else if route === 'settings'}
         <EditorPage>
         <div class="heading"><div><h1>{$t("app.settings_c7f73")}</h1><p>{$t("app.controllerIdentityAndDevicePreferences_603f4")}</p></div></div>
         <div class="hostname-workspace"><form class="panel settings hostname-form" onsubmit={save}>

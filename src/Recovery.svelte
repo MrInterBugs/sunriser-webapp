@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {sourceCount} from './messages';
  import FilePicker from "./ui/FilePicker.svelte";
  import {t,renderText,language,source} from './i18n';
   import EditorPage from './ui/EditorPage.svelte';
@@ -96,7 +97,7 @@ Third-party material retains its own terms.
       if (kind === "backup") {
         values = validateBackup(bytes, firmware.pwm_count);
         backup = bytes;
-        backupMessage = source("recovery.v0V1KeysV2BytesFormatValidSettingSemantics_6cdba",{v0:file.name,v1:Object.keys(values).length,v2:bytes.length});
+        backupMessage = source("recovery.v0V1KeysV2BytesFormatValidSettingSemantics_6cdba",{v0:file.name,v1:sourceCount(Object.keys(values).length,'key'),v2:sourceCount(bytes.length,'byte')});
       } else {
         imageInfo = await validateBee(bytes, firmware.pwm_count);
         image = bytes;
@@ -115,7 +116,7 @@ Third-party material retains its own terms.
       values = validateBackup(bytes, firmware.pwm_count);
       backup = bytes;
       backupName = demo + ".mp";
-      backupMessage = source("recovery.v0V1KeysV2BytesExampleWillMergeIts_0164b",{v0:backupName,v1:Object.keys(values).length,v2:bytes.length});
+      backupMessage = source("recovery.v0V1KeysV2BytesExampleWillMergeIts_0164b",{v0:backupName,v1:sourceCount(Object.keys(values).length,'key'),v2:sourceCount(bytes.length,'byte')});
     } catch (e) {
       backup = undefined;
       values = undefined;
@@ -324,7 +325,7 @@ Third-party material retains its own terms.
       {$t("recovery.checkDeviceReadbackSendsReadsOnlyWithNoAutomatic_66671")} <a href="#network">{$t("recovery.networkRecovery_1b0e2")}</a>{$t("recovery.doNotPowerOffDuringInstallationTheUploadedBundle_68137")}
     </p>
     <p>
-      {$t("recovery.useATrustedBEEFileFor_8383f")} {firmware.sunriser}{$t("recovery.structuralChecksAndAChecksumDoNotAuthenticateIts_ef31e")}
+      {$t("recovery.trustedFirmwareNotice",{v0:firmware.sunriser})}
     </p>
     <label for="firmware-file">{$t("recovery.firmwareBEEFile_8e65b")}</label><FilePicker id="firmware-file" label={$t("recovery.firmwareBEEFile_8e65b")}
 

@@ -48,7 +48,7 @@ Third-party material retains its own terms.
   {#if administration}<nav class="device-tabs" aria-label={$t("appshell.deviceNavigation_87a9f")} inert={menuOpen}>{#each device as [id,label]}<a href={`#${id}`} aria-current={route===id?'page':undefined}>{$renderText(label)}</a>{/each}</nav>{/if}
   <div class="workspace" inert={menuOpen}>{@render children()}<footer>SunRiser <span>·</span> {$t("appshell.aquariumLightingController_0ee46")} <span>·</span> <a href="#help">{$t("appshell.help_c47ae")}</a> <span>·</span> <a href="notices.html#photography">{$t("appshell.imageCredits_ed24c")}</a></footer></div>
   <nav class="mobile-dock" aria-label={$t("appshell.everydayLighting_e88e7")}>
-    {#each [['index',source("app.overview_0efc2")],[source("lightingdashboard.channels_3536f"),source("lightingdashboard.channels_18e03")],['schedules',source("schedules.schedules_26d9d")]] as [id,label]}<a href={`#${id}`} aria-current={route===id?'page':undefined} onclick={close}>{$renderText(label)}</a>{/each}
+    {#each [['index',source("app.overview_0efc2")],['channels',source("lightingdashboard.channels_18e03")],['schedules',source("schedules.schedules_26d9d")]] as [id,label]}<a href={`#${id}`} aria-current={route===id?'page':undefined} onclick={close}>{$renderText(label)}</a>{/each}
     <button aria-expanded={menuOpen} aria-controls="main-navigation" onclick={toggle}>{$t("appshell.menu_57f5f")}</button>
   </nav>
 </div>
@@ -82,6 +82,7 @@ Third-party material retains its own terms.
   @media(max-width:800px){
     .app-header{justify-content:space-between;min-height:72px;padding:12px 16px}.wordmark{font-size:23px}
     .all-pages{display:block;min-height:44px;padding:8px 12px;background:var(--sr-surface);color:var(--sr-ink);border:1px solid var(--sr-control-line);font-size:14px}
+    .all-pages:hover:not(:disabled),.mobile-dock button:hover:not(:disabled){background:var(--sr-soft);color:var(--sr-ink)}
     #main-navigation{display:none}#main-navigation.open{position:fixed;z-index:15;inset:72px 0 calc(55px + max(6px,env(safe-area-inset-bottom)));display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:16px;padding:20px 16px;overflow:auto;scroll-padding-block:8px;background:var(--sr-canvas)}
     .language-choice{order:-1;grid-column:1/-1;justify-self:start;margin:0}.lighting-links,.mobile-device{display:block;min-width:0}.group-label{display:block;margin:0 10px 12px;color:var(--sr-muted);font-size:13px}.lighting-links a,nav a{min-height:48px;border:0;border-radius:4px;padding:12px 10px}.lighting-links a[aria-current]{background:var(--sr-soft)}
     .device-menu{display:none}.device-tabs{flex-wrap:wrap;padding:4px 12px;gap:0;justify-content:space-between}.device-tabs a{font-size:13px;padding:10px 8px}

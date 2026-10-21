@@ -33,7 +33,7 @@ Third-party material retains its own terms.
  {#if draft}
  <p>{$t("channelconfiguration.displayColourDoesNotChangeThePhysicalLightSpectrum_5d638")}</p>
  <form onsubmit={save}>
- <DraftBar {snapshotRevision} feedback={$renderText(feedback)} {dirty} {busy} disabled={!dirty} label={$t("channelconfiguration.saveChannelConfiguration_90956")} scope={$language==='en'?$t("channelconfiguration.channel_fbe7d")+' ':$t("channelconfiguration.channel_fbe7d")} detail={$t("channelconfiguration.onlyChangedColourAndBinaryKeysAreSavedReported_27624")}/>
+ <DraftBar {snapshotRevision} feedback={$renderText(feedback)} {dirty} {busy} disabled={!dirty} label={$t("channelconfiguration.saveChannelConfiguration_90956")} scope={$t("channelconfiguration.channel_fbe7d")} detail={$t("channelconfiguration.onlyChangedColourAndBinaryKeysAreSavedReported_27624")}/>
  <div class="configuration-grid">
  {#each draft as channel,i}
  <fieldset disabled={busy}><legend><ChannelIdentity number={i+1}/></legend>

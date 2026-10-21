@@ -33,7 +33,7 @@ Third-party material retains its own terms.
  <div class="section-heading"><div><h2>{$t("devicepreferences.devicePreferences_f0e32")}</h2><p>{$t("devicepreferences.buttonActionsStatusIndicationAndLoggingSavingDoesNot_5c51c")}</p></div>{#if draft||loadFailed}<ActionButton secondary disabled={busy} onclick={()=>load(true)}>{draft?$t("devicepreferences.reloadDevicePreferences_a405d"):$t("devicepreferences.retryDevicePreferences_b23c9")}</ActionButton>{/if}</div>
  {#if draft}
  <form onsubmit={save}>
- <DraftBar {snapshotRevision} {dirty} {busy} feedback={$renderText(feedback)} disabled={!dirty} label={$t("devicepreferences.saveDevicePreferences_412b6")} scope={$language==='en'?$t("devicepreferences.preference_281ad")+' ':$t("devicepreferences.preference_281ad")} detail={$t("devicepreferences.changedPreferencesAreSavedAndReadBackIndependentlyOf_8400b")}/>
+ <DraftBar {snapshotRevision} {dirty} {busy} feedback={$renderText(feedback)} disabled={!dirty} label={$t("devicepreferences.saveDevicePreferences_412b6")} scope={$t("devicepreferences.preference_281ad")} detail={$t("devicepreferences.changedPreferencesAreSavedAndReadBackIndependentlyOf_8400b")}/>
  <div class="preferences-grid">
  <section class="preference-group"><h3>{$t("devicepreferences.physicalButton_86f1c")}</h3>
  {#if typeof draft.nobutton==='boolean'}<label class="check"><input type="checkbox" disabled={busy} checked={draft.nobutton} onchange={e=>set('nobutton',e.currentTarget.checked)}/>{$t("devicepreferences.disablePhysicalButton_905bc")}</label>

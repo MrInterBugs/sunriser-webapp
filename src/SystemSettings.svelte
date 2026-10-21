@@ -110,7 +110,7 @@ Third-party material retains its own terms.
         catch(e){loadFailure=e instanceof Error?e.message:source("systemsettings.configurationReadFailed_c5b59");throw e;}
       },
       source("systemsettings.v0SettingsLoaded_41a17",{v0:title}),
-      source("systemsettings.couldNotLoadV0SettingsRetryReloadV1Settings_d7768",{v0:title,v1:$language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title}),
+      source("systemsettings.couldNotLoadV0SettingsRetryReloadV1Settings_d7768",{v0:title,v1:title}),
       source("systemsettings.loadingV0Settings_ffcfc",{v0:title}),
     );}finally{loadingSettings=false;}
   }
@@ -219,7 +219,7 @@ Third-party material retains its own terms.
     <p>
       {$t("systemsettings.reloadReplacesUnsavedEditsStateRefreshAndVerificationKeep_f19ab")}
     </p>
-    {#if loadFailure}<p class="notice" role="note">{$t("app.saved_c0ae8")} {$language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title} {$t("systemsettings.configurationUnavailable_faba5")} {$renderText(loadFailure)}. {kind==='clock'?$t("systemsettings.liveClockReadbackIsIndependentOfThisSettingsRequest_d4b64"):$t("systemsettings.reportedAddressesAreIndependentOfThisSettingsRequest_d5a07")} {$t("systemsettings.reloadRetriesTheReadItDoesNotWriteSettings_aaef7")}</p>{/if}
+    {#if loadFailure}<p class="notice" role="note">{$t('systemsettings.savedConfigurationUnavailable',{v0:$language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title,v1:$renderText(loadFailure)})} {kind==='clock'?$t("systemsettings.liveClockReadbackIsIndependentOfThisSettingsRequest_d4b64"):$t("systemsettings.reportedAddressesAreIndependentOfThisSettingsRequest_d5a07")} {$t("systemsettings.reloadRetriesTheReadItDoesNotWriteSettings_aaef7")}</p>{/if}
     <div class="configuration-workspace">{#if editor}
       <form class="panel settings system-editor" onsubmit={save} oninput={onedit}>
         <DraftBar {snapshotRevision} feedback={$renderText(feedback)} {dirty} {busy} disabled={!!invalid||!dirty} label={$t("systemsettings.saveV0Settings_f4607",{v0: $language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title})} scope="" detail={$t("systemsettings.savedValuesAreVerifiedIndependentlyReloadReplacesDraftsVerify_5cbd7")} />

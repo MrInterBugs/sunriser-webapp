@@ -187,7 +187,7 @@ Third-party material retains its own terms.
   </p>
 
   {#if book}<form class="panel" onsubmit={save} oninput={onedit} novalidate>
-      <DraftBar {snapshotRevision} feedback={$renderText(feedback)} {dirty} {busy} disabled={!valid||!dirty} label={$t("weather.saveWeather_5241a")} scope={$language==='en'?$t("weather.weather_f9866")+' ':$t("weather.weather_f9866")} detail={$t("weather.saveAppliesToAllEditedProfilesAndChannelAssignments_5fe83")} />
+      <DraftBar {snapshotRevision} feedback={$renderText(feedback)} {dirty} {busy} disabled={!valid||!dirty} label={$t("weather.saveWeather_5241a")} scope={$t("weather.weather_f9866")} detail={$t("weather.saveAppliesToAllEditedProfilesAndChannelAssignments_5fe83")} />
       <fieldset disabled={busy}>
         <legend class="visually-hidden">{$t("weather.weatherConfiguration_74d13")}</legend>
         <div class="weather-workspace"><aside class="weather-profiles" aria-label={$t("weather.weatherProfiles_3b38a")}><h2>{$t("weather.profiles_0c2a9")}</h2><div><label for="weather-profile">{$t("weather.weatherProfile_9a2f1")}</label><select
@@ -363,7 +363,7 @@ Third-party material retains its own terms.
  .effect-switch { display:flex; gap:8px; border-bottom:1px solid var(--sr-line); margin:20px 0; }
  .effect-switch button { background:transparent; border:0; border-radius:0; border-bottom:3px solid transparent; color:var(--sr-muted); }
  .effect-switch button[aria-pressed=true] { color:var(--sr-accent); border-color:var(--sr-accent); }
- .weather-values { max-width:960px; }
+ .weather-values { max-width:960px; } .weather-values label { overflow-wrap:anywhere; hyphens:auto; }
  .weather-channels { grid-column:2; border-top:1px solid var(--sr-line); padding-top:24px; min-width:0; }
  .weather-assignments { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px 20px; }
  .weather-assignments label { margin:0; } .weather-assignments p { font-size:12px; }

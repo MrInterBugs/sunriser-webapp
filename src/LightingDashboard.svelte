@@ -174,7 +174,7 @@ Third-party material retains its own terms.
     .device-details summary span { display:block; margin:4px 0 0 16px; }
     dl { grid-template-columns:1fr 1fr; }
   }
-  @media(min-width:360px) and (max-width:600px) { .page-heading { display:grid; grid-template-columns:minmax(0,1fr) 116px; align-items:center; gap:12px; } }
+  @media(min-width:360px) and (max-width:600px) { .page-heading { display:grid; grid-template-columns:minmax(0,1fr) 144px; align-items:center; gap:12px; } }
   .channel-row:focus-within,.service-row:focus-within { background:var(--sr-surface); }
 .command-inputs:lang(de) { grid-template-columns:minmax(0,1fr) 100px; } .command-inputs:lang(de) :global(button) { padding-inline:8px; } @media(max-width:600px) { .all-channels .command-inputs:lang(de) { grid-template-columns:minmax(0,1fr); } }
 </style>

@@ -76,8 +76,9 @@ Third-party material retains its own terms.
   .editor-page :global(input[inputmode=numeric]),.editor-page :global(input[inputmode=decimal]) { font-variant-numeric:tabular-nums; }
   @media(max-width:760px) {
     .editor-page :global(:is(input,select,button)) { scroll-margin-block:220px 48px; }
-    .editor-page :global(.heading) { flex-direction:row; align-items:center; }
-    .editor-page :global(.heading > button) { max-width:160px; }
+    .editor-page :global(.heading) { flex-direction:row; flex-wrap:wrap; align-items:center; }
+    .editor-page :global(.heading > div) { flex:1 1 220px; }
+    .editor-page :global(.heading > button) { flex:0 1 auto; max-width:100%; }
     .editor-page :global(.field-grid), .editor-page :global(.service-fields) { grid-template-columns:minmax(0,1fr); }
     .editor-page :global(.field-grid.three-columns) { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .editor-page :global(.field-grid.three-columns > :first-child) { grid-column:1/-1; }
