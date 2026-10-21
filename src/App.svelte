@@ -8,7 +8,7 @@ Third-party material retains its own terms.
 -->
 <script lang="ts">
  import {t,renderText,language,source} from './i18n';
-  import {PWM_RAW_MAX, PWM_DEFAULT_DIMMER_MAX} from "./pwm";
+  import {PWM_RAW_MAX} from "./pwm";
   import {preferredReportedAddress} from './network-address';
   import OverviewLighting from "./ui/OverviewLighting.svelte";
   import {savedDailyPlans,loadDailyPlan,resetSavedDailyPlans} from "./schedules";

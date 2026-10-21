@@ -8,7 +8,7 @@ Third-party material retains its own terms.
 -->
 <script lang="ts">
  import {t,renderText,language} from './i18n';
-  import {PWM_RAW_MAX, PWM_DEFAULT_DIMMER_MAX} from "./pwm";
+  import {PWM_RAW_MAX} from "./pwm";
   import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
   import RawMeter from './ui/RawMeter.svelte';
@@ -176,4 +176,5 @@ Third-party material retains its own terms.
   }
   @media(min-width:360px) and (max-width:600px) { .page-heading { display:grid; grid-template-columns:minmax(0,1fr) 116px; align-items:center; gap:12px; } }
   .channel-row:focus-within,.service-row:focus-within { background:var(--sr-surface); }
+.command-inputs:lang(de) { grid-template-columns:minmax(0,1fr) 100px; } .command-inputs:lang(de) :global(button) { padding-inline:8px; } @media(max-width:600px) { .all-channels .command-inputs:lang(de) { grid-template-columns:minmax(0,1fr); } }
 </style>

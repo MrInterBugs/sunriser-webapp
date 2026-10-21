@@ -8,7 +8,7 @@ Third-party material retains its own terms.
 -->
 <script lang="ts">
  import {t,renderText,language,source} from './i18n';
-  import {PWM_RAW_MAX, PWM_DEFAULT_DIMMER_MAX} from "./pwm";
+  import {PWM_RAW_MAX} from "./pwm";
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
  import {readSavedConfiguration,saveConfiguration,inRange,type Firmware,type DeviceState} from './api';

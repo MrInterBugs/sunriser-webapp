@@ -26,5 +26,6 @@ Third-party material retains its own terms.
  .draft-bar p.error { color:var(--sr-error); }
  .draft-bar p { font-size:13px; color:var(--sr-muted); margin:6px 0 0; }
  @media(max-width:760px) { .draft-bar { top:0; padding:12px 0; gap:12px; } .draft-bar :global(button) { max-width:135px; } .draft-bar p { font-size:12px; } }
+ @media(max-width:480px) { .draft-bar:lang(de) { grid-template-columns:minmax(0,1fr); } .draft-bar:lang(de) :global(button) { justify-self:start; max-width:100%; } }
  @media(max-height:500px) { .draft-bar { position:static; } }
 </style>

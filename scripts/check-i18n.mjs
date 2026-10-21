@@ -15,7 +15,7 @@ const source=files.map(f=>fs.readFileSync(path.join(root,f),'utf8')).join('\n');
 for(const key of Object.keys(en))if(!source.includes(key)&&!key.startsWith('startup.'))errors.push(`Unused key: ${key}`);
 // All fixed prose in markup/accessible attributes must use the catalogue.
 // Protocol units, branding, licence and navigation glyphs are deliberately stable.
-const preserved=new Set(["s","T","aquaLUMix AFRICAN-SUN","aquaLUMix AMAZON-GROW","aquaLUMix DEEP-BLUE","spotBEAM","http://192.0.2.42:8080","Language / Sprache","English","Deutsch"]);
+const preserved=new Set(["s","T","aquaLUMix AFRICAN-SUN","aquaLUMix AMAZON-GROW","aquaLUMix DEEP-BLUE","spotBEAM","http://192.0.2.42:8080","Language / Sprache","English","Deutsch","EN","DE"]);
 const technical=/^(?:SunRiser|LEDaquaristik|UTC|BEE|JSON|CH|CC BY-SA 3\.0|\d+(?:px|%| s| ms| °C)?|[\d\s·:,.%°/(){}+−–—→↗↔×<>#=\-]+)$/;
 function prose(text,file){const s=text.replace(/\s+/g,' ').trim();if(/[A-Za-zÀ-ž]/.test(s)&&!technical.test(s)&&!preserved.has(s))errors.push(`Untranslated markup ${file}: ${s}`);}
 function walk(node,file){if(!node||typeof node!=='object')return;if(Array.isArray(node)){for(const child of node)walk(child,file);return;}if(node.type==='Text')prose(node.data,file);if(node.type==='Attribute'){if(['aria-label','title','placeholder','alt','label','detail','scope','unit'].includes(node.name))for(const v of Array.isArray(node.value)?node.value:[])if(v.type==='Text')prose(v.data,file);return;}for(const[k,v]of Object.entries(node))if(!['start','end','loc','metadata','parent','value'].includes(k))walk(v,file);}

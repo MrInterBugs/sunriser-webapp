@@ -372,4 +372,5 @@ Third-party material retains its own terms.
  @media(max-width:1100px) { .weather-assignments { grid-template-columns:repeat(2,minmax(0,1fr)); } .weather-commands { display:block; } }
  @media(max-width:800px) { .weather-workspace { grid-template-columns:1fr; gap:16px; } .weather-profiles { position:static; border:0; padding:0; display:grid; grid-template-columns:1fr; } .weather-profiles h2,.weather-profiles>p { display:none; } .weather-profiles .form-actions { display:flex; margin:8px 0; } .weather-profiles .weather-reload { margin:8px 0; } .weather-profiles .weather-reload p { font-size:12px; } .weather-channels { grid-column:1; } .weather-reload { display:block; } .weather-reload p { margin-top:12px; } .effect-switch { gap:0; justify-content:space-between; } .effect-switch button { padding:10px 5px; font-size:12px; } }
  @media(min-width:360px) and (max-width:760px) { .profile-editor .field-grid.weather-values { grid-template-columns:repeat(2,minmax(0,1fr)); } .weather-values>div:not(.wide)>label { min-height:42px; display:flex; align-items:end; } }
+.effect-switch button:hover:not(:disabled){background:var(--sr-soft);color:var(--sr-ink)}
 </style>
