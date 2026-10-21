@@ -450,7 +450,7 @@ export const de = {
   "recovery.backupDownloadedStoredOverridesOnlyProtectAnyCredentialsIn_b4b92": "Sicherung heruntergeladen. Nur gespeicherte Überschreibungen; schützen Sie enthaltene Zugangsdaten.",
   "recovery.downloadFailedTheBackupMayBeMissingOrEmpty_3d2f7": "Download fehlgeschlagen. Die Sicherung fehlt möglicherweise, ist leer oder die Verbindung ist nicht verfügbar. Keine Konfiguration wurde geändert.",
   "recovery.operationInProgress_c80f6": "Vorgang läuft…",
-  "recovery.sendingV0BackupBytes_1fce9": "Sicherung wird gesendet: {v0} Byte…",
+  "recovery.sendingV0BackupBytes_1fce9": "Sicherung wird gesendet: {v0}…",
   "recovery.sendingV0FactoryImageBytes_2dc9d": "Werksabbild wird gesendet: {v0} Byte…",
   "recovery.requestingDeletionOfStoredConfiguration_4514b": "Löschen der gespeicherten Konfiguration wird angefordert…",
   "recovery.requestingRebootTheConnectionMayClose_65b90": "Neustart wird angefordert; die Verbindung kann abbrechen…",
@@ -1215,4 +1215,5 @@ export const de = {
   "system.lanNetmask": "LAN-Netzmaske",
   "system.lanGateway": "LAN-Gateway",
   "system.lanDns": "LAN-DNS",
+  "systemsettings.v0Minute": "{v0} Minute",
 } satisfies Record<MessageKey,string>;

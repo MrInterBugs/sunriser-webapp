@@ -449,7 +449,7 @@ export const en = {
   "recovery.backupDownloadedStoredOverridesOnlyProtectAnyCredentialsIn_b4b92": "Backup downloaded. Stored overrides only; protect any credentials in this file.",
   "recovery.downloadFailedTheBackupMayBeMissingOrEmpty_3d2f7": "Download failed. The backup may be missing or empty, or the connection unavailable. No configuration was changed.",
   "recovery.operationInProgress_c80f6": "Operation in progress…",
-  "recovery.sendingV0BackupBytes_1fce9": "Sending {v0} backup bytes…",
+  "recovery.sendingV0BackupBytes_1fce9": "Sending backup: {v0}…",
   "recovery.sendingV0FactoryImageBytes_2dc9d": "Sending {v0} factory image bytes…",
   "recovery.requestingDeletionOfStoredConfiguration_4514b": "Requesting deletion of stored configuration…",
   "recovery.requestingRebootTheConnectionMayClose_65b90": "Requesting reboot; the connection may close…",
@@ -1214,5 +1214,6 @@ export const en = {
   "system.lanNetmask": "LAN netmask",
   "system.lanGateway": "LAN gateway",
   "system.lanDns": "LAN DNS",
+  "systemsettings.v0Minute": "{v0} minute",
 } as const;
 export type MessageKey = keyof typeof en;

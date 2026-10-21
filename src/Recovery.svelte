@@ -153,7 +153,7 @@ Third-party material retains its own terms.
     result = source("recovery.operationInProgress_c80f6");
     progress =
       op === "restore"
-        ? source("recovery.sendingV0BackupBytes_1fce9",{v0:backup!.length})
+        ? source("recovery.sendingV0BackupBytes_1fce9",{v0:sourceCount(backup!.length,'byte')})
         : op === "factory"
           ? source("recovery.sendingV0FactoryImageBytes_2dc9d",{v0:image!.length})
           : op === "reset"

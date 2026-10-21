@@ -196,7 +196,7 @@ Third-party material retains its own terms.
             <dd data-testid="clock-offset">
               {snapshot.utc_offset === undefined
                 ? $t("systemsettings.notReported_98e85")
-                : $t("systemsettings.v0Minutes_5e99e",{v0: snapshot.utc_offset})}
+                : $t(Math.abs(snapshot.utc_offset)===1?"systemsettings.v0Minute":"systemsettings.v0Minutes_5e99e",{v0: snapshot.utc_offset})}
             </dd>
           </div>
         </dl>

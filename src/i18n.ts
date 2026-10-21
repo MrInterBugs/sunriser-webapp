@@ -51,6 +51,7 @@ export function present(text:unknown,locale:Language):string{
   // strings (filenames, names, addresses, IDs) remain verbatim.
   const nested:Readonly<Record<string,string[]>>={
    'recovery.invalidBackupV0_5f6e4':['v0'],
+   'recovery.sendingV0BackupBytes_1fce9':['v0'],
    'recovery.v0V1KeysV2BytesFormatValidSettingSemantics_6cdba':['v1','v2'],
    'recovery.v0V1KeysV2BytesExampleWillMergeIts_0164b':['v1','v2'], 'recovery.invalidFirmwareV0_acb6c':['v0'],
    'recovery.invalidExampleDetail':['v0'], 'common.errorPrefix':['v0'],
