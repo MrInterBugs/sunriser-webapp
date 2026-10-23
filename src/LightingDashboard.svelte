@@ -16,6 +16,8 @@ Third-party material retains its own terms.
   import ActionButton from './ui/ActionButton.svelte';
   import StateBadge from './ui/StateBadge.svelte';
   import LevelControl from './ui/LevelControl.svelte';
+  import UnusedChannels from './ui/UnusedChannels.svelte';
+  import {savedChannels,listedChannels,showUnusedChannels} from './channels';
   let {serviceRevision,serviceReconciled,onconfigure,route,firmware,snapshot,persisted,stale,busy,raw=$bindable(),allRaw=$bindable(),serviceSettings=$bindable(),serviceDirty,serviceValid,refresh,applyRaw,command,loadService,saveServiceForm,onedit}: {
     serviceRevision:number;serviceReconciled:boolean;onconfigure:()=>void; route:string; firmware:Firmware; snapshot:DeviceState; persisted:string; stale:boolean; busy:boolean;
     raw:Record<string,number|undefined>; allRaw:number|undefined; serviceSettings:ServiceSettings|undefined;
@@ -24,6 +26,10 @@ Third-party material retains its own terms.
   }=$props();
   const service=$derived(route==='service');
   const active=$derived(snapshot.service_mode>0);
+  // Unused channels stay listed while lit; service rows also stay while their saved value needs fixing.
+  const lit=(n:number)=>Number(snapshot.pwms[String(n)])>0;
+  const listed=$derived(listedChannels($savedChannels,firmware.pwm_count,$showUnusedChannels,lit));
+  const serviceListed=$derived(listedChannels($savedChannels,serviceSettings?.channels.length??0,$showUnusedChannels,n=>{const c=serviceSettings!.channels[n-1];return lit(n)||!inRange(c.percent,100)||(c.binary&&c.percent!==0&&c.percent!==100);}));
 </script>
 <div class="lighting">
   <div class="page-heading">
@@ -45,7 +51,7 @@ Third-party material retains its own terms.
           <p class="footnote">{$t("lightingdashboard.readbackMeters01000RawReferenceMarksHigherValues_9c2c2")}</p>
 
           </div><div class="service-list">
-            {#each serviceSettings.channels as channel,i}
+            {#each serviceListed as n}{@const i=n-1}{@const channel=serviceSettings.channels[i]}
               <fieldset class="service-row" disabled={busy} data-testid="channel"><legend class="sr-only">{$t("channelconfiguration.channel_879f0")} {i+1}</legend>
                 <div class="channel-identity"><div><h3><ChannelIdentity number={i+1}/></h3><p class:stale><strong>{snapshot.pwms[String(i+1)]}</strong> {$t("app.raw_ce158")} <span>· {stale?$t("app.readbackStale_e56ed"):$t("lightingtools.reported_73c20")}</span></p><RawMeter value={snapshot.pwms[String(i+1)]} {stale}/></div></div>
                 <div class="service-inputs"><span class="command-label">{$t("lightingdashboard.serviceSetting_5721d")}</span>
@@ -56,6 +62,7 @@ Third-party material retains its own terms.
               </fieldset>
             {/each}
           </div>
+          <UnusedChannels listed={serviceListed} count={serviceSettings.channels.length}/>
           {#if !serviceValid}<p role="alert">{$t("lightingdashboard.useWholePercentagesFrom0To100BinaryChannels_aabe4")}</p>{/if}
           <div class="save-bar"><div><strong>{serviceDirty?$t("lightingdashboard.saveYourChanges_c4a1d"):$t("lightingdashboard.readyForService_376fe")}</strong><p>{serviceDirty?$t("lightingdashboard.saveToUseTheseLevelsTheNextTimeService_9f3e9"):$t("lightingdashboard.editLevelsAboveThenSaveBeforeStartingService_ae4ce")}</p></div><div class="actions"><ActionButton secondary onclick={loadService} disabled={busy}>{$t("lightingdashboard.reloadServiceSettings_8a6ea")}</ActionButton><ActionButton type="submit" disabled={busy || !serviceValid || !serviceDirty || !serviceReconciled}>{$t("lightingdashboard.saveServiceSettings_37e83")}</ActionButton></div></div>
           <p class="footnote">{$t("lightingdashboard.reloadReplacesUnsavedServiceEditsSavingSettingsDoesNot_7bd91")}</p>
@@ -68,13 +75,14 @@ Third-party material retains its own terms.
     <div class="section-title"><div><p>{firmware.pwm_count} {$t("lightingdashboard.outputsApplySendsTheCommandDraftReportedOutputUpdates_b98c4")}</p></div><StateBadge tone={active?'active':'neutral'}>{$t("lightingdashboard.service_e5bc1")} <span data-testid="service">{active?(snapshot.blackout?$t("lightingdashboard.blackoutActive_01b9f"):$t("lightingdashboard.active_a733b")):$t("lightingdashboard.off_e3de5")}</span></StateBadge></div>
 
     <ol class="channel-list">
-      {#each Array.from({length:firmware.pwm_count},(_,i)=>i+1) as channel}
+      {#each listed as channel}
         <li data-testid="channel" class="channel-row">
           <div class="channel-identity"><div><h3><ChannelIdentity number={channel}/></h3><p class:stale><strong>{snapshot.pwms[String(channel)]}</strong> {$t("app.raw_ce158")} <span>· {stale?$t("app.readbackStale_e56ed"):$t("lightingtools.reported_73c20")}</span></p><RawMeter value={snapshot.pwms[String(channel)]} {stale}/></div></div>
           <div class="command-inputs"><span class="command-label">{$t("lightingdashboard.localCommandDraftRaw_b051b")}</span><LevelControl id={`raw-${channel}`} label={$t("lightingdashboard.channelV0Raw_f1db0",{v0: channel})} bind:value={raw[channel]} max={PWM_RAW_MAX} disabled={busy}/><ActionButton secondary label={$t("lightingdashboard.applyChannelV0_04fed",{v0: channel})} onclick={()=>applyRaw(channel)} disabled={busy || !inRange(raw[channel],PWM_RAW_MAX)}>{$t("lightingdashboard.apply_cfea4")}</ActionButton></div>
         </li>
       {/each}
     </ol>
+    <UnusedChannels {listed} count={firmware.pwm_count}/>
     <div class="all-channels"><div><h3>{$t("lightingdashboard.allChannels_844df")}</h3><p>{$t("lightingdashboard.oneCommandToAll_b3646")} {firmware.pwm_count} {$t("lightingdashboard.outputs_9cb67")}</p></div><div class="command-inputs"><span class="command-label">{$t("lightingdashboard.localCommandDraftRaw_b051b")}</span><LevelControl id="raw-all" label={$t("lightingdashboard.allChannelsRaw_44821")} bind:value={allRaw} max={PWM_RAW_MAX} disabled={busy}/><ActionButton label={$t("lightingdashboard.applyAllChannels_d7a36")} onclick={()=>applyRaw('all')} disabled={busy || !inRange(allRaw,PWM_RAW_MAX)}>{$t("lightingdashboard.applyAll_fbcb3")}</ActionButton></div></div>
     <p class="footnote">{$t("lightingdashboard.rawValuesAreNotBrightnessPercentagesMeterReference0_4b848")}</p>
     <p><a href="#lighting-tools">{$t("lightingdashboard.minimumOutputTimeLapseAndExpertDimming_be532")}</a></p><details class="behaviour"><summary>{$t("lightingdashboard.howRawCommandsAffectYourLighting_6449d")}</summary><p>{$t("lightingdashboard.planningUsuallyResumesAfterAboutAMinuteFixedValue_f3b21")}</p></details>

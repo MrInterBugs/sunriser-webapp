@@ -14,7 +14,8 @@ Third-party material retains its own terms.
   import {untrack} from 'svelte';
   import WeatherRuntime from './WeatherRuntime.svelte';
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
-  import {savedChannels} from './channels';
+  import {savedChannels,listedChannels,showUnusedChannels} from './channels';
+  import UnusedChannels from './ui/UnusedChannels.svelte';
   import EditorPage from './ui/EditorPage.svelte';
   import DraftBar from './ui/DraftBar.svelte';
   import StateBadge from './ui/StateBadge.svelte';
@@ -63,6 +64,8 @@ Third-party material retains its own terms.
     onedit: () => void;
   } = $props();
   let book = $state<Book>();
+  // Unused channels stay listed while a saved or drafted weather profile is assigned.
+  const listed = $derived(book ? listedChannels($savedChannels, book.channels.length, $showUnusedChannels, n => book!.channels[n-1].profile !== 0 || (book!.baseline[`pwm#${n}#weather`] ?? 0) !== 0) : []);
   let attempted = $state(false);
   let attemptedIds = $state<Record<number, boolean>>({});
   let selected = $state(0);
@@ -296,7 +299,7 @@ Third-party material retains its own terms.
           {$t("weather.channelsSharingAProfileHaveSynchronizedWeatherAssignmentDoes_77eed")}
         </p>
         <div class="weather-assignments">
-          {#each book.channels as ch, i}<div>
+          {#each listed as n}{@const i = n - 1}{@const ch = book.channels[i]}<div>
               <label for={`weather-channel-${i}`}
                 ><ChannelIdentity number={i+1}/></label
               ><select id={`weather-channel-${i}`} aria-label={$t("weather.channelV0WeatherProfile_3aeeb",{v0: i + 1})} bind:value={ch.profile}
@@ -309,6 +312,7 @@ Third-party material retains its own terms.
               >{#if ch.binary}<p>{$t("weather.binaryOutputWeatherIgnored_966de")}</p>{/if}
             </div>{/each}
         </div>
+        <UnusedChannels {listed} count={book.channels.length}/>
         </section></div>
         {#if !valid}<p role="alert">
             {$t("weather.checkProfileNamesChannelReferencesIntegerRangesAndMinimum_320b9")}

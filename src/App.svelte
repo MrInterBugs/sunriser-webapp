@@ -18,7 +18,8 @@ Third-party material retains its own terms.
   let labelsPhase=$state<'idle'|'loading'|'ready'|'error'>('idle');
   let hostnameStale=$state(false);
   let readingState=$state(false),visible=$state(document.visibilityState==='visible');
-  import {readChannels,savedChannels,channelLabel} from './channels';
+  import {readChannels,savedChannels,channelLabel,listedChannels,showUnusedChannels} from './channels';
+  import UnusedChannels from './ui/UnusedChannels.svelte';
   import ChannelConfiguration from './ChannelConfiguration.svelte';
   import DevicePreferences from './DevicePreferences.svelte';
   import Help from './Help.svelte';
@@ -174,6 +175,9 @@ Third-party material retains its own terms.
     const selected=overviewChannel;
     try{await loadDailyPlan(selected,refresh);}catch{/* Per-channel saved-plan error is displayed locally. */}finally{end();}
   }
+  // Unused channels leave the Overview unless they are currently lit.
+  const overviewListed=$derived(firmware?listedChannels($savedChannels,firmware.pwm_count,$showUnusedChannels,n=>Number(snapshot?.pwms[String(n)])>0):[]);
+  $effect(()=>{const listed=overviewListed;if(listed.length&&!listed.includes(overviewChannel))untrack(()=>overviewChannel=listed[0]);});
   const dirty = $derived(hostname !== persisted);
   const valid = $derived(validHostname(hostname));
 
@@ -401,15 +405,15 @@ Third-party material retains its own terms.
           <div><h1>{$t("app.overview_0efc2")}</h1></div>
           <div class="overview-heading-actions"><button class="secondary" onclick={() => refresh()} disabled={busy}>{$t("app.refreshState_0a7bf")}</button></div>
         </div>
-        <OverviewLighting {firmware} {snapshot} hostname={persisted} {hostnameStale} {stale} {busy} unverified={!!$configurationState.recovery} plan={$savedDailyPlans[overviewChannel]} onretry={()=>readDaily(true)} bind:selected={overviewChannel} unsaved={scheduleUnsaved}/>
+        <OverviewLighting {firmware} {snapshot} hostname={persisted} {hostnameStale} {stale} {busy} unverified={!!$configurationState.recovery} plan={$savedDailyPlans[overviewChannel]} onretry={()=>readDaily(true)} bind:selected={overviewChannel} channels={overviewListed} unsaved={scheduleUnsaved}/>
         <div class="monitor-workspace living-monitor"><section class="overview-outputs" aria-labelledby="channels-title">
           <div class="overview-top"><h2 id="channels-title">{$t("app.reportedChannelOutput_656b2")}</h2><span>{$t("app.rawCounts_d9b8b")}</span></div>
           <ol class="channels">
-            {#each Array.from({ length: firmware.pwm_count }, (_, i) => i + 1) as channel}
+            {#each overviewListed as channel}
               <li data-testid="channel"><button type="button" class="output-select" aria-label={$t("app.inspectV0ChannelV1SavedSchedule_327d9",{v0: channelLabel($savedChannels[channel-1],$language)?channelLabel($savedChannels[channel-1],$language)+' · ':'',v1: channel})} aria-pressed={overviewChannel===channel} onclick={()=>overviewChannel=channel}><span class="output-name"><ChannelIdentity number={channel}/></span><strong>{snapshot.pwms[String(channel)]} <small>{$t("app.raw_ce158")}</small></strong></button><RawMeter value={snapshot.pwms[String(channel)]} {stale}/></li>
             {/each}
           </ol>
-          <p class="meter-key">{$t("app.reportedRawCountsNotBrightnessPercentagesMeterReference0_26f24")}</p>
+          <div class="output-footnotes"><p class="meter-key">{$t("app.reportedRawCountsNotBrightnessPercentagesMeterReference0_26f24")}</p><UnusedChannels listed={overviewListed} count={firmware.pwm_count}/></div>
           <div class="overview-links"><a href="#channels">{$t("app.openChannelControls_7799e")} <span aria-hidden="true">→</span></a><a href="#schedules">{$t("app.editSchedules_8a533")} <span aria-hidden="true">→</span></a><a href="#help">{$t("app.gettingStartedAndHelp_915dc")} <span aria-hidden="true">→</span></a></div>
         </section>
         <OperatingState {snapshot} {stale} loading={readingState}/></div>
@@ -498,6 +502,9 @@ Third-party material retains its own terms.
   .overview-outputs :global(.raw-meter) { margin:0; } .overview-outputs :global(.channels strong) { text-align:right; color:var(--sr-ink); font:500 23px var(--sr-mono); letter-spacing:-1px; }
   .overview-outputs small { font:400 11px var(--sr-font); letter-spacing:0; color:var(--sr-muted); }
   .overview-outputs :global(.meter-key) { font-size:12px; margin:12px 0 0; }
+  /* Meter key left, unused-channel note right; they wrap onto two lines when narrow. */
+  .output-footnotes { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0 24px; margin-top:12px; }
+  .output-footnotes :global(.meter-key), .output-footnotes :global(.unused-channels) { margin:0; }
   .overview-links { display:flex; flex-wrap:wrap; gap:8px 24px; }
   .overview-links a { min-height:44px; display:flex; align-items:center; gap:12px; font-size:14px; font-weight:600; }
   .overview-details { margin-top:18px; padding-top:16px; border-top:1px solid var(--sr-line); }

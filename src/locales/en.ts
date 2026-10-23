@@ -862,7 +862,7 @@ export const en = {
   "guidance.existingMode4IsPreserved_845d4": "Existing mode 4 is preserved",
   "guidance.noAssignedWeatherProfile_59497": "No assigned weather profile",
   "help-content.reportedChannelOutputIsAnIndependentRawCountNormally_4fe50": "Reported channel output is an independent raw count, referenced to 0–1024; ordinary dimming defaults to a 1000 cap. It is not a brightness percentage. Editing a slider or number changes a local command draft only. Apply sends that command and reads state separately.",
-  "help-content.configureChannelsLoadsSavedColourPresetsAndBinaryOn_8f07e": "Configure channels loads saved colour presets and binary/on-off settings. Presets are display labels and colours, not changes to physical light spectrum. Multi-channel choices expand only into available channels. Unknown values are preserved. Choose \"Custom label…\" at the end of the list to type your own name (up to 32 characters); choosing an original label again clears it.",
+  "help-content.configureChannelsLoadsSavedColourPresetsAndBinaryOn_8f07e": "Configure channels loads saved colour presets and binary/on-off settings. Presets are display labels and colours, not changes to physical light spectrum. Multi-channel choices expand only into available channels. Unknown values are preserved. Choose \"Custom label…\" at the end of the list to type your own name (up to 32 characters); choosing an original label again clears it. Choose \"Not used\" (with no custom label) to hide a channel everywhere except this editor; it stays listed while it still has output, a schedule, weather, a sensor response or an unsaved draft on that page. \"Show unused channels\" lists them all for this browser session.",
   "help-content.reviewEveryExpandedChannelBeforeSaveCrossingBetweenPump_48635": "Review every expanded channel before Save. Crossing between pump/CO₂ and lighting preset categories changes the binary-mode draft automatically; explicit on/off overrides remain available. The legacy UVA expansion case mismatch is preserved; the standalone UVA display preset remains selectable.",
   "help-content.rawCommandsOnFixedModeChannelsPersistTheFixed_01977": "Raw commands on fixed-mode channels persist the fixed value, including after restart. Other planning normally resumes after about a minute. A successful Apply does not establish physical output, and does not stop service mode.",
   "help-content.serviceAndBlackout_51b7a": "Service and blackout",
@@ -1238,5 +1238,12 @@ export const en = {
   "sensors.removalChanged": "The saved sensor list changed. Review the sensor again before removing it.",
   "help.sensorRemoval": "Remove saved sensor clears only the selected ID’s registration and settings, after confirmation. A connected probe remains detectable and is not registered again automatically. Removal persists in configuration backups; restoring an older backup can reintroduce the registration.",
   "sensors.removeControlWarning": "Any temperature-based channel control configured for this sensor will be disabled.",
+  "unusedChannels.hiddenOne": "1 unused channel hidden.",
+  "unusedChannels.hiddenMany": "{v0} unused channels hidden.",
+  "unusedChannels.showing": "Showing unused channels.",
+  "unusedChannels.show": "Show unused channels",
+  "unusedChannels.hide": "Hide unused channels",
+  "unusedChannels.showShort": "Show",
+  "unusedChannels.hideShort": "Hide",
 } as const;
 export type MessageKey = keyof typeof en;

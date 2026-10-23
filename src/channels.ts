@@ -38,6 +38,18 @@ export function channelDisplay(number:number,channel?:Channel,fallback='',langua
   const label=channelLabel(channel,language)||fallback;
   return label?`${String(number).padStart(2,'0')} · ${label}`:translate(language,'channels.channelV0_04477',{v0:number});
 }
+/** "Not used" in the Channels editor: a saved empty colour and no custom name. A never-saved colour stays listed. */
+export function channelUnused(channel?:Channel):boolean{return channel?.color===''&&!(typeof channel.name==='string'&&channel.name.trim());}
+/** Session-only choice to list unused channels on every page; a reload hides them again. */
+export const showUnusedChannels=writable(false);
+/**
+ * Channel numbers a page should list. Unused channels are left out unless shown
+ * for the session or `keep` reports a setting or output on that page, so nothing
+ * that still affects the lights disappears.
+ */
+export function listedChannels(channels:Channel[],count:number,show:boolean,keep:(n:number)=>boolean=()=>false):number[]{
+  return Array.from({length:count},(_,i)=>i+1).filter(n=>show||!channelUnused(channels[n-1])||keep(n));
+}
 export function channelColor(channel?:Channel){return presets.find(p=>p.id===channel?.color)?.color;}
 export function choosePreset(channels:Channel[], index:number, id:string){
   if(!channels[index] || (id!==''&&!presets.some(p=>p.id===id)))throw Error(source("channels.unknownPreset_bab86"));

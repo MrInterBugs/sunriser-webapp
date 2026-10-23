@@ -12,7 +12,8 @@ Third-party material retains its own terms.
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
  import {readSavedConfiguration,saveConfiguration,inRange,type Firmware,type DeviceState} from './api';
- import {readChannels,savedChannels} from './channels';
+ import {readChannels,savedChannels,listedChannels,showUnusedChannels} from './channels';
+ import UnusedChannels from './ui/UnusedChannels.svelte';
  import {lightingKeys,decodeLighting,lightingPatch,timeLapseState,type LightingValues} from './advanced';
  import ActionButton from './ui/ActionButton.svelte';
  import DraftBar from './ui/DraftBar.svelte';
@@ -22,7 +23,8 @@ Third-party material retains its own terms.
  import LevelControl from './ui/LevelControl.svelte';
  let {active,busy,firmware,snapshot,stale,feedback,perform,command,refresh,readback,onedit}:{active:boolean;busy:boolean;firmware:Firmware;snapshot:DeviceState;stale:boolean;feedback:string;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>;command:(value:{pwms?:Record<string,number>;timewarp?:number})=>Promise<void>;refresh:()=>void;readback:()=>Promise<void>;onedit:()=>void}=$props();
  let draft=$state<LightingValues>(),base=$state<LightingValues>({}),attempted=$state(false),loading=$state(false),loadFailed=$state(false);
- const channels=$derived(Array.from({length:firmware.pwm_count},(_,i)=>i+1));
+ // Unused channels stay listed while lit or while one of their settings has an unsaved draft.
+ const channels=$derived(listedChannels($savedChannels,firmware.pwm_count,$showUnusedChannels,n=>Number(snapshot.pwms[String(n)])>0||[`pwm#${n}#min`,`pwm#${n}#max`,`pwm#${n}#nosmart`].some(k=>!!draft&&JSON.stringify(draft[k])!==JSON.stringify(base[k]))));
  function assessment(scope:'minimum'|'expert'){try{return {patch:draft?lightingPatch(draft,base,firmware.pwm_count,scope):{},error:''};}catch(e){return {patch:{},error:(e as Error).message};}}
  const minimum=$derived(assessment('minimum')),expert=$derived(assessment('expert')),mode=$derived(timeLapseState(snapshot,stale));
  const flags=[['higherminimum',source("lightingtools.raiseLowEndMinimum_60b13")],['oldfade',source("lightingtools.useOriginalDimmingAlgorithm_51c50")]];
@@ -40,6 +42,7 @@ Third-party material retains its own terms.
  <nav aria-label={$t("lightingtools.lightingToolsSections_1b340")}><a href="#minimum-settings" onclick={e=>{e.preventDefault();document.getElementById('minimum-settings')?.scrollIntoView({block:'start'});}}>{$t("lightingtools.minimumOutput_9fc4c")}</a><a href="#expert-settings" onclick={e=>{e.preventDefault();document.getElementById('expert-settings')?.scrollIntoView({block:'start'});}}>{$t("lightingtools.expertDimming_1dd6d")}</a><a href="#schedules">{$t("lightingtools.schedulesAndRawCurves_eba01")}</a></nav>
  <div class="load-row">{#if draft||loadFailed}<ActionButton secondary disabled={busy} onclick={()=>load(true)}>{draft?$t("lightingtools.reloadLightingSettings_d4c6e"):$t("lightingtools.retryLightingSettings_3fc55")}</ActionButton>{/if}<p>{draft?$t("lightingtools.reloadReplacesBothSettingsDraftsNavigationKeepsUnsavedEdits_bbf37"):$t("lightingtools.savedSettingsLoadWhenThisPageOpensTimeLapse_a5410")}</p></div>
  {#if draft}
+ <UnusedChannels listed={channels} count={firmware.pwm_count}/>
  <section id="minimum-settings" aria-label={$t("lightingtools.minimumOutputSettings_24196")}><h2>{$t("lightingtools.minimumOutput_9fc4c")}</h2><p>{$t("lightingtools.setAStoredMinimumFrom01000Raw0_f4d2f")}</p>
  <p class="notice">{$t("lightingtools.previewSendsALiveRawCommandFixedModeChannels_0d04d")}</p>
  <form onsubmit={e=>save('minimum',e)} novalidate><DraftBar {snapshotRevision} dirty={!!Object.keys(minimum.patch).length||!!minimum.error} {busy} feedback={$renderText(feedback)} disabled={!Object.keys(minimum.patch).length||!!minimum.error} label={$t("lightingtools.saveMinimumSettings_9296f")} scope={$t("lightingtools.minimum_bd164")} detail={$t("lightingtools.onlyChangedMinimumSettingsAreSavedOutputIsRead_05fba")}/>

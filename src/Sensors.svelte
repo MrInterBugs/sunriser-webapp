@@ -15,7 +15,8 @@ Third-party material retains its own terms.
   import {untrack,onDestroy,tick} from 'svelte';
   import {reviewSensorRemoval,verifySensorRemoval,type SensorRemoval} from './sensor-removal';
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
-  import {savedChannels,channelDisplay} from './channels';
+  import {savedChannels,channelDisplay,listedChannels,showUnusedChannels} from './channels';
+  import UnusedChannels from './ui/UnusedChannels.svelte';
   import EditorPage from './ui/EditorPage.svelte';
   import DraftBar from './ui/DraftBar.svelte';
   import StateBadge from './ui/StateBadge.svelte';
@@ -77,6 +78,9 @@ Third-party material retains its own terms.
   const editor = $derived(editors[selected]);
   const reading = $derived(sensorState.readings[selected]);
   const valid = $derived(!!editor && validDraft(editor, channels));
+  // Unused channels stay listed while this sensor has a saved or drafted response for them.
+  const responseSet=(n:number)=>{const p=editor!.draft.channels[n-1];return Object.values(p).some(a=>a.enabled||a.absolute||a.percent!=='0')||Object.entries(editor!.baseline).some(([k,v])=>k.endsWith(`#pwm#${n}#domin`)||k.endsWith(`#pwm#${n}#domax`)||k.endsWith(`#pwm#${n}#percentmin`)||k.endsWith(`#pwm#${n}#percentmax`)||k.endsWith(`#pwm#${n}#absmin`)||k.endsWith(`#pwm#${n}#absmax`)?!!v:false);};
+  const listed = $derived(editor ? listedChannels($savedChannels, channels.length, $showUnusedChannels, responseSet) : []);
   const patch = $derived(editor ? sensorPatch(selected, editor, catalogue) : {});
   $effect(() => {
     if (active && !attempted && !busy && !$configurationState.recovery) void reload();
@@ -300,8 +304,8 @@ Third-party material retains its own terms.
    </div></div><p>{$t("sensors.storedBounds_31ede")} {numberText(editor.min/10,$language,Number.isInteger(editor.min/10)?0:1)}–{numberText(editor.max/10,$language,Number.isInteger(editor.max/10)?0:1)}{$t("sensors.cMinimumMustNotExceedMaximumThresholdsAreInclusive_bf7b0")}</p>
    <details class="months-editor" open><summary>{$t("sensors.activeMonthsNoneSelectedMeansAll_28793")}</summary><fieldset><legend class="visually-hidden">{$t("sensors.activeMonthsNoneSelectedMeansAll_622b6")}</legend><div class="sensor-months">{#each Array.from({length:12},(_,i)=>i+1) as n}<label class="check"><input type="checkbox" checked={editor.draft.months.includes(n)} onchange={e=>month(n,e.currentTarget.checked)} />{$t("sensors.month_082bc")} {n}</label>{/each}</div></fieldset></details>
    <p class="notice" data-testid="sensor-month-warning">{$t("sensors.firmwareLimitationChangedMonthSelectionsMayRetainPreviouslyActive_f7884")}</p>
-   <div class="assignments-heading"><div><h2>{$t("sensors.channelAssignments_433f0")}</h2><p>{$t("sensors.responsesAtTheInclusiveMinimumAndMaximumThresholdsEdits_153dd")}</p></div><div class="channel-jump"><label for="sensor-response-jump">{$t("sensors.jumpToChannelResponse_a9e18")}</label><div class="jump-controls"><select id="sensor-response-jump" bind:value={responseJump} disabled={busy}><option value="">{$t("sensors.chooseChannel_60b53")}</option>{#each channels as channel,i}<option value={String(i+1)}>{channelDisplay(i+1,$savedChannels[i],$configurationState.revision===0?channel.name:'',$language)}</option>{/each}</select><button type="button" class="secondary" aria-label={$t("sensors.goToChannelResponse_797c1")} disabled={busy||!responseJump} onclick={()=>jumpChannel(responseJump)}>{$t("sensors.go_2e0b4")}</button></div></div></div>
-   <p class="response-help">{$t("sensors.relative0200Absolute0100BinaryOffOn_becf4")}</p><div class="service-fields sensor-responses">{#each channels as channel,i}<fieldset id={`sensor-channel-${i+1}`} class="sensor-response" tabindex="-1"><legend><ChannelIdentity number={i+1} fallback={channel.name}/></legend>
+   <div class="assignments-heading"><div><h2>{$t("sensors.channelAssignments_433f0")}</h2><p>{$t("sensors.responsesAtTheInclusiveMinimumAndMaximumThresholdsEdits_153dd")}</p></div><div class="channel-jump"><label for="sensor-response-jump">{$t("sensors.jumpToChannelResponse_a9e18")}</label><div class="jump-controls"><select id="sensor-response-jump" bind:value={responseJump} disabled={busy}><option value="">{$t("sensors.chooseChannel_60b53")}</option>{#each listed as n}{@const i=n-1}{@const channel=channels[i]}<option value={String(i+1)}>{channelDisplay(i+1,$savedChannels[i],$configurationState.revision===0?channel.name:'',$language)}</option>{/each}</select><button type="button" class="secondary" aria-label={$t("sensors.goToChannelResponse_797c1")} disabled={busy||!responseJump} onclick={()=>jumpChannel(responseJump)}>{$t("sensors.go_2e0b4")}</button></div></div></div>
+   <p class="response-help">{$t("sensors.relative0200Absolute0100BinaryOffOn_becf4")}</p><div class="service-fields sensor-responses">{#each listed as n}{@const i=n-1}{@const channel=channels[i]}<fieldset id={`sensor-channel-${i+1}`} class="sensor-response" tabindex="-1"><legend><ChannelIdentity number={i+1} fallback={channel.name}/></legend>
     {#if channel.manager===0}<p>{$t("sensors.plannerInactiveSensorAssignmentsWillNotControlThisOutput_55dc3")}</p>{/if}
     <div class="threshold-pair">{#each ['min','max'] as side}{@const s=side as 'min'|'max'}{@const a=editor.draft.channels[i][s]}{@const label=$t("sensors.channelV0V1_d0b6e",{v0: i+1,v1: s==='min'?$t("sensors.belowMinimum_f0474"):$t("sensors.aboveMaximum_62554")})}
      <div><label class="check response-enable"><input type="checkbox" aria-label={$renderText(label)} bind:checked={a.enabled} />{s==='min'?$t("sensors.atBelowMinimum_002fc"):$t("sensors.atAboveMaximum_e26e8")}</label>
@@ -309,6 +313,7 @@ Third-party material retains its own terms.
      {:else}<div class="response-value-row"><div class="response-value"><label class="visually-hidden" for={`sensor-${i}-${s}`}>{$t("schedules.level_9a874")}</label><div class="sensor-level"><input class="sensor-percent" id={`sensor-${i}-${s}`} inputmode="numeric" aria-label={$t("sensors.v0Percent_ad07f",{v0: label})} aria-invalid={!/^\d+$/.test(a.percent) || Number(a.percent)>(a.absolute?100:200)} bind:value={a.percent} /><span aria-hidden="true">%</span></div></div><label class="check"><input type="checkbox" aria-label={$t("sensors.v0Absolute_85785",{v0: label})} bind:checked={a.absolute} />{$t("sensors.absolute_a6c5f")}</label></div>{/if}
     </div>{/each}</div>
    </fieldset>{/each}</div>
+   <UnusedChannels {listed} count={channels.length}/>
    <div class="form-actions"><button type="button" class="secondary" onclick={reset}>{$t("sensors.resetSensorDraft_023e8")}</button><button type="button" class="secondary" onclick={()=>document.getElementById('sensor-name')?.focus()}>{$t("sensors.backToSensorSettings_f138e")}</button></div>
    {#if !valid}<p role="alert">{$t("sensors.checkTheNameCorrectionOrderedThresholdsAndChannelPercentages_034c6")}</p>{/if}
    </fieldset>

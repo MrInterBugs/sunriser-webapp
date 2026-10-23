@@ -12,7 +12,7 @@ Third-party material retains its own terms.
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
  import {tick} from 'svelte';
- import {readChannels,savedChannels,choosePreset,channelPatch,channelNameLimit,presets,type Channel} from './channels';
+ import {readChannels,savedChannels,choosePreset,channelPatch,channelNameLimit,presets,channelUnused,type Channel} from './channels';
  import {saveConfiguration,type Firmware} from './api';
  import ActionButton from './ui/ActionButton.svelte';
  import DraftBar from './ui/DraftBar.svelte';
@@ -41,7 +41,7 @@ Third-party material retains its own terms.
  <DraftBar {snapshotRevision} feedback={$renderText(feedback)} {dirty} {busy} disabled={!dirty} label={$t("channelconfiguration.saveChannelConfiguration_90956")} scope={$t("channelconfiguration.channel_fbe7d")} detail={$t("channelconfiguration.onlyChangedColourAndBinaryKeysAreSavedReported_27624")}/>
  <div class="configuration-grid">
  {#each draft as channel,i}
- <fieldset disabled={busy}><legend><ChannelIdentity number={i+1}/></legend>
+ <fieldset disabled={busy} class:unused={channelUnused(channel)}><legend><ChannelIdentity number={i+1}/></legend>
  <label for={`channel-colour-${i}`}>{$t("channelconfiguration.channel_879f0")} {i+1} {$t("channelconfiguration.label_4c1e2")}</label>
  <select id={`channel-colour-${i}`} value={custom(i)?'__custom__':channel.color==null?'__absent__':typeof channel.color==='string'?channel.color:'__unknown__'} onchange={e=>select(i,e.currentTarget.value)}>
  {#if channel.color==null}<option value="__absent__" disabled>{$t("channelconfiguration.notConfigured_81193")}</option>{:else if typeof channel.color!=='string'||(channel.color!==''&&!presets.some(p=>p.id===channel.color))}<option value={typeof channel.color==='string'?channel.color:'__unknown__'} disabled>{$t("channelconfiguration.unknownValuePreserved_dc58b")} {JSON.stringify(channel.color)}</option>{/if}
@@ -60,6 +60,7 @@ Third-party material retains its own terms.
  <div class="links"><a href="#schedules">{$t("channelconfiguration.scheduleModesAndPlanning_1cb61")}</a><a href="#service">{$t("channelconfiguration.serviceLevelsAndChannelExclusions_88f68")}</a></div>
 </section>
 <style>
+ fieldset.unused{border-style:dashed;background:var(--sr-soft)}
  .channel-configuration{border-top:1px solid var(--sr-line);margin-top:28px;padding-top:24px}
  .title{display:flex;justify-content:space-between;align-items:center;gap:20px}.title h2{font-size:18px;margin:0;scroll-margin-top:16px}
  p.error{color:var(--sr-error)}

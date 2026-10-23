@@ -14,7 +14,8 @@ Third-party material retains its own terms.
  const configurationReconciled=$derived(!$configurationState.recovery&&snapshotRevision===$configurationState.revision);
   import DayCycle from "./ui/DayCycle.svelte";
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
-  import {savedChannels,channelDisplay} from './channels';
+  import {savedChannels,channelDisplay,listedChannels,showUnusedChannels} from './channels';
+  import UnusedChannels from './ui/UnusedChannels.svelte';
   import { onMount, tick, untrack } from "svelte";
   import ActionButton from "./ui/ActionButton.svelte";
   import StateBadge from "./ui/StateBadge.svelte";
@@ -250,12 +251,15 @@ Third-party material retains its own terms.
     program = book.programs[0]?.id ?? 0;
     onedit();
   }
+  // Unused channels are listed only while they have a saved or drafted plan.
+  const listed = $derived(book ? listedChannels($savedChannels, book.channels.length, $showUnusedChannels, n => book!.channels[n-1].manager !== 0 || baseline?.channels[n-1]?.manager !== 0) : []);
+  $effect(() => { const shown = listed; if (shown.length && !shown.includes(channel)) untrack(() => channel = shown[0]); });
   function copyPlan() {
     if (!book || !baseline || edited || errors.length) return;
     const source = baseline.channels[channel - 1];
     if (source.manager > 3) return;
     book.channels.forEach((_, i) => {
-      if (targets[i] && i !== channel - 1) book!.channels[i] = clone(source);
+      if (targets[i] && i !== channel - 1 && listed.includes(i + 1)) book!.channels[i] = clone(source);
     });
     onedit();
   }
@@ -267,7 +271,7 @@ Third-party material retains its own terms.
     <div class="reload"><ActionButton secondary onclick={()=>load(true)} disabled={busy}>{$t("schedules.reloadSchedules_7b37d")}</ActionButton><small>{$t("schedules.reloadReplacesUnsavedEdits_83489")}</small></div>
   </div>
   {#if book}
-    <div class="schedule-workspace"><aside class="channel-roster" aria-label={$t("schedules.scheduleChannels_593d6")}><h2>{$t("lightingdashboard.channels_18e03")}</h2>{#each book.channels as ch,i}<button type="button" aria-label={$t("schedules.selectChannelV0_634d4",{v0: i+1})} aria-pressed={channel===i+1 && view!=='program'} disabled={busy} onclick={()=>{channel=i+1;if(view==='program')view='day';}}><strong><ChannelIdentity number={i+1}/></strong><span>{$renderText(modeNames[ch.manager])}{JSON.stringify(ch)!==JSON.stringify(baseline!.channels[i])?$t('common.draftSuffix'):''}</span></button>{/each}</aside><form novalidate onsubmit={save} oninput={onedit} onchange={onedit}>
+    <div class="schedule-workspace"><aside class="channel-roster" aria-label={$t("schedules.scheduleChannels_593d6")}><h2>{$t("lightingdashboard.channels_18e03")}</h2>{#each listed as n}{@const i=n-1}{@const ch=book.channels[i]}<button type="button" aria-label={$t("schedules.selectChannelV0_634d4",{v0: i+1})} aria-pressed={channel===i+1 && view!=='program'} disabled={busy} onclick={()=>{channel=i+1;if(view==='program')view='day';}}><strong><ChannelIdentity number={i+1}/></strong><span>{$renderText(modeNames[ch.manager])}{JSON.stringify(ch)!==JSON.stringify(baseline!.channels[i])?$t('common.draftSuffix'):''}</span></button>{/each}<UnusedChannels {listed} count={book.channels.length}/></aside><form novalidate onsubmit={save} oninput={onedit} onchange={onedit}>
       <fieldset class="editor" disabled={busy}>
         <legend class="visually-hidden">{$t("schedules.scheduleEditor_0b45b")}</legend>
         <div class="save-bar">
@@ -285,13 +289,15 @@ Third-party material retains its own terms.
         </div>
         <div class="selectors">
           {#if view !== 'program'}
-            <label>{$t("schedules.scheduleChannel_0860e")}<select bind:value={channel}>{#each book.channels as ch,i}<option value={i+1}>{channelDisplay(i+1,$savedChannels[i],'',$language)}</option>{/each}</select></label>
+            <label>{$t("schedules.scheduleChannel_0860e")}<select bind:value={channel}>{#each listed as n}{@const i=n-1}<option value={i+1}>{channelDisplay(i+1,$savedChannels[i],'',$language)}</option>{/each}</select></label>
             <label>{$t("schedules.planningMode_20d36")}<select bind:value={book.channels[channel-1].manager}><option value={0}>{$t("schedules.noSchedule_15d88")}</option><option value={1}>{$t("schedules.daily_72829")}</option><option value={2}>{$t("schedules.weekly_158f3")}</option><option value={3}>{$t("schedules.fixedExistingValue_59fdc")}</option>{#if book.channels[channel-1].manager===4}<option value={4} disabled>{$t("schedules.otherModePreserved_71c40")}</option>{/if}</select></label>
           {:else}
             <label class="program-picker">{$t("schedules.program_9d680")}<select bind:value={program}>{#each book.programs as p}<option value={p.id}>#{p.id} {p.name}</option>{/each}</select></label>
           {/if}
         </div>
         </div>
+        <!-- Narrow screens hide the roster, so the note follows the channel picker instead. -->
+        {#if view !== 'program'}<div class="roster-fallback"><UnusedChannels {listed} count={book.channels.length}/></div>{/if}
         <div class="view-switch" role="group" aria-label={$t("schedules.scheduleView_1418a")}>{#each [['day',source("schedules.dailyCurve_e2d23")],['week',source("schedules.weeklyAssignments_539c2")],['program',source("schedules.programs_ab14d")]] as [value,label]}<button type="button" aria-pressed={view===value} onclick={()=>view=value}>{$renderText(label)}</button>{/each}</div>
         {#if view !== 'program'}
           <!-- Planning explanation is adjacent to the chart/weekly editor below. -->
@@ -342,11 +348,11 @@ Third-party material retains its own terms.
         {:else}<section class="empty-programs"><h2>{$t("schedules.noProgramsYet_17ed6")}</h2><p>{$t("schedules.addAProgramToBuildAReusableCurveFor_8deea")}</p></section>{/if}
         {#if view !== 'program'}
           <section class="copy-section"><div class="section-title"><h2>{$t("schedules.copySavedPlanFrom_c4c41")} {channelDisplay(channel,$savedChannels[channel-1],'',$language)}</h2><span>{$t("schedules.saveFirstThenCopy_4ba0b")}</span></div><p>{$t("schedules.copiesDailyPointsWeeklyAssignmentsAndPlanningModeFixed_c8408")}</p>
-            <div class="targets">{#each book.channels as ch,i}<label><input type="checkbox" bind:checked={targets[i]} disabled={i===channel-1} aria-label={$t("schedules.copyTargetV0_7146e",{v0: i+1})} />{channelDisplay(i+1,$savedChannels[i],'',$language)}</label>{/each}</div>
-            <ActionButton secondary onclick={copyPlan} disabled={!!edited||!!errors.length||book.channels[channel-1].manager>3||!targets.some((v,i)=>v&&i!==channel-1)}>{$t("schedules.copySavedPlan_f3250")}</ActionButton>
+            <div class="targets">{#each listed as n}{@const i=n-1}<label><input type="checkbox" bind:checked={targets[i]} disabled={i===channel-1} aria-label={$t("schedules.copyTargetV0_7146e",{v0: i+1})} />{channelDisplay(i+1,$savedChannels[i],'',$language)}</label>{/each}</div>
+            <ActionButton secondary onclick={copyPlan} disabled={!!edited||!!errors.length||book.channels[channel-1].manager>3||!targets.some((v,i)=>v&&i!==channel-1&&listed.includes(i+1))}>{$t("schedules.copySavedPlan_f3250")}</ActionButton>
           </section>
         {/if}
-      <ScheduleTools {book} curve={view==='week'?undefined:curve} curveKey={view==='program'?`program:${program}`:`day:${channel}`} showDaily={view!=='program'} {busy} reset={toolsReset} bind:pending={rawPending} oncurve={setCurve} onbook={next=>{book=next;onedit();}} onselect={key=>{if(key.startsWith('day:')){channel=Number(key.slice(4));view='day';}else{program=Number(key.slice(8));view='program';}}}/>
+      <ScheduleTools {book} {listed} curve={view==='week'?undefined:curve} curveKey={view==='program'?`program:${program}`:`day:${channel}`} showDaily={view!=='program'} {busy} reset={toolsReset} bind:pending={rawPending} oncurve={setCurve} onbook={next=>{book=next;onedit();}} onselect={key=>{if(key.startsWith('day:')){channel=Number(key.slice(4));view='day';}else{program=Number(key.slice(8));view='program';}}}/>
       </fieldset>
     </form></div>
   {:else}
@@ -433,7 +439,9 @@ Third-party material retains its own terms.
   .fallback { border-top:1px solid var(--sr-line); padding-top:16px; grid-column:1/-1; }
   .empty-programs,.unavailable { padding:32px 24px; background:var(--sr-surface); border:1px solid var(--sr-line); border-radius:var(--sr-radius); }
   .schedules :global(input),.schedules :global(select),.schedules :global(button) { scroll-margin-top:120px; }
-  @media(max-width:1250px) { .channel-roster { display:none; } .schedule-workspace { grid-template-columns:1fr; } }
+  .roster-fallback { display:none; }
+  .channel-roster :global(.unused-channels) { padding:0 13px; }
+  @media(max-width:1250px) { .roster-fallback { display:block; } .channel-roster { display:none; } .schedule-workspace { grid-template-columns:1fr; } }
   @media(max-width:900px) { .shift-grid { grid-template-columns:1fr; } .curve-layout { grid-template-columns:1fr; gap:20px; } .curve-graph { position:static; } .curve-editor { border-left:0; border-top:1px solid var(--sr-line); padding:20px 0 0; } }
   @media(max-width:600px) {
     .save-bar { position:static; }
