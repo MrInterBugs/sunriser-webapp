@@ -6,8 +6,9 @@ no separate backend, cloud account or remote assets are required by the frontend
 
 [![Living Aquascape Overview with reference photograph, saved Daily Rhythm and reported channel outputs](docs/screenshots/overview-desktop-en.webp)](docs/screenshots/overview-desktop-en.webp)
 
-*Current application, simulated SR10 data. The photograph is a reference aquascape,
-not a live view; the saved lighting rhythm is separate from reported output.*
+*Current application with SR10 readback (firmware 1.007), captured on 23 October
+2026. The photograph is a reference aquascape, not a live view; the saved lighting
+rhythm is separate from reported output.*
 
 ## Features
 

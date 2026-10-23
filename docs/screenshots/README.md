@@ -1,10 +1,18 @@
 # Application screenshots
 
-Actual captures of the current Living Aquascape application, made on 21 October
-2026 with Chromium 156. All values come from a deterministic **simulated SR10**
-fixture using the v1.006 API model. `sunriser-demo`, `192.0.2.10`, sensor identities,
-temperatures, outputs and saved schedules are demonstration data, not a connected
-controller. The photograph is a reference aquascape, not a live view.
+Actual captures of the current Living Aquascape application (`c4759bf`), made on
+23 October 2026 with Chromium 156. Metadata, state and selected saved settings
+were read from `http://192.168.0.13`, which reported **SunRiser10, firmware 1.007**.
+The photograph is a reference aquascape, not a live view.
+
+Controller reads were serialized with at least five seconds between requests.
+No configuration changes or output commands were sent. The application was
+served locally and read responses were cached; German and mobile captures reused
+the cache without further controller requests. State readback is fixed at
+**12:07:56 UTC**
+(14:07:56 device-local time); saved settings were read separately afterward.
+These are locally rendered views of captured readback, not a live monitoring
+session or physical-output validation.
 
 Desktop captures use a 1440×1000 viewport and include the full page. Mobile
 captures use a 390×844 viewport; Schedules is scrolled to the curve and point editor.
