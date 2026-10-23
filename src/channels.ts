@@ -55,12 +55,19 @@ export function choosePreset(channels:Channel[], index:number, id:string){
     if(offset===0)channels[target].color=replacement; else assign(target,replacement);
   });
 }
+/** Longest custom label the editor accepts; keeps overview, schedule and service pickers readable. */
+export const channelNameLimit=32;
 export function channelPatch(draft:Channel[],base:Channel[]){
   const patch:Record<string,unknown>={};
   draft.forEach((channel,i)=>{
     if(JSON.stringify(channel.color)!==JSON.stringify(base[i].color)){
       if(typeof channel.color!=='string'||(channel.color!==''&&!presets.some(p=>p.id===channel.color)))throw Error(source("channels.invalidColour_dd67f"));
       patch[`pwm#${i+1}#color`]=channel.color;
+    }
+    const name=typeof channel.name==='string'?channel.name.trim():channel.name,was=typeof base[i].name==='string'?(base[i].name as string).trim():base[i].name;
+    if(JSON.stringify(name??'')!==JSON.stringify(was??'')){
+      if(typeof name!=='string'||name.length>channelNameLimit||/[\u0000-\u001f\u007f]/.test(name))throw Error(source("channels.invalidChannelName_4b8e1"));
+      patch[`pwm#${i+1}#name`]=name;
     }
     if(JSON.stringify(channel.binary)!==JSON.stringify(base[i].binary)){
       if(typeof channel.binary!=='boolean')throw Error(source("channels.invalidBinarySetting_80f4b"));

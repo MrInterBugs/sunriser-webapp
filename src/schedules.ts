@@ -259,19 +259,32 @@ export async function saveSchedules(
   publishScheduleBook(next,changed);
 }
 
+export interface WeeklyProgram {id:number;name:string;points:Point[]}
 export interface DailyPlanState {
   phase:'loading'|'ready'|'error';
   channel?:ScheduleChannel;
+  /** Weekly channels only: the distinct non-deleted programs their slots reference. */
+  programs?:WeeklyProgram[];
+}
+/** Slots are Sunday=0..Saturday=6, default=7; a zero weekday slot falls back to the default. */
+export function weeklyProgramFor(plan:DailyPlanState|undefined,weekday:number):WeeklyProgram|undefined{
+  const week=plan?.channel?.week;
+  if(plan?.channel?.manager!==2||!week||!Number.isInteger(weekday)||weekday<0||weekday>6)return;
+  const id=week[weekday]||week[7];
+  return plan.programs?.find(p=>p.id===id);
 }
 export const savedDailyPlans=writable<Record<number,DailyPlanState>>({});
 let dailyEpoch=0;
 const pendingDaily=new Map<number,Promise<ScheduleChannel>>();
 export function resetSavedDailyPlans(){dailyEpoch++;pendingDaily.clear();savedDailyPlans.set({});}
+const weeklyPrograms=(book:ScheduleBook,channel:ScheduleChannel):WeeklyProgram[]=>
+  [...new Set(channel.week)].flatMap(id=>{const p=book.programs.find(q=>q.id===id);return p&&!validateCurve(p.points).length?[{id,name:p.name,points:clone(p.points)}]:[];});
 function publishScheduleBook(book:ScheduleBook,changed?:Set<number>){
-  savedDailyPlans.update(previous=>({...previous,...Object.fromEntries(book.channels.flatMap((channel,i)=>changed&&!changed.has(i+1)?[]:[[i+1,{phase:channel.manager===1&&validateCurve(channel.points).length?'error':'ready',channel:clone(channel)}]]))}));
+  savedDailyPlans.update(previous=>({...previous,...Object.fromEntries(book.channels.flatMap((channel,i)=>changed&&!changed.has(i+1)?[]:[[i+1,{phase:channel.manager===1&&validateCurve(channel.points).length?'error':'ready',channel:clone(channel),...(channel.manager===2?{programs:weeklyPrograms(book,channel)}:{})}]]))}));
 }
 /** One selected channel, through the same bounded configuration reader as the editor.
- * No weekly programmes, other channels or draft data are requested here. */
+ * Weekly channels also read their eight slots and only the programmes those slots
+ * reference; other channels and draft data are never requested here. */
 export function loadDailyPlan(number:number,refresh=false):Promise<ScheduleChannel>{
   if(!Number.isInteger(number)||number<1||number>10) return Promise.reject(Error(source("schedules.invalidChannel_f48c8")));
   const existing=get(savedDailyPlans)[number];
@@ -286,8 +299,23 @@ export function loadDailyPlan(number:number,refresh=false):Promise<ScheduleChann
       if(!integer(manager,4))throw Error(source("schedules.invalidChannelPlan_17ece"));
       const channel:ScheduleChannel={manager,points:manager===1?fromFlat(values[keys[1]]):[],week:[]};
       if(manager===1&&validateCurve(channel.points).length)throw Error(source("schedules.invalidDailyPoints_55861"));
+      let programs:WeeklyProgram[]|undefined;
+      if(manager===2){
+        const weekKey=`weekplanner#programs#${number}`,week=(await readSavedConfiguration([weekKey],refresh))[weekKey]??Array(8).fill(0);
+        if(!Array.isArray(week)||week.length!==8||week.some(id=>!integer(id,65535)))throw Error(source("schedules.invalidChannelPlan_17ece"));
+        channel.week=week as number[];
+        const ids=[...new Set(channel.week)].filter(id=>id!==0);
+        const details=ids.length?await readSavedConfiguration(ids.flatMap(id=>[`programs#setup#${id}#name`,`programs#setup#${id}#marker`,`programs#setup#${id}#deleted`]),refresh):{};
+        programs=ids.flatMap(id=>{
+          const name=details[`programs#setup#${id}#name`],deleted=details[`programs#setup#${id}#deleted`];
+          if(deleted===true||typeof name!=='string')return [];
+          const points=fromFlat(details[`programs#setup#${id}#marker`]);
+          if(validateCurve(points).length)throw Error(source("schedules.invalidDailyPoints_55861"));
+          return [{id,name,points}];
+        });
+      }
       if(epoch!==dailyEpoch)throw Error(source("schedules.obsoleteDailyPlan_5f4cb"));
-      savedDailyPlans.update(all=>({...all,[number]:{phase:'ready',channel:clone(channel)}}));
+      savedDailyPlans.update(all=>({...all,[number]:{phase:'ready',channel:clone(channel),...(programs?{programs}:{})}}));
       return channel;
     }catch(error){
       if(epoch===dailyEpoch)savedDailyPlans.update(all=>({...all,[number]:{...existing,phase:'error'}}));
