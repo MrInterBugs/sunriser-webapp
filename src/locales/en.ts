@@ -1,5 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 export const en = {
+  "common.joinMessages": "{v0} {v1}",
+  "systemsettings.clockName": "clock",
+  "systemsettings.networkName": "network",
+  "common.httpStatus": "HTTP {v0}",
+  "app.documentTitle": "SunRiser · Device overview",
+  "common.unexpectedError": "Unexpected error.",
   "app.operationPending_c929e": "Operation pending",
   "app.readbackStale_e56ed": "Readback stale",
   "app.readbackAvailable_465ca": "Readback available",
@@ -470,7 +476,7 @@ export const en = {
   "recovery.v0NoCompleteResponseFromTheDeviceV1The_6fd86": "{v0}: no complete response from the device ({v1}). The outcome is uncertain. Do not assume it was applied or rolled back. No write was retried. Check device readback before deciding to submit again.",
   "recovery.operationFailedOrOutcomeUncertainDoNotAssumeIt_7a4d6": "Operation failed or outcome uncertain. Do not assume it was rolled back. No write was retried. Check device readback before deciding to submit again.",
   "recovery.v0DeviceReachableV1FirmwareV2TimestampV3Uptime_b254d": "{v0}Device reachable: {v1}, firmware {v2}, timestamp {v3}, uptime {v4} s, hostname: {v5}. Installation and successful physical boot are not proven. Reload other editors explicitly to reconcile their retained drafts.",
-  "recovery.restoredValuesVerified_3f019": "Restored values verified.",
+  "recovery.restoredValuesVerified_3f019": "Restored values verified. ",
   "recovery.recoveryReadbackComplete_f8e8b": "Recovery readback complete.",
   "recovery.recoveryReadbackNotVerified_d63fe": "Recovery readback not verified.",
   "recovery.checkingDeviceReadback_762a2": "Checking device readback…",

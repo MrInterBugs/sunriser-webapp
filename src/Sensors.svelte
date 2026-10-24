@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+import {type UiText, MessageError} from './messages.js';
  import {t,renderText,language,source,numberText,decimalDraft,canonicalDecimal} from './i18n';
  import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
@@ -47,16 +48,16 @@ Third-party material retains its own terms.
     onedit,
   }: {
     active: boolean;
-    feedback: string;
+    feedback: UiText;
     busy: boolean;
     firmware: Firmware;
     snapshot: DeviceState;
     stale: boolean;
     perform: (
       task: () => Promise<void>,
-      success: string,
-      failure: string,
-      pending: string,
+      success: UiText,
+      failure: UiText,
+      pending: UiText,
     ) => Promise<boolean>;
     refresh: () => Promise<void>;
     onedit: () => void;
@@ -205,7 +206,7 @@ Third-party material retains its own terms.
     let writeAttempted=false;
     const ok=await perform(async()=>{
       await verifySensorRemoval(plan);
-      if(!configurationCurrent(snapshotRevision))throw Error(source('sensors.removalChanged'));
+      if(!configurationCurrent(snapshotRevision))throw new MessageError(source('sensors.removalChanged'));
       writeAttempted=true;
       await saveConfiguration(plan.patch,firmware);
       catalogue=plan.catalogue;
@@ -283,7 +284,7 @@ Third-party material retains its own terms.
     <div class="sensor-remove-action"><button id="sensor-remove" type="button" class="secondary remove-sensor" onclick={prepareRemoval} disabled={busy||removing||removalUncertain||!configurationReconciled}>{$t("sensors.removeSaved")}</button></div>
    {/if}
    {#if !catalogue[selected]}<ConfigurationNotice revision={snapshotRevision}/>
-    {#if reading?.device===1}<label for="sensor-new-name">{$t("sensors.sensorName_d8c93")}</label><input id="sensor-new-name" bind:value={names[selected]} placeholder={$t("sensors.temperature_0a906")} disabled={busy} oninput={onedit} /><p>{$t("sensors.registerWritesTemperatureDefaultsInactiveControlCorrection0Thresholds_f3a77")}</p><button onclick={register} disabled={busy||removalUncertain||!configurationReconciled||!(names[selected]??'Temperature').trim()}>{$t("sensors.registerSensor_7b392")}</button>
+    {#if reading?.device===1}<label for="sensor-new-name">{$t("sensors.sensorName_d8c93")}</label><input id="sensor-new-name" bind:value={names[selected]} placeholder={$t("sensors.temperature_0a906")} disabled={busy} oninput={onedit} /><p>{$t("sensors.registerWritesTemperatureDefaultsInactiveControlCorrection0Thresholds_f3a77")}</p><button onclick={register} disabled={busy||removalUncertain||!configurationReconciled||!(names[selected]??$t('sensors.temperature_0a906')).trim()}>{$t("sensors.registerSensor_7b392")}</button>
     {:else}<p>{$t("sensors.unsupportedSensorDeviceTypeRawReadingsAreShownRegistration_721fd")}</p>{/if}
    {/if}
   {/if}

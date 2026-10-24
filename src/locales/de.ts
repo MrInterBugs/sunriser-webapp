@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import type {MessageKey} from "./en.js";
 export const de = {
+  "common.joinMessages": "{v0} {v1}",
+  "systemsettings.clockName": "Uhrzeit",
+  "systemsettings.networkName": "Netzwerk",
+  "common.httpStatus": "HTTP {v0}",
+  "app.documentTitle": "SunRiser · Geräteübersicht",
+  "common.unexpectedError": "Unerwarteter Fehler.",
   "app.operationPending_c929e": "Vorgang läuft",
   "app.readbackStale_e56ed": "Veraltete Rückmeldung",
   "app.readbackAvailable_465ca": "Rückmeldung verfügbar",
@@ -471,7 +477,7 @@ export const de = {
   "recovery.v0NoCompleteResponseFromTheDeviceV1The_6fd86": "{v0}: Keine vollständige Geräteantwort ({v1}). Ergebnis ungewiss. Nehmen Sie weder Ausführung noch Rücknahme an. Kein Schreibvorgang wurde wiederholt. Prüfen Sie die Geräterückmeldung vor einer erneuten Übermittlung.",
   "recovery.operationFailedOrOutcomeUncertainDoNotAssumeIt_7a4d6": "Vorgang fehlgeschlagen oder Ergebnis ungewiss. Nehmen Sie keine Rücknahme an. Kein Schreibvorgang wurde wiederholt. Prüfen Sie die Geräterückmeldung vor einer erneuten Übermittlung.",
   "recovery.v0DeviceReachableV1FirmwareV2TimestampV3Uptime_b254d": "{v0}Gerät erreichbar: {v1}, Firmware {v2}, Zeitstempel {v3}, Betriebsdauer {v4} s, Hostname: {v5}. Installation und erfolgreicher physischer Start sind nicht bewiesen. Laden Sie andere Editoren zum Abgleich erhaltener Entwürfe ausdrücklich neu.",
-  "recovery.restoredValuesVerified_3f019": "Wiederhergestellte Werte überprüft.",
+  "recovery.restoredValuesVerified_3f019": "Wiederhergestellte Werte überprüft. ",
   "recovery.recoveryReadbackComplete_f8e8b": "Wiederherstellungsrückmeldung vollständig.",
   "recovery.recoveryReadbackNotVerified_d63fe": "Wiederherstellungsrückmeldung nicht überprüft.",
   "recovery.checkingDeviceReadback_762a2": "Geräterückmeldung wird geprüft…",

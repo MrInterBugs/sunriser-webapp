@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {type UiText} from './messages.js';
+
  import {t,renderText,language,source} from './i18n';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
@@ -48,16 +50,16 @@ Third-party material retains its own terms.
     onedit,
   }: {
     active: boolean;
-    feedback: string;
+    feedback: UiText;
     busy: boolean;
     firmware: Firmware;
     snapshot: DeviceState;
     stale: boolean;
     perform: (
       task: () => Promise<void>,
-      success: string,
-      failure: string,
-      pending: string,
+      success: UiText,
+      failure: UiText,
+      pending: UiText,
     ) => Promise<boolean>;
     refresh: () => Promise<void>;
     command: (v: { thunder: number }) => Promise<void>;

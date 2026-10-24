@@ -7,7 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
- import {sourceCount} from './messages';
+import {errorText, type Message, type UiText, MessageError, sourceCount} from './messages.js';
  import FilePicker from "./ui/FilePicker.svelte";
  import {t,renderText,language,source} from './i18n';
   import EditorPage from './ui/EditorPage.svelte';
@@ -41,9 +41,9 @@ Third-party material retains its own terms.
     firmware: Firmware;
     perform: (
       task: () => Promise<void>,
-      success: string,
-      failure: string,
-      pending: string,
+      success: UiText,
+      failure: UiText,
+      pending: UiText,
     ) => Promise<boolean>;
     onconfigurationchange: (outcome:'acknowledged'|'uncertain') => void;
     onread: (state: DeviceState, info: Firmware, name: string) => void;
@@ -58,8 +58,8 @@ Third-party material retains its own terms.
     imageName = $state(""),
     imageMessage = $state(source("recovery.selectOneLocalBEEFile_37a4d"));
   let confirm = $state<Operation>(),
-    result = $state(source("recovery.noRecoveryOperationRequested_b80e1")),
-    progress = $state(""),
+    result = $state<UiText>(source("recovery.noRecoveryOperationRequested_b80e1")),
+    progress = $state<UiText>(""),
     selecting = $state(false),
     demo = $state<keyof typeof demos>("standard");
   let expected: Uint8Array | undefined;
@@ -86,7 +86,7 @@ Third-party material retains its own terms.
     if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
     else if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
   }
-  const labels: Record<Operation, string> = {
+  const labels: Record<Operation, Message> = {
     restore: source("recovery.restoreConfiguration"),
     firmware: source("recovery.installFirmware"),
     factory: source("recovery.replaceFactory"),
@@ -108,7 +108,7 @@ Third-party material retains its own terms.
     }
     try {
       if (file.size > (kind === "backup" ? BACKUP_LIMIT : BEE_LIMIT))
-        throw Error(source("recovery.fileExceedsLocalSizeLimit_9aa65"));
+        throw new MessageError(source("recovery.fileExceedsLocalSizeLimit_9aa65"));
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (kind === "backup") {
         values = validateBackup(bytes, firmware.pwm_count);
@@ -120,8 +120,8 @@ Third-party material retains its own terms.
         imageMessage = source("recovery.v0V1BytesV2V3_7cb37",{v0:file.name,v1:bytes.length,v2:imageInfo.filename,v3:imageInfo.description});
       }
     } catch (e) {
-      if (kind === "backup") backupMessage = source("recovery.invalidBackupV0_5f6e4",{v0:String(e)});
-      else imageMessage = source("recovery.invalidFirmwareV0_acb6c",{v0:String(e)});
+      if (kind === "backup") backupMessage = source("recovery.invalidBackupV0_5f6e4",{v0:errorText(e, true)});
+      else imageMessage = source("recovery.invalidFirmwareV0_acb6c",{v0:errorText(e, true)});
     } finally {
       selecting = false;
     }
@@ -136,7 +136,7 @@ Third-party material retains its own terms.
     } catch (e) {
       backup = undefined;
       values = undefined;
-      backupMessage = source("recovery.invalidExampleDetail",{v0:String(e)});
+      backupMessage = source("recovery.invalidExampleDetail",{v0:errorText(e, true)});
     }
   }
   async function exportBackup(factory = false) {
@@ -211,9 +211,9 @@ Third-party material retains its own terms.
         }[op]
       : failureText(op, failure, framing);
   }
-  function failureText(op: Operation, e: unknown, framing: boolean): string {
+  function failureText(op: Operation, e: unknown, framing: boolean): Message {
     const what = labels[op];
-    if (e instanceof RecoveryError && e.chunkOffset !== undefined) return e.message;
+    if (e instanceof RecoveryError && e.chunkOffset !== undefined) return e.uiMessage;
     if (e instanceof RecoveryError && e.stage === "upload") {
       if (op === "restore" && e.status === 413 && !framing) {
         restoreFraming = true;
@@ -224,7 +224,7 @@ Third-party material retains its own terms.
     if (e instanceof RecoveryError && e.stage === "acknowledgement")
       return source("recovery.v0TheDeviceAnsweredWithoutTheExpectedAcknowledgementThe_86c49",{v0:what});
     if (e instanceof RecoveryError && e.stage === "connection")
-      return source("recovery.v0NoCompleteResponseFromTheDeviceV1The_6fd86",{v0:what,v1:e.message.split(": ").pop()});
+      return source("recovery.v0NoCompleteResponseFromTheDeviceV1The_6fd86",{v0:what,v1:e.uiMessage.values.v2 ?? e.uiMessage});
     return source("recovery.operationFailedOrOutcomeUncertainDoNotAssumeIt_7a4d6");
   }
   async function run(op: Operation, framing: boolean) {
@@ -238,12 +238,12 @@ Third-party material retains its own terms.
     if (op === "reboot") await acknowledged("GET", "/reboot", "REBOOT");
   }
   async function verify() {
-    let text = "";
+    let text: UiText = "";
     const ok = await perform(
       async () => {
         const read = await readRecovery(firmware, expected);
         onread(read.state, read.firmware, read.hostname);
-        text = source("recovery.v0DeviceReachableV1FirmwareV2TimestampV3Uptime_b254d",{v0:expected ? source("recovery.restoredValuesVerified_3f019")+" " : "",v1:read.firmware.sunriser,v2:read.firmware.version,v3:read.firmware.timestamp ?? "unavailable",v4:read.state.uptime,v5:read.hostname});
+        text = source("recovery.v0DeviceReachableV1FirmwareV2TimestampV3Uptime_b254d",{v0:expected ? source("recovery.restoredValuesVerified_3f019") : "",v1:read.firmware.sunriser,v2:read.firmware.version,v3:read.firmware.timestamp ?? source("operatingstate.unavailable_2c9c1"),v4:read.state.uptime,v5:read.hostname});
       },
       source("recovery.recoveryReadbackComplete_f8e8b"),
       source("recovery.recoveryReadbackNotVerified_d63fe"),

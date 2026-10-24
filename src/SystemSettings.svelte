@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+import {type UiText, errorText} from './messages.js';
  import {timezoneLabel} from "./i18n";
  import {source,t,renderText,language} from './i18n';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
@@ -47,7 +48,7 @@ Third-party material retains its own terms.
     onedit,
   }: {
     active: boolean;
-    feedback: string;
+    feedback: UiText;
     kind: SettingsPage;
     busy: boolean;
     firmware: Firmware;
@@ -55,19 +56,19 @@ Third-party material retains its own terms.
     stale: boolean;
     perform: (
       task: () => Promise<void>,
-      success: string,
-      failure: string,
-      pending: string,
+      success: UiText,
+      failure: UiText,
+      pending: UiText,
     ) => Promise<boolean>;
     refresh: () => Promise<void>;
     command: (value: { time: number }) => Promise<void>;
     onedit: () => void;
   } = $props();
-  let loadFailure = $state(''),loadingSettings=$state(false);
+  let loadFailure = $state<UiText>(''),loadingSettings=$state(false);
   let attempted = $state(false),
     editor = $state<Editor>();
   let address = $state(""),
-    clockInputError = $state(""),
+    clockInputError = $state<UiText>(""),
     showReadback = $state(false);
   async function setClock() {
     const seconds = Math.floor(Date.now() / 1000);
@@ -97,7 +98,7 @@ Third-party material retains its own terms.
         ([k, v]) => JSON.stringify(editor!.saved[k]) === JSON.stringify(v),
       ),
   );
-  const title = $derived(kind === "clock" ? "clock" : "network");
+  const title = $derived(source(kind === "clock" ? "systemsettings.clockName" : "systemsettings.networkName"));
   $effect(() => {
     if (active && !attempted && !busy && !$configurationState.recovery) void reload();
   });
@@ -107,7 +108,7 @@ Third-party material retains its own terms.
     try{await perform(
       async () => {
         try{editor = await loadSettings(kind, wifi);snapshotRevision=configurationRevision();}
-        catch(e){loadFailure=e instanceof Error?e.message:source("systemsettings.configurationReadFailed_c5b59");throw e;}
+        catch(e){loadFailure=e instanceof Error?errorText(e):source("systemsettings.configurationReadFailed_c5b59");throw e;}
       },
       source("systemsettings.v0SettingsLoaded_41a17",{v0:title}),
       source("systemsettings.couldNotLoadV0SettingsRetryReloadV1Settings_d7768",{v0:title,v1:title}),
@@ -154,7 +155,7 @@ Third-party material retains its own terms.
       .filter(([key]) => key !== "time")
       .map(
         ([key, v]) =>
-          source("systemsettings.v0V1_98b58",{v0:key,v1:key === "wifi_pass" ? (v ? $t('common.stored') : $t('common.empty')) : Array.isArray(v) ? v.join(".") : v === null ? $t('common.unset') : String(v)}),
+          $t("systemsettings.v0V1_98b58",{v0:key,v1:key === "wifi_pass" ? (v ? $t('common.stored') : $t('common.empty')) : Array.isArray(v) ? v.join(".") : v === null ? $t('common.unset') : String(v)}),
       )
       .join(" · ");
   }
@@ -167,7 +168,7 @@ Third-party material retains its own terms.
 
 {#if active}
 <EditorPage>
-  <section class="system-page" class:clock-page={kind==='clock'} aria-label={$t("systemsettings.v0Settings_2e59c",{v0: $language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title})}>
+  <section class="system-page" class:clock-page={kind==='clock'} aria-label={$t("systemsettings.v0Settings_2e59c",{v0: title})}>
     <div class="heading">
       <div>
 
@@ -219,10 +220,10 @@ Third-party material retains its own terms.
     <p>
       {$t("systemsettings.reloadReplacesUnsavedEditsStateRefreshAndVerificationKeep_f19ab")}
     </p>
-    {#if loadFailure}<p class="notice" role="note">{$t('systemsettings.savedConfigurationUnavailable',{v0:$language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title,v1:$renderText(loadFailure)})} {kind==='clock'?$t("systemsettings.liveClockReadbackIsIndependentOfThisSettingsRequest_d4b64"):$t("systemsettings.reportedAddressesAreIndependentOfThisSettingsRequest_d5a07")} {$t("systemsettings.reloadRetriesTheReadItDoesNotWriteSettings_aaef7")}</p>{/if}
+    {#if loadFailure}<p class="notice" role="note">{$t('systemsettings.savedConfigurationUnavailable',{v0:title,v1:$renderText(loadFailure)})} {kind==='clock'?$t("systemsettings.liveClockReadbackIsIndependentOfThisSettingsRequest_d4b64"):$t("systemsettings.reportedAddressesAreIndependentOfThisSettingsRequest_d5a07")} {$t("systemsettings.reloadRetriesTheReadItDoesNotWriteSettings_aaef7")}</p>{/if}
     <div class="configuration-workspace">{#if editor}
       <form class="panel settings system-editor" onsubmit={save} oninput={onedit}>
-        <DraftBar {snapshotRevision} feedback={$renderText(feedback)} {dirty} {busy} disabled={!!invalid||!dirty} label={$t("systemsettings.saveV0Settings_f4607",{v0: $language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title})} scope="" detail={$t("systemsettings.savedValuesAreVerifiedIndependentlyReloadReplacesDraftsVerify_5cbd7")} />
+        <DraftBar {snapshotRevision} feedback={$renderText(feedback)} {dirty} {busy} disabled={!!invalid||!dirty} label={$t("systemsettings.saveV0Settings_f4607",{v0: title})} scope="" detail={$t("systemsettings.savedValuesAreVerifiedIndependentlyReloadReplacesDraftsVerify_5cbd7")} />
         <fieldset disabled={busy}>
           <legend
             >{kind === "clock"
@@ -349,11 +350,11 @@ Third-party material retains its own terms.
               ? $t("systemsettings.editedValuesMatchTheSavedConfiguration_c62e9")
               : $t("systemsettings.deviceValuesDifferFromThisDraftReviewReadbackBefore_d4f3c")}
           </p>{/if}
-        <p class="config-readback" data-testid={`${$language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title}-readback`}>
+        <p class="config-readback" data-testid={`${kind}-readback`}>
           {summary()}
         </p>
       </details>
-    {:else}<div class="empty-state"><h2>{loadingSettings?$t("systemsettings.loadingV0Settings_ffcfc",{v0: $language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title}):$t("systemsettings.settingsUnavailable_4b7b1")}</h2><p>{loadingSettings?$t("systemsettings.readingSavedConfiguration_e2dcf"):$t("systemsettings.useReloadV0SettingsToTryAgain_9b5c9",{v0: $language==='de'?(kind==='clock'?'Uhrzeit':'Netzwerk'):title})}</p></div>{/if}
+    {:else}<div class="empty-state"><h2>{loadingSettings?$t("systemsettings.loadingV0Settings_ffcfc",{v0: title}):$t("systemsettings.settingsUnavailable_4b7b1")}</h2><p>{loadingSettings?$t("systemsettings.readingSavedConfiguration_e2dcf"):$t("systemsettings.useReloadV0SettingsToTryAgain_9b5c9",{v0: title})}</p></div>{/if}
     {#if kind === 'network'}      <section class="panel readback network-recovery" data-testid="network-recovery">
         <h2>{$t("systemsettings.connectionAndRecovery_8f4bf")}</h2>
         <p>

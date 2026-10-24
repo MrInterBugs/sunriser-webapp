@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {type UiText} from './messages.js';
+
  import {presetName} from "./channel-presets";
  import {t,renderText,language,source} from './i18n';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
@@ -17,7 +19,7 @@ Third-party material retains its own terms.
  import ActionButton from './ui/ActionButton.svelte';
  import DraftBar from './ui/DraftBar.svelte';
  import ChannelIdentity from './ui/ChannelIdentity.svelte';
- let {active,busy,firmware,perform,onedit,onsaved,feedback}:{feedback:string;active:boolean;busy:boolean;firmware:Firmware;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>;onedit:()=>void;onsaved:(channels:Channel[])=>void}=$props();
+ let {active,busy,firmware,perform,onedit,onsaved,feedback}:{feedback: UiText;active:boolean;busy:boolean;firmware:Firmware;perform:(task:()=>Promise<void>,success: UiText,failure: UiText,pending: UiText)=>Promise<boolean>;onedit:()=>void;onsaved:(channels:Channel[])=>void}=$props();
  let loading=$state(false),attempted=$state(false),loadFailed=$state(false);
  let draft=$state<Channel[]>(),baseline=$state<Channel[]>([]);
  const patch=$derived(draft?channelPatch(draft,baseline):{});

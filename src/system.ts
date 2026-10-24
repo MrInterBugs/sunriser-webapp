@@ -1,4 +1,4 @@
-import {source} from './messages.js';
+import {errorText, type Message, MessageError, source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -86,10 +86,10 @@ export function validTimezone(value: string): boolean {
 export function parseIPv4(s: string): number[] | null {
   if (s === "") return null;
   if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(s))
-    throw Error(source("system.useFourIPv4OctetsFrom0To255_bf691"));
+    throw new MessageError(source("system.useFourIPv4OctetsFrom0To255_bf691"));
   const v = s.split(".").map(Number);
   if (v.some((n) => n > 255))
-    throw Error(source("system.useFourIPv4OctetsFrom0To255_bf691"));
+    throw new MessageError(source("system.useFourIPv4OctetsFrom0To255_bf691"));
   return v;
 }
 export function recoveryURL(s: string): string {
@@ -145,7 +145,7 @@ export async function loadSettings(
       const flag = key === "summertime" && (value === 0 || value === 1)
         ? value === 1 : value;
       if (flag != null && typeof flag !== "boolean")
-        throw Error(source("system.invalidBooleanSettingV0_8773f",{v0:key}));
+        throw new MessageError(source("system.invalidBooleanSettingV0_8773f",{v0:key}));
       draft[key] = flag ?? false;
     } else if (field?.type === "ip") {
       if (key === "wifi_ip4" && typeof value === "boolean") draft[key] = "";
@@ -156,18 +156,18 @@ export async function loadSettings(
         value.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)
       )
         draft[key] = value.join(".");
-      else throw Error(source("system.invalidIPv4SettingV0_f27c7",{v0:key}));
+      else throw new MessageError(source("system.invalidIPv4SettingV0_f27c7",{v0:key}));
     } else if (
       key === "timezone" ||
       key === "gmtoff" ||
       field?.type === "port"
     ) {
       if (typeof value !== "number" || !Number.isInteger(value))
-        throw Error(source("system.invalidIntegerSettingV0_dc350",{v0:key}));
+        throw new MessageError(source("system.invalidIntegerSettingV0_dc350",{v0:key}));
       draft[key] = String(value);
     } else {
       if (value != null && typeof value !== "string")
-        throw Error(source("system.invalidTextSettingV0_ce36a",{v0:key}));
+        throw new MessageError(source("system.invalidTextSettingV0_ce36a",{v0:key}));
       draft[key] = (value ?? "") as string;
     }
   }
@@ -189,7 +189,7 @@ export function validation(
   route: SettingsPage,
   draft: Values,
   wifi: boolean,
-): string {
+): Message | "" {
   if (route === "clock") {
     if (!validTimezone(String(draft.tz)))
       return source("system.useAValidPOSIXTimezoneRuleOfAtMost_41df0");
@@ -207,7 +207,7 @@ export function validation(
         try {
           parseIPv4(v);
         } catch (e) {
-          return (e as Error).message;
+          return errorText(e);
         }
       }
       if (f.type === "port" && (!/^\d+$/.test(v) || +v < 1 || +v > 65534))

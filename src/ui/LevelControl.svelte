@@ -7,9 +7,11 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
- import {t,renderText,language} from '../i18n';
-  let {id, label, value=$bindable(), max, disabled=false, unit='raw'}: {
-    id:string; label:string; value:number|undefined; max:number; disabled?:boolean; unit?:string;
+ import {type UiText} from '../messages.js';
+
+ import {t,renderText,language,source} from '../i18n';
+  let {id, label, value=$bindable(), max, disabled=false, unit=source("app.raw_ce158")}: {
+    id:string; label: UiText; value:number|undefined; max:number; disabled?:boolean; unit?:UiText;
   }=$props();
   const valid=$derived(value!==undefined && Number.isInteger(value) && value>=0 && value<=max);
 </script>

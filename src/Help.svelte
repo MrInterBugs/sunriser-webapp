@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {type UiText} from './messages.js';
+
  import {t,renderText,language,source} from './i18n';
  import {configurationRevision,configurationSaves} from './configuration-state';
  import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
@@ -18,7 +20,7 @@ Third-party material retains its own terms.
  import {configurationKeys,configuredRows} from './guidance';
  import {helpSections} from './help-content';
  import ActionButton from './ui/ActionButton.svelte';
- let {active,busy,firmware,snapshot,hostname,stale:stateStale,perform}:{active:boolean;busy:boolean;firmware:Firmware|undefined;snapshot:DeviceState|undefined;hostname:string;stale:boolean;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>}=$props();
+ let {active,busy,firmware,snapshot,hostname,stale:stateStale,perform}:{active:boolean;busy:boolean;firmware:Firmware|undefined;snapshot:DeviceState|undefined;hostname:string;stale:boolean;perform:(task:()=>Promise<void>,success: UiText,failure: UiText,pending: UiText)=>Promise<boolean>}=$props();
  let rows=$state<ReturnType<typeof configuredRows>>(),readAt=$state(''),stale=$state(false);
  let identities=$state<Channel[]>([]),summarySave=$state(0);
  const changed=$derived(!!rows&&summarySave!==$configurationSaves);

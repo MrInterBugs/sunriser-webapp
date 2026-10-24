@@ -57,7 +57,7 @@ try {
       html = html.replace(script[0],`<script type="module" src="./${name}"></script>`).replace(style[0],'')
         .replace("style-src 'self';",`style-src 'self' 'sha256-${hash}';`)
         .replace('</head>',`<style>${css}</style>\n</head>`)
-        .replace('<div id="app"></div>', '<section id="startup" aria-label="Interface loading"><div class="startup-panel"><h1>SunRiser</h1><p id="startup-status" role="status">'+en['startup.loading']+'</p><a href="">Reload interface</a></div></section>\n<div id="app"></div>');
+        .replace('<div id="app"></div>', '<section id="startup" aria-label="'+en['startup.label']+'"><div class="startup-panel"><h1>SunRiser</h1><p id="startup-status" role="status">'+en['startup.loading']+'</p><a href="">'+en['startup.reload']+'</a></div></section>\n<div id="app"></div>');
       page.source = html;
     }},
   };

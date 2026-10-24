@@ -1,4 +1,4 @@
-import {source} from './messages.js';
+import {type Message, MessageError, source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -44,17 +44,17 @@ const clock = (minute: number) =>
 export function fromFlat(value: unknown): Point[] {
   if (value == null) return [];
   if (!Array.isArray(value) || value.length % 2)
-    throw Error(source("schedules.malformedMarkerArray_3f987"));
+    throw new MessageError(source("schedules.malformedMarkerArray_3f987"));
   const points: Point[] = [];
   for (let i = 0; i < value.length; i += 2) {
     if (!integer(value[i], 1440) || !integer(value[i + 1], 100))
-      throw Error(source("schedules.malformedMarkerValue_0df3b"));
+      throw new MessageError(source("schedules.malformedMarkerValue_0df3b"));
     points.push({ time: clock(value[i]), percent: value[i + 1] });
   }
   return points;
 }
-export function validateCurve(points: Point[]): string[] {
-  const errors: string[] = [];
+export function validateCurve(points: Point[]): Message[] {
+  const errors: Message[] = [];
   const times = points.map((p) => parseTime(p.time));
   if (times.some((t) => t === undefined))
     errors.push(source("schedules.useHHMMFrom0000To2359_e75fe"));
@@ -65,7 +65,7 @@ export function validateCurve(points: Point[]): string[] {
   return errors;
 }
 export function flatten(points: Point[]): number[] {
-  if (validateCurve(points).length) throw Error(source("schedules.invalidCurve_d0e7d"));
+  if (validateCurve(points).length) throw new MessageError(source("schedules.invalidCurve_d0e7d"));
   return points
     .map((p) => [parseTime(p.time)!, p.percent!])
     .sort((a, b) => a[0] - b[0])
@@ -87,8 +87,8 @@ export function shiftLevel(points: Point[], percent: number): Point[] {
       p.percent === 0 ? 0 : Math.max(0, Math.min(100, p.percent! + percent)),
   }));
 }
-export function validateBook(book: ScheduleBook): string[] {
-  const errors: string[] = [];
+export function validateBook(book: ScheduleBook): Message[] {
+  const errors: Message[] = [];
   const ids = new Set(book.programs.map((p) => p.id));
   book.channels.forEach((ch, i) => {
     errors.push(
@@ -184,11 +184,11 @@ export async function getSchedules(count: number, refresh=true): Promise<Schedul
     );
   const v = await readSavedConfiguration(keys,refresh);
   if (v["programs#web"] != null && typeof v["programs#web"] !== "string")
-    throw Error(source("schedules.invalidCatalogueType_56c2e"));
+    throw new MessageError(source("schedules.invalidCatalogueType_56c2e"));
   const entries: unknown = JSON.parse((v["programs#web"] ?? "[]") as string);
   const lastId = v["programs#last_setup_id"] ?? 0;
   if (!Array.isArray(entries) || !integer(lastId, 65535))
-    throw Error(source("schedules.invalidCatalogue_27a60"));
+    throw new MessageError(source("schedules.invalidCatalogue_27a60"));
   const seen = new Set<number>();
   for (const p of entries) {
     if (
@@ -199,7 +199,7 @@ export async function getSchedules(count: number, refresh=true): Promise<Schedul
       typeof p.name !== "string" ||
       seen.has(p.id)
     )
-      throw Error(source("schedules.invalidProgram_0a9be"));
+      throw new MessageError(source("schedules.invalidProgram_0a9be"));
     seen.add(p.id);
   }
   const details = await readSavedConfiguration(
@@ -220,7 +220,7 @@ export async function getSchedules(count: number, refresh=true): Promise<Schedul
         week.length !== 8 ||
         week.some((id) => !integer(id, 65535))
       )
-        throw Error(source("schedules.invalidChannelPlan_17ece"));
+        throw new MessageError(source("schedules.invalidChannelPlan_17ece"));
       return {
         manager,
         week,
@@ -235,7 +235,7 @@ export async function getSchedules(count: number, refresh=true): Promise<Schedul
         name !== p.name ||
         (deleted != null && deleted !== false)
       )
-        throw Error(source("schedules.invalidProgramMetadata_7d412"));
+        throw new MessageError(source("schedules.invalidProgramMetadata_7d412"));
       return {
         id: p.id,
         name,
@@ -252,7 +252,7 @@ export async function saveSchedules(
   next: ScheduleBook,
   firmware: Firmware,
 ) {
-  if (validateBook(next).length) throw Error(source("schedules.invalidSchedules_739c1"));
+  if (validateBook(next).length) throw new MessageError(source("schedules.invalidSchedules_739c1"));
   const patch = schedulePatch(base, next);
   if (Object.keys(patch).length) await saveConfiguration(patch, firmware);
   const changed=new Set(Object.keys(patch).flatMap(key=>{const match=/^(?:pwm#(\d+)#manager|dayplanner#marker#(\d+)|weekplanner#programs#(\d+))$/.exec(key);return match?[Number(match[1]||match[2]||match[3])]:[];}));
@@ -286,7 +286,7 @@ function publishScheduleBook(book:ScheduleBook,changed?:Set<number>){
  * Weekly channels also read their eight slots and only the programmes those slots
  * reference; other channels and draft data are never requested here. */
 export function loadDailyPlan(number:number,refresh=false):Promise<ScheduleChannel>{
-  if(!Number.isInteger(number)||number<1||number>10) return Promise.reject(Error(source("schedules.invalidChannel_f48c8")));
+  if(!Number.isInteger(number)||number<1||number>10) return Promise.reject(new MessageError(source("schedules.invalidChannel_f48c8")));
   const existing=get(savedDailyPlans)[number];
   if(!refresh&&existing?.phase==='ready'&&existing.channel)return Promise.resolve(clone(existing.channel));
   const pending=pendingDaily.get(number);if(pending)return pending.then(clone);
@@ -296,13 +296,13 @@ export function loadDailyPlan(number:number,refresh=false):Promise<ScheduleChann
     try{
       const keys=[`pwm#${number}#manager`,`dayplanner#marker#${number}`];
       const values=await readSavedConfiguration(keys,refresh),manager=values[keys[0]]??0;
-      if(!integer(manager,4))throw Error(source("schedules.invalidChannelPlan_17ece"));
+      if(!integer(manager,4))throw new MessageError(source("schedules.invalidChannelPlan_17ece"));
       const channel:ScheduleChannel={manager,points:manager===1?fromFlat(values[keys[1]]):[],week:[]};
-      if(manager===1&&validateCurve(channel.points).length)throw Error(source("schedules.invalidDailyPoints_55861"));
+      if(manager===1&&validateCurve(channel.points).length)throw new MessageError(source("schedules.invalidDailyPoints_55861"));
       let programs:WeeklyProgram[]|undefined;
       if(manager===2){
         const weekKey=`weekplanner#programs#${number}`,week=(await readSavedConfiguration([weekKey],refresh))[weekKey]??Array(8).fill(0);
-        if(!Array.isArray(week)||week.length!==8||week.some(id=>!integer(id,65535)))throw Error(source("schedules.invalidChannelPlan_17ece"));
+        if(!Array.isArray(week)||week.length!==8||week.some(id=>!integer(id,65535)))throw new MessageError(source("schedules.invalidChannelPlan_17ece"));
         channel.week=week as number[];
         const ids=[...new Set(channel.week)].filter(id=>id!==0);
         const details=ids.length?await readSavedConfiguration(ids.flatMap(id=>[`programs#setup#${id}#name`,`programs#setup#${id}#marker`,`programs#setup#${id}#deleted`]),refresh):{};
@@ -310,11 +310,11 @@ export function loadDailyPlan(number:number,refresh=false):Promise<ScheduleChann
           const name=details[`programs#setup#${id}#name`],deleted=details[`programs#setup#${id}#deleted`];
           if(deleted===true||typeof name!=='string')return [];
           const points=fromFlat(details[`programs#setup#${id}#marker`]);
-          if(validateCurve(points).length)throw Error(source("schedules.invalidDailyPoints_55861"));
+          if(validateCurve(points).length)throw new MessageError(source("schedules.invalidDailyPoints_55861"));
           return [{id,name,points}];
         });
       }
-      if(epoch!==dailyEpoch)throw Error(source("schedules.obsoleteDailyPlan_5f4cb"));
+      if(epoch!==dailyEpoch)throw new MessageError(source("schedules.obsoleteDailyPlan_5f4cb"));
       savedDailyPlans.update(all=>({...all,[number]:{phase:'ready',channel:clone(channel),...(programs?{programs}:{})}}));
       return channel;
     }catch(error){

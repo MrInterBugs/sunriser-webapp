@@ -1,0 +1,452 @@
+{
+  "identical": {
+    "common.joinMessages": {
+      "text": "{v0} {v1}",
+      "reason": "Joins independently translated validation messages with a space; no prose."
+    },
+    "app.controller_a36a5": {
+      "text": "Controller",
+      "reason": "Established term with the same spelling in English and German."
+    },
+    "app.firmware_0dc5f": {
+      "text": "Firmware",
+      "reason": "Established term with the same spelling in English and German."
+    },
+    "app.hostname_c983a": {
+      "text": "Hostname",
+      "reason": "Established term with the same spelling in English and German."
+    },
+    "diagnostics.v0S_2260e": {
+      "text": "{v0} s",
+      "reason": "Technical notation, unit, acronym or data-only interpolation; no prose to translate."
+    },
+    "lightingdashboard.service_329cb": {
+      "text": "Service",
+      "reason": "Established term with the same spelling in English and German."
+    },
+    "lightingdashboard.blackout_92de6": {
+      "text": "Blackout",
+      "reason": "Established term with the same spelling in English and German."
+    },
+    "lightingdashboard.service_e5bc1": {
+      "text": "Service:",
+      "reason": "Established term with the same spelling in English and German."
+    },
+    "recovery.standard_2dfa6": {
+      "text": "Standard",
+      "reason": "Established term with the same spelling in English and German."
+    },
+    "recovery.sha256_df745": {
+      "text": ". SHA-256:",
+      "reason": "Technical notation, unit, acronym or data-only interpolation; no prose to translate."
+    },
+    "schedules.hhMM_a4c7e": {
+      "text": "HH:MM",
+      "reason": "Technical notation, unit, acronym or data-only interpolation; no prose to translate."
+    },
+    "sensors.sensor_9101f": {
+      "text": "Sensor",
+      "reason": "Established term with the same spelling in English and German."
+    },
+    "sensors.rom_1ea25": {
+      "text": "· ROM",
+      "reason": "Technical notation, unit, acronym or data-only interpolation; no prose to translate."
+    },
+    "sensors.minimumC_82d4f": {
+      "text": "Minimum °C",
+      "reason": "Established term with the same spelling in English and German."
+    },
+    "sensors.maximumC_83e2c": {
+      "text": "Maximum °C",
+      "reason": "Established term with the same spelling in English and German."
+    },
+    "systemsettings.maximum_a8df2": {
+      "text": "Maximum",
+      "reason": "Established term with the same spelling in English and German."
+    },
+    "systemsettings.v0V1_98b58": {
+      "text": "{v0}: {v1}",
+      "reason": "Technical notation, unit, acronym or data-only interpolation; no prose to translate."
+    },
+    "networkAddress.lan": {
+      "text": "LAN",
+      "reason": "Technical notation, unit, acronym or data-only interpolation; no prose to translate."
+    },
+    "appshell.english": {
+      "text": "EN · English",
+      "reason": "Language selector uses each language name in its own language."
+    },
+    "appshell.german": {
+      "text": "DE · Deutsch",
+      "reason": "Language selector uses each language name in its own language."
+    },
+    "common.httpStatus": {
+      "text": "HTTP {v0}",
+      "reason": "HTTP status is protocol notation in both languages."
+    }
+  },
+  "literals": {
+    "App.svelte": {
+      "idle": "Internal route and load-state identifiers; never displayed as labels.",
+      "index": "Internal route and load-state identifiers; never displayed as labels.",
+      "channels": "Internal route and load-state identifiers; never displayed as labels.",
+      "service": "Internal route and load-state identifiers; never displayed as labels.",
+      "sensors": "Internal route and load-state identifiers; never displayed as labels.",
+      "weather": "Internal route and load-state identifiers; never displayed as labels.",
+      "clock": "Internal route and load-state identifiers; never displayed as labels.",
+      "network": "Internal route and load-state identifiers; never displayed as labels.",
+      "lighting-tools": "Internal route and load-state identifiers; never displayed as labels.",
+      "schedules": "Internal route and load-state identifiers; never displayed as labels.",
+      "ready": "Internal route and load-state identifiers; never displayed as labels.",
+      "loading": "Internal route and load-state identifiers; never displayed as labels.",
+      "error": "Internal route and load-state identifiers; never displayed as labels."
+    },
+    "ChannelConfiguration.svelte": {
+      "start": "DOM scroll alignment option.",
+      "channel-colour-": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "__custom__": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "__absent__": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "__unknown__": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "channel-name-": "Internal view, style, DOM identity or operation code; displayed labels use translation messages."
+    },
+    "DevicePreferences.svelte": {
+      "button_short": "Exact controller configuration keys; labels use separate messages.",
+      "button_long": "Exact controller configuration keys; labels use separate messages.",
+      "button_double": "Exact controller configuration keys; labels use separate messages.",
+      "no_error_logging": "Exact controller configuration keys; labels use separate messages.",
+      "info_logging": "Exact controller configuration keys; labels use separate messages.",
+      "nobutton": "Controller field or button-action selector; visible labels use translation messages.",
+      "short": "Controller field or button-action selector; visible labels use translation messages.",
+      "long": "Controller field or button-action selector; visible labels use translation messages.",
+      "double": "Controller field or button-action selector; visible labels use translation messages.",
+      "unknown": "Controller field or button-action selector; visible labels use translation messages.",
+      "nostatus": "Controller field or button-action selector; visible labels use translation messages."
+    },
+    "Diagnostics.svelte": {
+      "sunriser-errors.txt": "Downloaded diagnostic filenames; remain stable data.",
+      "sunriser-info.txt": "Downloaded diagnostic filenames; remain stable data.",
+      "LAN MAC": "Network hardware acronym, unchanged in both languages."
+    },
+    "LightingTools.svelte": {
+      "minimum": "Save-scope identifiers and controller configuration keys.",
+      "expert": "Save-scope identifiers and controller configuration keys.",
+      "higherminimum": "Save-scope identifiers and controller configuration keys.",
+      "oldfade": "Save-scope identifiers and controller configuration keys.",
+      "active": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "neutral": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "draft": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "start": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "minimum-": "Internal view, style, DOM identity or operation code; displayed labels use translation messages."
+    },
+    "Recovery.svelte": {
+      "standard": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "key": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "byte": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "GET": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "factory-reset-backup.mp": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "sunriser-backup.mp": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "restore": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "reset": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "factory": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "acknowledged": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "uncertain": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "PUT": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "OK": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "FACTORY.BEE": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "DELETE": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "REBOOT": "Operation identifiers, count-unit selectors, HTTP protocol tokens and download filenames.",
+      "draft": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "neutral": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "backup": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "firmware": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "reboot": "Internal view, style, DOM identity or operation code; displayed labels use translation messages."
+    },
+    "ScheduleTools.svelte": {
+      "level": "Internal shift operation and channel-selection identifiers.",
+      "time": "Internal shift operation and channel-selection identifiers.",
+      "day:": "Internal shift operation and channel-selection identifiers."
+    },
+    "Schedules.svelte": {
+      "day": "Internal view and operation identifiers.",
+      "program": "Internal view and operation identifiers.",
+      "draft": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "neutral": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "week": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "start": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "point-error-": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "program:": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "day:": "Internal view, style, DOM identity or operation code; displayed labels use translation messages."
+    },
+    "Sensors.svelte": {
+      "sensor-channel-": "DOM identity prefix and scroll alignment option.",
+      "start": "DOM identity prefix and scroll alignment option.",
+      "draft": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "active": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "error": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "min": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "max": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "sensor-": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "neutral": "Internal view, style, DOM identity or operation code; displayed labels use translation messages."
+    },
+    "SystemSettings.svelte": {
+      "useip4": "Internal routes and exact controller configuration keys.",
+      "ip4": "Internal routes and exact controller configuration keys.",
+      "ip4_netmask": "Internal routes and exact controller configuration keys.",
+      "ip4_gateway": "Internal routes and exact controller configuration keys.",
+      "ip4_dns": "Internal routes and exact controller configuration keys.",
+      "enforcenet": "Internal routes and exact controller configuration keys.",
+      "ntpserver": "Internal routes and exact controller configuration keys.",
+      "webport": "Internal routes and exact controller configuration keys.",
+      "nofinder": "Internal routes and exact controller configuration keys.",
+      "nowifi": "Internal routes and exact controller configuration keys.",
+      "wifi_connect": "Internal routes and exact controller configuration keys.",
+      "wifi_ssid": "Internal routes and exact controller configuration keys.",
+      "wifi_pass": "Internal routes and exact controller configuration keys.",
+      "wifi_ip4": "Internal routes and exact controller configuration keys.",
+      "wifi_ip4_netmask": "Internal routes and exact controller configuration keys.",
+      "wifi_ip4_gateway": "Internal routes and exact controller configuration keys.",
+      "wifi_ip4_dns": "Internal routes and exact controller configuration keys.",
+      "__custom__": "DOM input type, identifier or synthetic option; visible labels use translation messages.",
+      "network-": "DOM input type, identifier or synthetic option; visible labels use translation messages.",
+      "password": "DOM input type, identifier or synthetic option; visible labels use translation messages.",
+      "text": "DOM input type, identifier or synthetic option; visible labels use translation messages.",
+      "numeric": "DOM input type, identifier or synthetic option; visible labels use translation messages.",
+      "-readback": "DOM input type, identifier or synthetic option; visible labels use translation messages."
+    },
+    "Weather.svelte": {
+      "clouds": "Internal effect identifier; label is translated separately.",
+      "draft": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "neutral": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "rain": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "thunder": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "moon": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "weather-": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "weather-channel-": "Internal view, style, DOM identity or operation code; displayed labels use translation messages."
+    },
+    "advanced.ts": {
+      "higherminimum": "Exact controller configuration keys and field suffixes.",
+      "oldfade": "Exact controller configuration keys and field suffixes.",
+      "min": "Exact controller configuration keys and field suffixes.",
+      "max": "Exact controller configuration keys and field suffixes.",
+      "nosmart": "Exact controller configuration keys and field suffixes.",
+      "onoff": "Exact controller configuration keys and field suffixes.",
+      "manager": "Exact controller configuration keys and field suffixes.",
+      "timewarp": "Exact controller configuration keys and field suffixes."
+    },
+    "api.ts": {
+      "content-type": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
+      "GET": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
+      "POST": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
+      "hostname": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
+      "PUT": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
+      "Z": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
+      "service_timeout": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
+      "service_value": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys."
+    },
+    "channels.ts": {
+      "color": "Controller field suffixes and language code.",
+      "onoff": "Controller field suffixes and language code.",
+      "name": "Controller field suffixes and language code.",
+      "en": "Controller field suffixes and language code."
+    },
+    "diagnostics.ts": {
+      "Z": "ISO timestamp UTC designator."
+    },
+    "i18n.ts": {
+      "sunriser.language": "Local preference key and Intl language tags.",
+      "de": "Local preference key and Intl language tags.",
+      "en": "Local preference key and Intl language tags.",
+      "de-DE": "Local preference key and Intl language tags.",
+      "en-GB": "Local preference key and Intl language tags."
+    },
+    "messages.ts": {
+      "message": "Internal message discriminant, language and developer-only missing-parameter diagnostic.",
+      "Missing message parameter:": "Internal message discriminant, language and developer-only missing-parameter diagnostic.",
+      "en": "Internal message discriminant, language and developer-only missing-parameter diagnostic.",
+      "Render a message with its locale before converting to text": "Developer-only guard against silently discarding a message key."
+    },
+    "network-address.ts": {
+      "lan": "Internal transport identifier; labels are translated separately.",
+      "wifi": "Internal transport identifier; labels are translated separately."
+    },
+    "preferences.ts": {
+      "button_": "Exact controller setting-key prefix."
+    },
+    "recovery.ts": {
+      "utf-8": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "___firmware": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "___firmware10": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "___firmware_": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "filename": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "description": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "author": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "timestamp": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "X-SR-Framing": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "x": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "connection": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "upload": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "acknowledgement": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "PUT": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "INIT": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "INSTALL": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "GET": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "OK": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "hostname": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
+      "a": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated."
+    },
+    "schedules.ts": {
+      "error": "Internal saved-plan load-state identifiers.",
+      "ready": "Internal saved-plan load-state identifiers.",
+      "loading": "Internal saved-plan load-state identifiers."
+    },
+    "sensor-removal.ts": {
+      "active": "Controller key and HTTP method.",
+      "GET": "Controller key and HTTP method."
+    },
+    "sensors.ts": {
+      "name": "Exact controller sensor field names and suffixes.",
+      "device": "Exact controller sensor field names and suffixes.",
+      "unit": "Exact controller sensor field names and suffixes.",
+      "unitcomma": "Exact controller sensor field names and suffixes.",
+      "deviceoffset": "Exact controller sensor field names and suffixes.",
+      "min": "Exact controller sensor field names and suffixes.",
+      "max": "Exact controller sensor field names and suffixes.",
+      "active": "Exact controller sensor field names and suffixes.",
+      "offset": "Exact controller sensor field names and suffixes.",
+      "desiredmin": "Exact controller sensor field names and suffixes.",
+      "desiredmax": "Exact controller sensor field names and suffixes.",
+      "months": "Exact controller sensor field names and suffixes.",
+      "domin": "Exact controller sensor field names and suffixes.",
+      "domax": "Exact controller sensor field names and suffixes.",
+      "percentmin": "Exact controller sensor field names and suffixes.",
+      "percentmax": "Exact controller sensor field names and suffixes.",
+      "absmin": "Exact controller sensor field names and suffixes.",
+      "absmax": "Exact controller sensor field names and suffixes.",
+      "percent": "Exact controller sensor field names and suffixes.",
+      "do": "Exact controller sensor field names and suffixes.",
+      "abs": "Exact controller sensor field names and suffixes."
+    },
+    "system.ts": {
+      "CET-1CEST,M3.5.0,M10.5.0/3": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "tz": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "timezone": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "gmtoff": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "nodst": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "summertime": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "usentp": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "http:": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "https:": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "network": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "pool.ntp.org": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "ip4": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "ip4_netmask": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "ip4_gateway": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "ip4_dns": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "wifi_ip4_netmask": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "wifi_ip4_gateway": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route.",
+      "wifi_ip4_dns": "Controller configuration keys, POSIX rule, URI schemes, default NTP hostname and internal route."
+    },
+    "weather-runtime.ts": {
+      "min": "Controller runtime field names, formatter selectors and minute unit.",
+      "cloudticks": "Controller runtime field names, formatter selectors and minute unit.",
+      "cloud": "Controller runtime field names, formatter selectors and minute unit.",
+      "clouds_state": "Controller runtime field names, formatter selectors and minute unit.",
+      "number": "Controller runtime field names, formatter selectors and minute unit.",
+      "clouds_next_state_tick": "Controller runtime field names, formatter selectors and minute unit.",
+      "next": "Controller runtime field names, formatter selectors and minute unit.",
+      "rainmins": "Controller runtime field names, formatter selectors and minute unit.",
+      "minutes": "Controller runtime field names, formatter selectors and minute unit.",
+      "rainfront_start": "Controller runtime field names, formatter selectors and minute unit.",
+      "time": "Controller runtime field names, formatter selectors and minute unit.",
+      "rainfront_length": "Controller runtime field names, formatter selectors and minute unit.",
+      "rain_next_tick": "Controller runtime field names, formatter selectors and minute unit.",
+      "daycount": "Controller runtime field names, formatter selectors and minute unit.",
+      "stormfront_start": "Controller runtime field names, formatter selectors and minute unit.",
+      "stormfront_length": "Controller runtime field names, formatter selectors and minute unit.",
+      "thunder_state": "Controller runtime field names, formatter selectors and minute unit.",
+      "thunder_next_state_tick": "Controller runtime field names, formatter selectors and minute unit.",
+      "moon_state": "Controller runtime field names, formatter selectors and minute unit.",
+      "moon_next_state_tick": "Controller runtime field names, formatter selectors and minute unit."
+    },
+    "weather.ts": {
+      "clouds": "Internal effect identifiers, catalogue fields and language code.",
+      "rain": "Internal effect identifiers, catalogue fields and language code.",
+      "thunder": "Internal effect identifiers, catalogue fields and language code.",
+      "moon": "Internal effect identifiers, catalogue fields and language code.",
+      "name": "Internal effect identifiers, catalogue fields and language code.",
+      "deleted": "Internal effect identifiers, catalogue fields and language code.",
+      "en": "Internal effect identifiers, catalogue fields and language code."
+    },
+    "ui/ActionButton.svelte": {
+      "button": "HTML button type."
+    },
+    "ui/AppShell.svelte": {
+      "index": "Route identifiers; displayed navigation names use messages.",
+      "channels": "Route identifiers; displayed navigation names use messages.",
+      "service": "Route identifiers; displayed navigation names use messages.",
+      "schedules": "Route identifiers; displayed navigation names use messages.",
+      "weather": "Route identifiers; displayed navigation names use messages.",
+      "sensors": "Route identifiers; displayed navigation names use messages.",
+      "settings": "Route identifiers; displayed navigation names use messages.",
+      "clock": "Route identifiers; displayed navigation names use messages.",
+      "network": "Route identifiers; displayed navigation names use messages.",
+      "lighting-tools": "Route identifiers; displayed navigation names use messages.",
+      "diagnostics": "Route identifiers; displayed navigation names use messages.",
+      "recovery": "Route identifiers; displayed navigation names use messages.",
+      "help": "Route identifiers; displayed navigation names use messages.",
+      "en": "Language code or ARIA current-page token.",
+      "de": "Language code or ARIA current-page token.",
+      "page": "Language code or ARIA current-page token."
+    },
+    "ui/AquariumPhotograph.svelte": {
+      "desktop": "Local asset URLs and internal photo loading identifiers.",
+      "p/aquascape-c-1600-f4d1fb0c.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/aquascape-c-1600-871dc1eb.webp": "Local asset URLs and internal photo loading identifiers.",
+      "p/aquascape-c-3040-2da30d41.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/aquascape-c-3040-b140f4b1.webp": "Local asset URLs and internal photo loading identifiers.",
+      "p/aquascape-c-800-f7c9cf14.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/aquascape-c-800-833afa56.webp": "Local asset URLs and internal photo loading identifiers.",
+      "imagery": "Local asset URLs and internal photo loading identifiers.",
+      "mobile": "Local asset URLs and internal photo loading identifiers.",
+      "retina": "Local asset URLs and internal photo loading identifiers."
+    },
+    "ui/SchedulePreview.svelte": {
+      "ArrowLeft": "KeyboardEvent key identifiers.",
+      "ArrowRight": "KeyboardEvent key identifiers.",
+      "ArrowUp": "KeyboardEvent key identifiers.",
+      "ArrowDown": "KeyboardEvent key identifiers."
+    },
+    "ui/StateBadge.svelte": {
+      "neutral": "Internal visual style identifier."
+    },
+    "LightingDashboard.svelte": {
+      "draft": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "neutral": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "service-": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "active": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "raw-": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "all": "Internal view, style, DOM identity or operation code; displayed labels use translation messages."
+    },
+    "ui/DraftBar.svelte": {
+      "draft": "Internal view, style, DOM identity or operation code; displayed labels use translation messages.",
+      "neutral": "Internal view, style, DOM identity or operation code; displayed labels use translation messages."
+    },
+    "ui/LevelControl.svelte": {
+      "-unit": "Internal view, style, DOM identity or operation code; displayed labels use translation messages."
+    }
+  },
+  "files": {
+    "channel-presets.ts": {
+      "sha256": "8a83880a1515777ab93561be1d2bdb0bcd406a0fe15cd6385b92d57b941400ad",
+      "reason": "Pinned vendor channel catalogue and explicit bilingual descriptor mapping; covered by every-preset tests."
+    },
+    "timezone-labels.ts": {
+      "sha256": "05d2a5b5fba4ed510c9786fa1ace2dc53b52a44f1cbe31670ce8f1745c416604",
+      "reason": "Pinned German translation table for vendor timezone names; unchanged proper place names are intentional."
+    },
+    "startup-build.ts": {
+      "sha256": "d5fb647ee23fbc8f7866f9a270c31cc9f8457ba210a4a7efe10a9c3c6bff8ae1",
+      "reason": "Reviewed build-time JavaScript/CSS/HTML generator; startup display text reads the bilingual catalogue. Changes require renewed review."
+    }
+  }
+}

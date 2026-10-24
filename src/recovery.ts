@@ -1,4 +1,4 @@
-import {source} from './messages.js';
+import {MessageError, type Message, source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -28,8 +28,8 @@ const configHash = (bytes: Uint8Array) => {
   for (const b of bytes) h = (h * 33 + (b > 127 ? b - 256 : b)) >>> 0;
   return h;
 };
-const fail = (message: string): never => {
-  throw Error(message);
+const fail = (message: Message): never => {
+  throw new MessageError(message);
 };
 /** Parse structure before decode: JS objects alone cannot reveal duplicate/non-string keys. */
 export function validateBackup(
@@ -248,11 +248,11 @@ export async function validateBee(
 /** The stage at which a recovery request failed: "upload" - the device answered with an error status (the request
  * was rejected, not acknowledged); "connection" - no complete response (the outcome is uncertain); "acknowledgement" -
  * a response other than the expected acknowledgement (uncertain). */
-export class RecoveryError extends Error {
+export class RecoveryError extends MessageError {
   constructor(
     public stage: "upload" | "connection" | "acknowledgement",
     public status: number | undefined,
-    message: string,
+    message: Message,
     public chunkOffset?: number,
   ) {
     super(message);
@@ -345,7 +345,7 @@ async function uploadChunk(
   bytes: Uint8Array,
   offset: number,
   retry: boolean,
-  progress: (message: string) => void,
+  progress: (message: Message) => void,
 ) {
   // Stay below the firmware's 60 s inactivity watchdog. Recheck after waits,
   // since a background/suspended tab may wake well after its scheduled delay.
@@ -362,7 +362,7 @@ async function uploadChunk(
       if (!(e instanceof RecoveryError)) throw e;
       const stopped = () => new RecoveryError(
         e.stage, e.status,
-        source("recovery.chunkStopped", { v0: offset, v1: attempt + 1, v2: e.message }),
+        source("recovery.chunkStopped", { v0: offset, v1: attempt + 1, v2: e.uiMessage }),
         offset,
       );
       const transient = e.stage === "connection" ||
@@ -380,7 +380,7 @@ async function uploadChunk(
 }
 export async function uploadFirmware(
   bytes: Uint8Array,
-  progress: (message: string) => void,
+  progress: (message: Message) => void,
   firmwareVersion: string,
 ) {
   progress(source("recovery.initializingUpload_04d65"));

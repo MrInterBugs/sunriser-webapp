@@ -1,4 +1,4 @@
-import {source} from './messages.js';
+import {type Message, MessageError, source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -18,7 +18,7 @@ export interface Reading {
 }
 export function parseSensorState(value: unknown) {
   const readings: Record<string, Reading> = {};
-  const errors: string[] = [];
+  const errors: Message[] = [];
   if (value == null) return { readings, errors };
   if (!object(value)) return { readings, errors: [source("sensors.invalidSensorStateMap_083aa")] };
   for (const [rom, v] of Object.entries(value)) {
@@ -39,7 +39,7 @@ export function parseSensorState(value: unknown) {
   return { readings, errors };
 }
 export const formatReading = (v: Reading) =>
-  v.device === 1 ? `${v.value / 10} °C` : `${v.value} raw (device ${v.device})`;
+  v.device === 1 ? `${v.value / 10} °C` : source("sensors.unsupportedReading",{v0:v.value,v1:v.device});
 export function tenths(text: string): number | undefined {
   if (!/^-?\d+(?:\.\d)?$/.test(text)) return;
   const value = Number(text) * 10;
@@ -58,9 +58,9 @@ export function sensorCatalogue(value: unknown): Catalogue {
   let catalogue: Catalogue = {};
   if (value != null && value !== "") {
     if (typeof value !== "string")
-      throw Error(source("sensors.invalidSensorCatalogue_cd8df"));
+      throw new MessageError(source("sensors.invalidSensorCatalogue_cd8df"));
     const parsed: unknown = JSON.parse(value);
-    if (!object(parsed)) throw Error(source("sensors.invalidSensorCatalogue_cd8df"));
+    if (!object(parsed)) throw new MessageError(source("sensors.invalidSensorCatalogue_cd8df"));
     for (const [rom, entry] of Object.entries(parsed)) {
       if (
         !romPattern.test(rom) ||
@@ -69,7 +69,7 @@ export function sensorCatalogue(value: unknown): Catalogue {
         typeof entry.name !== "string" ||
         !Number.isInteger(entry.device)
       )
-        throw Error(source("sensors.invalidSensorCatalogueEntry_77a80"));
+        throw new MessageError(source("sensors.invalidSensorCatalogueEntry_77a80"));
     }
     catalogue = parsed as Catalogue;
   }
@@ -93,7 +93,7 @@ export async function loadSensorIndex(count: number) {
       manager > 4 ||
       typeof name !== "string"
     )
-      throw Error(source("sensors.invalidSensorChannelMetadata_7eea4"));
+      throw new MessageError(source("sensors.invalidSensorChannelMetadata_7eea4"));
     return { binary, manager, name };
   });
   return { catalogue, channels };
@@ -179,26 +179,26 @@ export async function loadSensor(
       n < -32768 ||
       n > 32767
     )
-      throw Error(source("sensors.invalidSensorNumber_b5357"));
+      throw new MessageError(source("sensors.invalidSensorNumber_b5357"));
     return n;
   };
   const bool = (f: string) => {
     const b = value(f, false);
-    if (typeof b !== "boolean") throw Error(source("sensors.invalidSensorFlag_cc359"));
+    if (typeof b !== "boolean") throw new MessageError(source("sensors.invalidSensorFlag_cc359"));
     return b;
   };
   const name = value("name", entry.name);
-  if (typeof name !== "string") throw Error(source("sensors.invalidSensorName_c0407"));
+  if (typeof name !== "string") throw new MessageError(source("sensors.invalidSensorName_c0407"));
   const min = num("min", 150),
     max = num("max", 350);
-  if (min > max) throw Error(source("sensors.invalidSensorBounds_1bb8f"));
+  if (min > max) throw new MessageError(source("sensors.invalidSensorBounds_1bb8f"));
   const months = value("months", []);
   if (
     !Array.isArray(months) ||
     months.some((m) => !Number.isInteger(m) || m < 1 || m > 12) ||
     new Set(months).size !== months.length
   )
-    throw Error(source("sensors.invalidSensorMonths_6d03f"));
+    throw new MessageError(source("sensors.invalidSensorMonths_6d03f"));
   const draft = defaults(channels.length, name, min, max);
   Object.assign(draft, {
     active: bool("active"),
@@ -218,7 +218,7 @@ export async function loadSensor(
             percent > 200 ||
             (ch.binary && percent !== 0 && percent !== 100)
           )
-            throw Error(source("sensors.invalidSensorPercent_dfaa3"));
+            throw new MessageError(source("sensors.invalidSensorPercent_dfaa3"));
           return [
             side,
             {

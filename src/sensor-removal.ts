@@ -1,3 +1,4 @@
+import {MessageError, source} from './messages.js';
 /* SPDX-License-Identifier: GPL-3.0-or-later
  * Copyright (C) 2026 Aedan Lawrence. See LICENSING.md.
  */
@@ -5,8 +6,6 @@ import {decode} from '@msgpack/msgpack';
 import {readConfig} from './api.js';
 import {backupValueBytes,recoveryRequest} from './recovery.js';
 import {key,sensorCatalogue,type Catalogue} from './sensors.js';
-import {source} from './messages.js';
-
 export interface SensorRemoval {
   rom: string;
   name: string;
@@ -20,11 +19,11 @@ export interface SensorRemoval {
  * partially interrupted write cannot leave cleared response fields enabled.
  */
 export function sensorRemovalPlan(rom:string, bytes:Uint8Array):SensorRemoval {
-  if(!/^[0-9a-fA-F]{16}$/.test(rom))throw Error(source('sensors.invalidSensorCatalogueEntry_77a80'));
+  if(!/^[0-9a-fA-F]{16}$/.test(rom))throw new MessageError(source('sensors.invalidSensorCatalogueEntry_77a80'));
   const values=backupValueBytes(bytes), encoded=values.get('sensors#web');
   const previousCatalogue=encoded?decode(encoded):undefined;
   const catalogue=sensorCatalogue(previousCatalogue);
-  if(typeof previousCatalogue!=='string'||!Object.hasOwn(catalogue,rom))throw Error(source('sensors.removalChanged'));
+  if(typeof previousCatalogue!=='string'||!Object.hasOwn(catalogue,rom))throw new MessageError(source('sensors.removalChanged'));
   const name=catalogue[rom].name as string;
   const remaining=Object.fromEntries(Object.entries(catalogue).filter(([id])=>id!==rom));
   const patch:Record<string,unknown>={[key(rom,'active')]:null};
@@ -40,5 +39,5 @@ export async function reviewSensorRemoval(rom:string):Promise<SensorRemoval>{
  */
 export async function verifySensorRemoval(plan:SensorRemoval){
   const saved=await readConfig(['sensors#web']);
-  if(saved['sensors#web']!==plan.previousCatalogue)throw Error(source('sensors.removalChanged'));
+  if(saved['sensors#web']!==plan.previousCatalogue)throw new MessageError(source('sensors.removalChanged'));
 }

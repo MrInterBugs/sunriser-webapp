@@ -7,12 +7,14 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {type UiText} from '../messages.js';
+
  import {source,t,renderText,language} from '../i18n';
  import {configurationState} from '../configuration-state';
  import ConfigurationNotice from './ConfigurationNotice.svelte';
  import ActionButton from './ActionButton.svelte';
  import StateBadge from './StateBadge.svelte';
- let {snapshotRevision, dirty, busy, feedback="", disabled=false, label, scope, detail=source("draftbar.defaultDetail")}: {snapshotRevision?:number;dirty:boolean;busy:boolean;feedback?:string;disabled?:boolean;label:string;scope:string;detail?:string}=$props();
+ let {snapshotRevision, dirty, busy, feedback="", disabled=false, label, scope, detail=source("draftbar.defaultDetail")}: {snapshotRevision?:number;dirty:boolean;busy:boolean;feedback?: UiText;disabled?:boolean;label: UiText;scope: UiText;detail?: UiText}=$props();
  const reconciled=$derived(snapshotRevision===undefined||(!$configurationState.recovery&&snapshotRevision===$configurationState.revision));
 </script>
 <div class="draft-bar" class:dirty>

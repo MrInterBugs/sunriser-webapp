@@ -14,6 +14,7 @@ copy=json.loads((P/'assets/notices-copy.json').read_text())
 assert set(copy)=={'en','de'} and copy['en'].keys()==copy['de'].keys(), 'Notice language keys differ'
 for key,value in copy['en'].items():
  assert value.strip() and copy['de'][key].strip(), f'Empty notice copy: {key}'
+ assert ' '.join(value.split()) != ' '.join(copy['de'][key].split()), f'Untranslated notice copy: {key}'
  assert sorted(re.findall(r'\{v\d+\}',value))==sorted(re.findall(r'\{v\d+\}',copy['de'][key])), f'Notice placeholder mismatch: {key}'
 def tr(key,tag='p',**values):
  text=copy['en'][key]

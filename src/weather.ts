@@ -1,4 +1,4 @@
-import {source} from './messages.js';
+import {type Message, MessageError, source, renderMessage} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -12,7 +12,7 @@ export type Value = string | boolean | number[];
 export interface Field {
   group: Effect;
   key: string;
-  label: string;
+  label: Message;
   default: number | boolean | number[];
   type: string;
   min?: number;
@@ -410,7 +410,7 @@ const bool = (v: unknown) =>
     : typeof v === "boolean"
       ? v
       : (() => {
-          throw Error(source("weather.invalidBoolean_ab602"));
+          throw new MessageError(source("weather.invalidBoolean_ab602"));
         })();
 export async function loadBook(count: number): Promise<Book> {
   const keys = ["weather#web", "weather#last_setup_id"];
@@ -428,9 +428,9 @@ export async function loadBook(count: number): Promise<Book> {
     ) ||
     new Set(profiles.map((p) => p.id)).size !== profiles.length
   )
-    throw Error(source("schedules.invalidCatalogue_27a60"));
+    throw new MessageError(source("schedules.invalidCatalogue_27a60"));
   const counter = baseline["weather#last_setup_id"] ?? 0;
-  if (!int(counter)) throw Error(source("weather.invalidCounter_98dff"));
+  if (!int(counter)) throw new MessageError(source("weather.invalidCounter_98dff"));
   Object.assign(
     baseline,
     await readConfig(
@@ -446,12 +446,12 @@ export async function loadBook(count: number): Promise<Book> {
       baseline[key(p.id, "name")] !== p.name ||
       bool(baseline[key(p.id, "deleted")])
     )
-      throw Error(source("weather.conflictingProfile_a36cf"));
+      throw new MessageError(source("weather.conflictingProfile_a36cf"));
     bool(baseline[key(p.id, "thunder#activated")]);
   }
   const channels = Array.from({ length: count }, (_, i) => {
     const profile = baseline[`pwm#${i + 1}#weather`] ?? 0;
-    if (!int(profile)) throw Error(source("weather.invalidAssignment_40165"));
+    if (!int(profile)) throw new MessageError(source("weather.invalidAssignment_40165"));
     return { profile, binary: bool(baseline[`pwm#${i + 1}#onoff`]) };
   });
   return { profiles, counter, channels, baseline, drafts: {}, removed: [] };
@@ -463,7 +463,7 @@ export async function loadProfile(book: Book, id: number) {
     const v = values[key(id, fieldKey(f))];
     if (v == null) continue;
     if (f.type === "boolean") {
-      if (typeof v !== "boolean") throw Error(source("weather.invalidBoolean_ab602"));
+      if (typeof v !== "boolean") throw new MessageError(source("weather.invalidBoolean_ab602"));
       draft[fieldKey(f)] = v;
     } else if (f.type === "array") {
       if (
@@ -471,11 +471,11 @@ export async function loadProfile(book: Book, id: number) {
         v.some((n) => !int(n, 0, 6)) ||
         new Set(v).size !== v.length
       )
-        throw Error(source("weather.invalidWeekdays_33964"));
+        throw new MessageError(source("weather.invalidWeekdays_33964"));
       draft[fieldKey(f)] = v;
     } else {
       if (typeof v !== "number" || !Number.isSafeInteger(v))
-        throw Error(source("weather.invalidInteger_30bfc"));
+        throw new MessageError(source("weather.invalidInteger_30bfc"));
       draft[fieldKey(f)] = String(v);
     }
   }
@@ -492,7 +492,7 @@ export const nextId = (book: Book) =>
 export function addProfile(book: Book) {
   const id = nextId(book);
   if (id > 65535) return;
-  book.profiles.push({ id, name: source("weather.newProfileV0_3363f",{v0:id}) });
+  book.profiles.push({ id, name: renderMessage(source("weather.newProfileV0_3363f",{v0:id}), "en") });
   book.counter = id;
   book.drafts[id] = defaults();
   return id;

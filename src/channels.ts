@@ -1,5 +1,5 @@
+import {MessageError, source} from './messages.js';
 import {translate} from './i18n.js';
-import {source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -52,7 +52,7 @@ export function listedChannels(channels:Channel[],count:number,show:boolean,keep
 }
 export function channelColor(channel?:Channel){return presets.find(p=>p.id===channel?.color)?.color;}
 export function choosePreset(channels:Channel[], index:number, id:string){
-  if(!channels[index] || (id!==''&&!presets.some(p=>p.id===id)))throw Error(source("channels.unknownPreset_bab86"));
+  if(!channels[index] || (id!==''&&!presets.some(p=>p.id===id)))throw new MessageError(source("channels.unknownPreset_bab86"));
   const binary=(v:unknown)=>v==='pump'||v==='co';
   function assign(i:number,value:string){
     const c=channels[i];
@@ -73,16 +73,16 @@ export function channelPatch(draft:Channel[],base:Channel[]){
   const patch:Record<string,unknown>={};
   draft.forEach((channel,i)=>{
     if(JSON.stringify(channel.color)!==JSON.stringify(base[i].color)){
-      if(typeof channel.color!=='string'||(channel.color!==''&&!presets.some(p=>p.id===channel.color)))throw Error(source("channels.invalidColour_dd67f"));
+      if(typeof channel.color!=='string'||(channel.color!==''&&!presets.some(p=>p.id===channel.color)))throw new MessageError(source("channels.invalidColour_dd67f"));
       patch[`pwm#${i+1}#color`]=channel.color;
     }
     const name=typeof channel.name==='string'?channel.name.trim():channel.name,was=typeof base[i].name==='string'?(base[i].name as string).trim():base[i].name;
     if(JSON.stringify(name??'')!==JSON.stringify(was??'')){
-      if(typeof name!=='string'||name.length>channelNameLimit||/[\u0000-\u001f\u007f]/.test(name))throw Error(source("channels.invalidChannelName_4b8e1"));
+      if(typeof name!=='string'||name.length>channelNameLimit||/[\u0000-\u001f\u007f]/.test(name))throw new MessageError(source("channels.invalidChannelName_4b8e1"));
       patch[`pwm#${i+1}#name`]=name;
     }
     if(JSON.stringify(channel.binary)!==JSON.stringify(base[i].binary)){
-      if(typeof channel.binary!=='boolean')throw Error(source("channels.invalidBinarySetting_80f4b"));
+      if(typeof channel.binary!=='boolean')throw new MessageError(source("channels.invalidBinarySetting_80f4b"));
       patch[`pwm#${i+1}#onoff`]=channel.binary;
     }
   });

@@ -7,6 +7,8 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {type UiText} from './messages.js';
+
  import {t,renderText,language,source} from './i18n';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());
@@ -14,11 +16,11 @@ Third-party material retains its own terms.
  import {actions,preferenceKeys,decodePreferences,preferencePatch,readThunderEligibility,type Preferences} from './preferences';
  import DraftBar from './ui/DraftBar.svelte';
  import ActionButton from './ui/ActionButton.svelte';
- let {active,busy,firmware,feedback,perform,onedit}:{active:boolean;busy:boolean;firmware:Firmware;feedback:string;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>;onedit:()=>void}=$props();
+ let {active,busy,firmware,feedback,perform,onedit}:{active:boolean;busy:boolean;firmware:Firmware;feedback: UiText;perform:(task:()=>Promise<void>,success: UiText,failure: UiText,pending: UiText)=>Promise<boolean>;onedit:()=>void}=$props();
  let draft=$state<Preferences>(),base=$state<Preferences>({}),attempted=$state(false),loading=$state(false),loadFailed=$state(false),eligible=$state<number[]|undefined>();
  const patch=$derived(draft?preferencePatch(draft,base,firmware.pwm_count):{}),dirty=$derived(Object.keys(patch).length>0);
  const usesThunder=$derived(draft&&['button_short','button_long','button_double'].some(k=>draft![k]===2));
- const flags=[['no_error_logging',source("devicepreferences.disableErrorLogging_71ce0")],['info_logging',source("devicepreferences.enableInfoLogging_b7cd6")]];
+ const flags: [string, UiText][]=[['no_error_logging',source("devicepreferences.disableErrorLogging_71ce0")],['info_logging',source("devicepreferences.enableInfoLogging_b7cd6")]];
  $effect(()=>{if(active&&!attempted&&!busy&&!$configurationState.recovery)void load();});
  async function load(refresh=false){attempted=true;loading=true;loadFailed=false;try{loadFailed=!await perform(async()=>{
   const next=decodePreferences(await readSavedConfiguration(preferenceKeys(firmware.pwm_count),refresh),firmware.pwm_count);
@@ -44,12 +46,12 @@ Third-party material retains its own terms.
  {#if !known}<option value="unknown" disabled>{$t("devicepreferences.unknownPreserved_50f93")} {JSON.stringify(draft[key])}</option>{/if}{#each actions(kind) as action}<option value={String(action.value)}>{$renderText(action.label)}</option>{/each}</select></label>
  {/each}</fieldset>
  <p>{$t("devicepreferences.longPress3SecondsAConfiguredDoublePressAdds_0f9f4")}</p>
- {#if usesThunder&&draft.nobutton===false}<p class="notice">{eligible===undefined?$t("devicepreferences.thunderEligibilityUnavailableReloadPreferencesToCheckSavedAssignments_ea086"):eligible.length?source("devicepreferences.eligibleSavedThunderProfiles_93bf7")+eligible.join(', '):$t("devicepreferences.noEligibleSavedThunderProfileAssignAnEnabledThunder_2fae2")}</p>{/if}
+ {#if usesThunder&&draft.nobutton===false}<p class="notice">{eligible===undefined?$t("devicepreferences.thunderEligibilityUnavailableReloadPreferencesToCheckSavedAssignments_ea086"):eligible.length?$t("devicepreferences.eligibleSavedThunderProfiles_93bf7")+eligible.join(', '):$t("devicepreferences.noEligibleSavedThunderProfileAssignAnEnabledThunder_2fae2")}</p>{/if}
  <p>{$t("devicepreferences.blackoutRespectsServiceExclusionsAndTheSavedTimeoutThese_db574")}</p>
  </section>
  <section class="preference-group"><h3>{$t("devicepreferences.loggingAndIndication_b206c")}</h3>
  <fieldset disabled={busy}><legend class="visually-hidden">{$t("devicepreferences.loggingAndStatusLED_281d8")}</legend>
- {#each [...flags,...(firmware.pwm_count===10?[['nostatus',source("devicepreferences.disableStatusLED_254fc")]]:[])] as [key,label]}
+ {#each [...flags,...(firmware.pwm_count===10?[['nostatus',source("devicepreferences.disableStatusLED_254fc")] as const]:[])] as [key,label]}
  {#if typeof draft[key]==='boolean'}<label class="check"><input type="checkbox" checked={draft[key]===true} onchange={e=>set(key,e.currentTarget.checked)}/>{$renderText(label)}</label>
  {:else}<label>{$renderText(label)}<select value="unknown" onchange={e=>set(key,e.currentTarget.value==='true')}><option disabled value="unknown">{$t("devicepreferences.unknownPreserved_50f93")} {JSON.stringify(draft[key])}</option><option value="false">{$t("devicepreferences.no_816c5")}</option><option value="true">{$t("devicepreferences.yes_5397e")}</option></select></label>{/if}{/each}
  </fieldset>

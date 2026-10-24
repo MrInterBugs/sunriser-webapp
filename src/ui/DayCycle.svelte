@@ -7,9 +7,11 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {type UiText} from '../messages.js';
+
  import {source,t,renderText,language,numberText} from '../i18n';
   import {parseTime,validateCurve,type Point} from '../schedules';
-  let {points,baseline=[],draft=false,label=source("schedules.savedDailyRhythm_48511"),inspectable=true,compact=false,initialMinute=1080}:{points:Point[];baseline?:Point[];draft?:boolean;label?:string;inspectable?:boolean;compact?:boolean;initialMinute?:number}=$props();
+  let {points,baseline=[],draft=false,label=source("schedules.savedDailyRhythm_48511"),inspectable=true,compact=false,initialMinute=1080}:{points:Point[];baseline?:Point[];draft?:boolean;label?: UiText;inspectable?:boolean;compact?:boolean;initialMinute?:number}=$props();
   let inspection=$state(1080);
   let initialised=false;
   $effect(()=>{if(!initialised){inspection=initialMinute;initialised=true;}});

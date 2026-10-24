@@ -7,14 +7,16 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {type UiText} from './messages.js';
+
  import {t,renderText,language,source,timestampDisplay} from './i18n';
  import {getFirmware,getState,getBootloader,getLog,utc,type Firmware,type DeviceState} from './api';
  import {metadataText,macText,timestampText} from './diagnostics';
  import {download} from './recovery';
  import EditorPage from './ui/EditorPage.svelte';
  import ActionButton from './ui/ActionButton.svelte';
- let {active,busy,firmware,perform}:{active:boolean;busy:boolean;firmware:Firmware;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>}=$props();
- let info=$state<Record<string,unknown>>(),snapshot=$state<DeviceState>(),boot=$state<Record<string,unknown>>(),stale=$state(false),bootError=$state(false),failure=$state('');
+ let {active,busy,firmware,perform}:{active:boolean;busy:boolean;firmware:Firmware;perform:(task:()=>Promise<void>,success: UiText,failure: UiText,pending: UiText)=>Promise<boolean>}=$props();
+ let info=$state<Record<string,unknown>>(),snapshot=$state<DeviceState>(),boot=$state<Record<string,unknown>>(),stale=$state(false),bootError=$state(false),failure = $state<UiText>('');
  const stateFields=$derived(snapshot as unknown as Record<string,unknown>|undefined);
  async function load(){failure='';const ok=await perform(async()=>{
   const nextInfo=await getFirmware(),nextState=await getState(firmware.pwm_count);let nextBoot:Record<string,unknown>|undefined;
@@ -30,11 +32,11 @@ Third-party material retains its own terms.
  <p class:warning={stale}>{stale?$t("diagnostics.staleDiagnosticSnapshot_eb6a8"):$t("diagnostics.diagnosticSnapshot_c9674")} · {utc(snapshot.time)} {$t("diagnostics.refreshedOnlyOnRequest_97550")}</p>
  <div class="diagnostic-columns">
  <section><h2>{$t("diagnostics.controllerAndFirmware_0eb1f")}</h2><dl>
- {#each [[source("diagnostics.model_68c2c"),info.sunriser],[source("diagnostics.firmwareVersion_e4a5e"),info.version],[source("diagnostics.firmwareFile_2a899"),info.filename],[source("diagnostics.buildTimeUTC_ad507"),info.timestamp==null?undefined:timestampDisplay(timestampText(info.timestamp),$language)],[source("diagnostics.description_55f8e"),info.description],[source("diagnostics.author_5fda2"),info.author],[source("diagnostics.experimentalBuild_8bbad"),info.experimental],['LAN MAC',info.mac==null?undefined:macText(info.mac)],...(firmware.wifi?[[source("diagnostics.wiFiMAC_e90f5"),info.wifi_mac==null?undefined:macText(info.wifi_mac)]]:[])] as [label,value]}<div><dt>{$renderText(label)}</dt><dd>{typeof value==='boolean'?$t(value?'diagnostics.yes':'diagnostics.no'):value==null?$t('systemsettings.notReported_98e85'):metadataText(value)}</dd></div>{/each}
+ {#each [[source("diagnostics.model_68c2c"),info.sunriser],[source("diagnostics.firmwareVersion_e4a5e"),info.version],[source("diagnostics.firmwareFile_2a899"),info.filename],[source("diagnostics.buildTimeUTC_ad507"),info.timestamp==null?undefined:timestampDisplay($renderText(timestampText(info.timestamp)),$language)],[source("diagnostics.description_55f8e"),info.description],[source("diagnostics.author_5fda2"),info.author],[source("diagnostics.experimentalBuild_8bbad"),info.experimental],['LAN MAC',info.mac==null?undefined:macText(info.mac)],...(firmware.wifi?[[source("diagnostics.wiFiMAC_e90f5"),info.wifi_mac==null?undefined:macText(info.wifi_mac)]]:[])] as [label,value]}<div><dt>{$renderText(label)}</dt><dd>{typeof value==='boolean'?$t(value?'diagnostics.yes':'diagnostics.no'):value==null?$t('systemsettings.notReported_98e85'):$renderText(metadataText(value))}</dd></div>{/each}
  </dl></section>
  <section><h2>{$t("diagnostics.bootloaderAndConnection_9872c")}</h2>
  {#if bootError}<p class="warning">{$t("diagnostics.bootloaderInformationUnavailableOtherMetadataWasReadSuccessfully_b27f9")}</p>{/if}
- <dl>{#each [[source("diagnostics.bootloaderVersion_9d093"),boot?.version],[source("diagnostics.bootloaderBuildUTC_c0601"),boot?.timestamp==null?undefined:timestampDisplay(timestampText(boot.timestamp),$language)],[source("app.lanAddress_99741"),snapshot.lan_ip],...(firmware.wifi?[[source("diagnostics.wiFiAddress_d8177"),snapshot.wifi_ip]]:[]),[source("app.uptime_6aafa"),source("diagnostics.v0S_2260e",{v0: snapshot.uptime})],[source("diagnostics.errorLogBytes_4cc27"),stateFields?.errsize],[source("diagnostics.infoLogBytes_4dde3"),stateFields?.logsize]] as [label,value]}<div><dt>{$renderText(label)}</dt><dd>{typeof value==='boolean'?$t(value?'diagnostics.yes':'diagnostics.no'):value==null?$t('systemsettings.notReported_98e85'):metadataText(value)}</dd></div>{/each}</dl>
+ <dl>{#each [[source("diagnostics.bootloaderVersion_9d093"),boot?.version],[source("diagnostics.bootloaderBuildUTC_c0601"),boot?.timestamp==null?undefined:timestampDisplay($renderText(timestampText(boot.timestamp)),$language)],[source("app.lanAddress_99741"),snapshot.lan_ip],...(firmware.wifi?[[source("diagnostics.wiFiAddress_d8177"),snapshot.wifi_ip]]:[]),[source("app.uptime_6aafa"),source("diagnostics.v0S_2260e",{v0: snapshot.uptime})],[source("diagnostics.errorLogBytes_4cc27"),stateFields?.errsize],[source("diagnostics.infoLogBytes_4dde3"),stateFields?.logsize]] as [label,value]}<div><dt>{$renderText(label)}</dt><dd>{typeof value==='boolean'?$t(value?'diagnostics.yes':'diagnostics.no'):value==null?$t('systemsettings.notReported_98e85'):$renderText(metadataText(value))}</dd></div>{/each}</dl>
  <p>{$t("diagnostics.logSizesAreSnapshotValuesAMissingOrZero_51b25")}</p>
  </section></div>
  <details><summary>{$t("diagnostics.rawReportedMetadata_af4fb")}</summary><pre>{JSON.stringify({firmware:info,bootloader:boot??null},null,2)}</pre></details>

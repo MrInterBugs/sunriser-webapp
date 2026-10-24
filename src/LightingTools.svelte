@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+import {type UiText, errorText} from './messages.js';
  import {t,renderText,language,source} from './i18n';
   import {PWM_RAW_MAX} from "./pwm";
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
@@ -21,13 +22,13 @@ Third-party material retains its own terms.
  import ChannelIdentity from './ui/ChannelIdentity.svelte';
  import RawMeter from './ui/RawMeter.svelte';
  import LevelControl from './ui/LevelControl.svelte';
- let {active,busy,firmware,snapshot,stale,feedback,perform,command,refresh,readback,onedit}:{active:boolean;busy:boolean;firmware:Firmware;snapshot:DeviceState;stale:boolean;feedback:string;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>;command:(value:{pwms?:Record<string,number>;timewarp?:number})=>Promise<void>;refresh:()=>void;readback:()=>Promise<void>;onedit:()=>void}=$props();
+ let {active,busy,firmware,snapshot,stale,feedback,perform,command,refresh,readback,onedit}:{active:boolean;busy:boolean;firmware:Firmware;snapshot:DeviceState;stale:boolean;feedback: UiText;perform:(task:()=>Promise<void>,success: UiText,failure: UiText,pending: UiText)=>Promise<boolean>;command:(value:{pwms?:Record<string,number>;timewarp?:number})=>Promise<void>;refresh:()=>void;readback:()=>Promise<void>;onedit:()=>void}=$props();
  let draft=$state<LightingValues>(),base=$state<LightingValues>({}),attempted=$state(false),loading=$state(false),loadFailed=$state(false);
  // Unused channels stay listed while lit or while one of their settings has an unsaved draft.
  const channels=$derived(listedChannels($savedChannels,firmware.pwm_count,$showUnusedChannels,n=>Number(snapshot.pwms[String(n)])>0||[`pwm#${n}#min`,`pwm#${n}#max`,`pwm#${n}#nosmart`].some(k=>!!draft&&JSON.stringify(draft[k])!==JSON.stringify(base[k]))));
- function assessment(scope:'minimum'|'expert'){try{return {patch:draft?lightingPatch(draft,base,firmware.pwm_count,scope):{},error:''};}catch(e){return {patch:{},error:(e as Error).message};}}
+ function assessment(scope:'minimum'|'expert'){try{return {patch:draft?lightingPatch(draft,base,firmware.pwm_count,scope):{},error:''};}catch(e){return {patch:{},error:errorText(e)};}}
  const minimum=$derived(assessment('minimum')),expert=$derived(assessment('expert')),mode=$derived(timeLapseState(snapshot,stale));
- const flags=[['higherminimum',source("lightingtools.raiseLowEndMinimum_60b13")],['oldfade',source("lightingtools.useOriginalDimmingAlgorithm_51c50")]];
+ const flags: [string, UiText][]=[['higherminimum',source("lightingtools.raiseLowEndMinimum_60b13")],['oldfade',source("lightingtools.useOriginalDimmingAlgorithm_51c50")]];
  function set(key:string,value:unknown){if(draft){draft[key]=value;onedit();}}
  $effect(()=>{if(active&&!attempted&&!busy&&!$configurationState.recovery)void load();});
  async function load(refresh=false){attempted=true;loading=true;loadFailed=false;try{loadFailed=!await perform(async()=>{const next=decodeLighting(await readSavedConfiguration(lightingKeys(firmware.pwm_count),refresh),firmware.pwm_count);const identities=await readChannels(firmware.pwm_count,refresh);base=JSON.parse(JSON.stringify(next));draft=next;snapshotRevision=configurationRevision();savedChannels.set(identities);},source("lightingtools.lightingSettingsLoaded_d631a"),source("lightingtools.couldNotLoadLightingSettingsDraftKeptExplicitlyReload_6d257"),source("lightingtools.readingLightingSettings_48f70"));}finally{loading=false;}}
@@ -36,7 +37,7 @@ Third-party material retains its own terms.
 </script>
 <div hidden={!active} class="lighting-tools">
  <div class="heading"><div><h1>{$t("lightingtools.lightingTools_601b5")}</h1><p>{$t("lightingtools.temporaryOperationsAndAdvancedDimmingSettings_d9f0d")}</p></div></div>
- <section class="time-lapse" aria-label={$t("lightingtools.timeLapse_01f19")}><div class="operation"><div><h2>{$t("lightingtools.timeLapse_01f19")}</h2><p>{$t("lightingtools.reportedState_6e385")} <StateBadge tone={mode==='Active'?'active':mode==='Off'?'neutral':'draft'}>{$renderText(mode)}</StateBadge></p></div><div class="actions"><ActionButton disabled={busy||mode==='Unknown'||mode==='Uncertain'} onclick={()=>command({timewarp:1})}>{$t("lightingtools.startTimeLapse_86046")}</ActionButton><ActionButton secondary disabled={busy} onclick={()=>command({timewarp:0})}>{$t("lightingtools.stopTimeLapse_5e82a")}</ActionButton></div></div>
+ <section class="time-lapse" aria-label={$t("lightingtools.timeLapse_01f19")}><div class="operation"><div><h2>{$t("lightingtools.timeLapse_01f19")}</h2><p>{$t("lightingtools.reportedState_6e385")} <StateBadge tone={mode.key==='lightingdashboard.active_a733b'?'active':mode.key==='lightingdashboard.off_e3de5'?'neutral':'draft'}>{$renderText(mode)}</StateBadge></p></div><div class="actions"><ActionButton disabled={busy||mode.key==='weather.unknown_bc781'||mode.key==='advanced.uncertain_c6a14'} onclick={()=>command({timewarp:1})}>{$t("lightingtools.startTimeLapse_86046")}</ActionButton><ActionButton secondary disabled={busy} onclick={()=>command({timewarp:0})}>{$t("lightingtools.stopTimeLapse_5e82a")}</ActionButton></div></div>
  <div class="read-state"><ActionButton secondary disabled={busy} onclick={refresh}>{$t("lightingtools.refreshLightingState_a6cf6")}</ActionButton></div><p>{$t("lightingtools.aTemporaryAcceleratedPlanningRunItChangesControllerOutput_277a4")}</p>
  <p>{$t("lightingtools.configurationReloadsAndRestartAlsoEndTimeLapseAfter_536f4")}</p></section>
  <nav aria-label={$t("lightingtools.lightingToolsSections_1b340")}><a href="#minimum-settings" onclick={e=>{e.preventDefault();document.getElementById('minimum-settings')?.scrollIntoView({block:'start'});}}>{$t("lightingtools.minimumOutput_9fc4c")}</a><a href="#expert-settings" onclick={e=>{e.preventDefault();document.getElementById('expert-settings')?.scrollIntoView({block:'start'});}}>{$t("lightingtools.expertDimming_1dd6d")}</a><a href="#schedules">{$t("lightingtools.schedulesAndRawCurves_eba01")}</a></nav>

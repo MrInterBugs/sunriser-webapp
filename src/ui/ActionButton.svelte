@@ -7,11 +7,13 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {type UiText} from '../messages.js';
+
  import {t,renderText,language} from '../i18n';
   import type { Snippet } from 'svelte';
   let {children, onclick, disabled=false, type='button', secondary=false, label}: {
     children: Snippet; onclick?: () => void; disabled?: boolean;
-    type?: 'button' | 'submit'; secondary?: boolean; label?: string;
+    type?: 'button' | 'submit'; secondary?: boolean; label?: UiText;
   } = $props();
 </script>
 <button {type} {onclick} {disabled} aria-label={label?$renderText(label):undefined} class:secondary>{@render children()}</button>

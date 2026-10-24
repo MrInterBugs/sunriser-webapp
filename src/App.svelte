@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+import {type UiText, MessageError} from './messages.js';
  import {t,renderText,language,source} from './i18n';
   import {PWM_RAW_MAX} from "./pwm";
   import {preferredReportedAddress} from './network-address';
@@ -68,8 +69,8 @@ Third-party material retains its own terms.
   let persisted = $state("");
   let loaded = $state(false);
   let busy = $state(false);
-  let error = $state("");
-  let status = $state("");
+  let error = $state<UiText>("");
+  let status = $state<UiText>("");
   let stale = $state(false);
   let route = $state(location.hash.slice(1) || "index");
   let raw = $state<Record<string, number | undefined>>({});
@@ -213,9 +214,9 @@ Third-party material retains its own terms.
 
   async function perform(
     task: () => Promise<void>,
-    success: string,
-    failure: string,
-    pending: string,
+    success: UiText,
+    failure: UiText,
+    pending: UiText,
   ) {
     if (!begin()) return false;
     error = "";
@@ -280,7 +281,7 @@ Third-party material retains its own terms.
     try {
       await readState();
       if (!background) status = source("app.stateRefreshed_0e050");
-      if (error.startsWith(source("app.stateRefreshFailed_7ccca"))) error = "";
+      if (typeof error!=="string" && error.key==="app.stateRefreshFailed_7ccca") error = "";
     } catch {
       uncertain();
       error =
@@ -382,7 +383,7 @@ Third-party material retains its own terms.
     try {
       await putHostname(draft, firmware);
       const actual = await getHostname();
-      if (actual !== draft) throw new Error(source("app.readbackMismatch_2cf0d"));
+      if (actual !== draft) throw new MessageError(source("app.readbackMismatch_2cf0d"));
       persisted = actual;
       status = source("app.saved_c0ae8");
     } catch {

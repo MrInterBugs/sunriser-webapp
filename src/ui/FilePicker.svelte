@@ -1,7 +1,9 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script lang="ts">
+ import {type UiText} from '../messages.js';
+
  import {t} from '../i18n';
- let {id,label,accept,disabled=false,onchange}:{id:string;label:string;accept?:string;disabled?:boolean;onchange:(event:Event & {currentTarget:EventTarget & HTMLInputElement})=>unknown}=$props();
+ let {id,label,accept,disabled=false,onchange}:{id:string;label: UiText;accept?:string;disabled?:boolean;onchange:(event:Event & {currentTarget:EventTarget & HTMLInputElement})=>unknown}=$props();
  let input:HTMLInputElement,name=$state('');
 </script>
 <div class="file-picker">

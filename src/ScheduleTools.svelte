@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+import {type UiText, errorText} from './messages.js';
  import {source,t,renderText,language} from './i18n';
  import {savedChannels,channelDisplay} from './channels';
  import {parseTime,type Point,type ScheduleBook} from './schedules';
@@ -14,17 +15,17 @@ Third-party material retains its own terms.
  import {inRange} from './api';
  import ActionButton from './ui/ActionButton.svelte';
  let {book,listed,curve,curveKey,showDaily,busy,reset,pending=$bindable(false),oncurve,onbook,onselect}:{book:ScheduleBook;listed:number[];curve:Point[]|undefined;curveKey:string;showDaily:boolean;busy:boolean;reset:number;pending?:boolean;oncurve:(points:Point[])=>void;onbook:(book:ScheduleBook)=>void;onselect:(key:string)=>void}=$props();
- let texts=$state<Record<string,string>>({}),channels=$state<number[]>([]),minutes=$state<number|undefined>(15),percent=$state<number|undefined>(5),shiftError=$state('');
+ let texts=$state<Record<string,string>>({}),channels=$state<number[]>([]),minutes=$state<number|undefined>(15),percent=$state<number|undefined>(5),shiftError = $state<UiText>('');
  $effect(()=>{reset;texts={};channels=[];shiftError='';});
  const pendingKeys=$derived(Object.keys(texts));
  // A ticked channel that is hidden again is not shifted.
  const shiftable=$derived(channels.filter(n=>listed.includes(n)));
  $effect(()=>{pending=pendingKeys.length>0;});
  const text=$derived(texts[curveKey]??JSON.stringify((curve??[]).flatMap(p=>[p.time==='24:00'?1440:parseTime(p.time),p.percent])));
- const rawError=$derived.by(()=>{try{parseRawCurve(text);return '';}catch(e){return (e as Error).message;}});
+ const rawError=$derived.by(()=>{try{parseRawCurve(text);return '';}catch(e){return errorText(e);}});
  function discard(){delete texts[curveKey];}
  function apply(){if(rawError||busy)return;oncurve(parseRawCurve(text));discard();}
- function shift(direction:number,level=false){if(busy)return;try{onbook(shiftSelectedDaily(book,shiftable,level?'level':'time',(level?percent!:minutes!)*direction));shiftError='';}catch(e){shiftError=(e as Error).message;}}
+ function shift(direction:number,level=false){if(busy)return;try{onbook(shiftSelectedDaily(book,shiftable,level?'level':'time',(level?percent!:minutes!)*direction));shiftError='';}catch(e){shiftError=errorText(e);}}
  const label=(key:string)=>key.startsWith('day:')?channelDisplay(Number(key.slice(4)),$savedChannels[Number(key.slice(4))-1],'',$language):source("scheduletools.programV0_f7356",{v0:key.slice(8)});
 </script>
 <div class="schedule-tools">

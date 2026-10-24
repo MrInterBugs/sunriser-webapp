@@ -101,7 +101,11 @@ npm run verify   # package integrity; build first
 These servers bind loopback and provide no simulated API. Controller operations
 need the existing API at the same origin; no physical-device connection is
 configured. Edit `src/locales/en.ts` and `de.ts` together; `npm run check` validates
-keys, placeholders, Svelte and TypeScript.
+keys, placeholders, missing translations, copied English, fixed UI prose, Svelte
+and TypeScript. Intentional shared terms and technical literals are documented in
+`src/locales/exemptions.json`; stale exemptions fail the check. Retained messages
+keep their keys and nested parameters until rendering, while user text stays
+verbatim. These development checks add no device requests.
 
 `npm test` runs six packaging/integrity tests. Broader browser and SR8/SR10 native
 simulator tests are maintained separately in the development workspace.

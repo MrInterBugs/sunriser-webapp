@@ -1,4 +1,4 @@
-import {source} from './messages.js';
+import {MessageError, source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -56,10 +56,10 @@ async function request(
         value === undefined ? {} : { "Content-Type": "application/x-msgpack" },
       body: value === undefined ? undefined : new Uint8Array(encode(value)),
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw new MessageError(source("common.httpStatus",{v0:response.status}));
     if (method === "PUT") {
       if ((await response.text()).trim() !== "OK")
-        throw new Error(source("api.unexpectedSaveAcknowledgement_eec64"));
+        throw new MessageError(source("api.unexpectedSaveAcknowledgement_eec64"));
       return undefined;
     }
     if (
@@ -69,7 +69,7 @@ async function request(
         .trim()
         .toLowerCase() !== "application/x-msgpack"
     )
-      throw new Error(source("api.unexpectedResponseType_3a3f3"));
+      throw new MessageError(source("api.unexpectedResponseType_3a3f3"));
     const bytes = new Uint8Array(await response.arrayBuffer());
     return raw ? bytes : decode(bytes);
   } finally {
@@ -86,12 +86,12 @@ export async function getFirmware(): Promise<Firmware> {
     !v.version ||
     typeof v.wifi !== "boolean"
   )
-    throw new Error(source("api.invalidFirmwareMetadata_ca53a"));
+    throw new MessageError(source("api.invalidFirmwareMetadata_ca53a"));
   return v as unknown as Firmware;
 }
 export async function getBootloader(): Promise<Record<string,unknown>> {
   const value=await request('GET','/bootload.mp');
-  if(!record(value))throw Error(source("api.invalidBootloaderMetadata_39e0b"));
+  if(!record(value))throw new MessageError(source("api.invalidBootloaderMetadata_39e0b"));
   return value;
 }
 export const getWeatherRuntime=()=>request('GET','/weather');
@@ -100,8 +100,8 @@ export async function getLog(path:'/errors'|'/log'):Promise<Uint8Array>{
   const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),8000);
   try{
     const response=await fetch(path,{method:'GET',signal:controller.signal,cache:'no-store',redirect:'error',credentials:'same-origin'});
-    if(!response.ok)throw Error(`HTTP ${response.status}`);
-    if(response.headers.get('content-type')?.split(';')[0].trim().toLowerCase()!=='text/plain')throw Error(source("api.unexpectedLogResponseType_53729"));
+    if(!response.ok)throw new MessageError(source("common.httpStatus",{v0:response.status}));
+    if(response.headers.get('content-type')?.split(';')[0].trim().toLowerCase()!=='text/plain')throw new MessageError(source("api.unexpectedLogResponseType_53729"));
     return new Uint8Array(await response.arrayBuffer());
   }finally{clearTimeout(deadline);}
 }
@@ -116,15 +116,15 @@ export async function getState(channels: number): Promise<DeviceState> {
     !integer(v.service_mode) ||
     !record(v.pwms)
   )
-    throw new Error(source("api.invalidDeviceState_aef23"));
+    throw new MessageError(source("api.invalidDeviceState_aef23"));
   for (let i = 1; i <= channels; i++)
-    if (!integer(v.pwms[String(i)])) throw new Error(source("api.invalidChannelState_d1c24"));
+    if (!integer(v.pwms[String(i)])) throw new MessageError(source("api.invalidChannelState_d1c24"));
   return v as unknown as DeviceState;
 }
 export async function getHostname(): Promise<string> {
   const v = await request("POST", "/", ["hostname"]);
   if (!record(v) || typeof v.hostname !== "string")
-    throw new Error(source("api.invalidHostnameResponse_a3c11"));
+    throw new MessageError(source("api.invalidHostnameResponse_a3c11"));
   return v.hostname;
 }
 export async function putHostname(hostname: string, firmware: Firmware) {
@@ -162,9 +162,9 @@ export async function readConfig(keys: string[]) {
   const result: Record<string, unknown> = {};
   for (let i = 0; i < keys.length; i += 15) {
     const v = await request("POST", "/", keys.slice(i, i + 15));
-    if (!record(v)) throw new Error(source("api.invalidConfiguration_0444e"));
+    if (!record(v)) throw new MessageError(source("api.invalidConfiguration_0444e"));
     for (const key of keys.slice(i, i + 15)) {
-      if (!(key in v)) throw new Error(source("api.missingConfigurationKeyV0_188ae",{v0:key}));
+      if (!(key in v)) throw new MessageError(source("api.missingConfigurationKeyV0_188ae",{v0:key}));
       result[key] = v[key];
     }
   }
@@ -189,11 +189,11 @@ export function readSavedConfiguration(keys: string[], refresh = false): Promise
   const pending=pendingSavedReads.get(signature);
   if(pending) return pending.then(value=>structuredClone(value));
   const task=savedReadTail.then(async()=>{
-    if(epoch!==configurationEpoch) throw Error(source("api.obsoleteConfigurationRead_01b70"));
+    if(epoch!==configurationEpoch) throw new MessageError(source("api.obsoleteConfigurationRead_01b70"));
     const missing=requested.filter(key=>refresh||!savedConfiguration.has(key));
     if(missing.length){
       const values=await readConfig(missing);
-      if(epoch!==configurationEpoch) throw Error(source("api.obsoleteConfigurationRead_01b70"));
+      if(epoch!==configurationEpoch) throw new MessageError(source("api.obsoleteConfigurationRead_01b70"));
       acceptSavedConfiguration(values);
     }
     return Object.fromEntries(requested.map(key=>[key,structuredClone(savedConfiguration.get(key))]));
@@ -211,12 +211,12 @@ export async function getService(count: number): Promise<ServiceSettings> {
   const number = (key: string, fallback: number) => {
     const value = v[key];
     if (value == null) return fallback;
-    if (!integer(value)) throw new Error(source("api.invalidNumericSetting_1efab"));
+    if (!integer(value)) throw new MessageError(source("api.invalidNumericSetting_1efab"));
     return value;
   };
   const boolean = (key: string) => {
     if (v[key] == null) return false;
-    if (typeof v[key] !== "boolean") throw new Error(source("api.invalidBooleanSetting_0481f"));
+    if (typeof v[key] !== "boolean") throw new MessageError(source("api.invalidBooleanSetting_0481f"));
     return v[key];
   };
   return {
@@ -256,7 +256,7 @@ export async function saveService(
   const actual = await readConfig(Object.keys(values));
   for (const key of Object.keys(values))
     if (actual[key] !== values[key])
-      throw new Error(source("api.serviceReadbackMismatch_6c09b"));
+      throw new MessageError(source("api.serviceReadbackMismatch_6c09b"));
 }
 
 /** Partial configuration write, followed by typed readback of exactly those keys. */
@@ -273,13 +273,13 @@ export async function saveConfiguration(
   const actual = await readConfig(Object.keys(payload));
   for (const [key, value] of Object.entries(payload))
     if (JSON.stringify(actual[key]) !== JSON.stringify(value))
-      throw Error(source("api.configurationReadbackMismatch_95937"));
+      throw new MessageError(source("api.configurationReadbackMismatch_95937"));
   acceptSavedConfiguration(actual);
   configurationSaved();
 }
 
 /** Raw configuration values for recovery: C copies stored MessagePack objects verbatim. */
 export async function readConfigBytes(keys: string[]): Promise<Uint8Array> {
-  if (!keys.length || keys.length > 15) throw Error(source("api.invalidRecoveryReadBatch_0e79f"));
+  if (!keys.length || keys.length > 15) throw new MessageError(source("api.invalidRecoveryReadBatch_0e79f"));
   return await request("POST", "/", keys, true) as Uint8Array;
 }

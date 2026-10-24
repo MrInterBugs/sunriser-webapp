@@ -7,6 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+import {type Message, type UiText} from './messages.js';
  import {t,renderText,language,source} from './i18n';
  import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
@@ -50,9 +51,9 @@ Third-party material retains its own terms.
     firmware: Firmware;
     perform: (
       task: () => Promise<void>,
-      success: string,
-      failure: string,
-      pending: string,
+      success: UiText,
+      failure: UiText,
+      pending: UiText,
     ) => Promise<boolean>;
     onedit: () => void;
   } = $props();
@@ -129,7 +130,7 @@ Third-party material retains its own terms.
   );
   const curveEdited = $derived(JSON.stringify(curve) !== JSON.stringify(savedCurve));
   const pointFeedback = $derived((curve ?? []).map((point, i, points) => {
-    const messages: string[] = [], time = parseTime(point.time);
+    const messages: Message[] = [], time = parseTime(point.time);
     if (time === undefined) messages.push(source("schedules.useHHMMFrom0000To2359_e75fe"));
     else {
       const duplicates = points.flatMap((p, n) => n !== i && parseTime(p.time) === time ? [n + 1] : []);
@@ -298,7 +299,7 @@ Third-party material retains its own terms.
         </div>
         <!-- Narrow screens hide the roster, so the note follows the channel picker instead. -->
         {#if view !== 'program'}<div class="roster-fallback"><UnusedChannels {listed} count={book.channels.length}/></div>{/if}
-        <div class="view-switch" role="group" aria-label={$t("schedules.scheduleView_1418a")}>{#each [['day',source("schedules.dailyCurve_e2d23")],['week',source("schedules.weeklyAssignments_539c2")],['program',source("schedules.programs_ab14d")]] as [value,label]}<button type="button" aria-pressed={view===value} onclick={()=>view=value}>{$renderText(label)}</button>{/each}</div>
+        <div class="view-switch" role="group" aria-label={$t("schedules.scheduleView_1418a")}>{#each [['day',source("schedules.dailyCurve_e2d23")],['week',source("schedules.weeklyAssignments_539c2")],['program',source("schedules.programs_ab14d")]] as const as [value,label]}<button type="button" aria-pressed={view===value} onclick={()=>view=value}>{$renderText(label)}</button>{/each}</div>
         {#if view !== 'program'}
           <!-- Planning explanation is adjacent to the chart/weekly editor below. -->
         {:else}

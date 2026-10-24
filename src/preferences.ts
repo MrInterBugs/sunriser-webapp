@@ -1,4 +1,4 @@
-import {source} from './messages.js';
+import {MessageError, source} from './messages.js';
 /*
  * SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Aedan Lawrence (original contributions).
@@ -18,8 +18,8 @@ export function preferencePatch(draft:Preferences,base:Preferences,board:8|10){
  for(const key of preferenceKeys(board)){
   const value=draft[key];if(JSON.stringify(value)===JSON.stringify(base[key]))continue;
   if(key.startsWith('button_')){
-   if(!actions(key.slice(7) as 'short'|'long'|'double').some(a=>a.value===value))throw Error(source("preferences.invalidButtonAction_132fb"));
-  }else if(typeof value!=='boolean')throw Error(source("preferences.invalidBooleanPreference_f7f06"));
+   if(!actions(key.slice(7) as 'short'|'long'|'double').some(a=>a.value===value))throw new MessageError(source("preferences.invalidButtonAction_132fb"));
+  }else if(typeof value!=='boolean')throw new MessageError(source("preferences.invalidBooleanPreference_f7f06"));
   patch[key]=value;
  }
  return patch;
@@ -28,7 +28,7 @@ export const thunderIds=(values:Preferences,count:number,ids:number[])=>ids.filt
 export async function readThunderEligibility(count:number,refresh=false){
  const catalogue=(await readSavedConfiguration(['weather#web'],refresh))['weather#web'];
  const profiles:unknown=catalogue==null?[]:typeof catalogue==='string'?JSON.parse(catalogue):null;
- if(!Array.isArray(profiles)||profiles.some(p=>!p||!Number.isInteger(p.id)||p.id<1||p.id>65535))throw Error(source("preferences.invalidWeatherCatalogue_313d1"));
+ if(!Array.isArray(profiles)||profiles.some(p=>!p||!Number.isInteger(p.id)||p.id<1||p.id>65535))throw new MessageError(source("preferences.invalidWeatherCatalogue_313d1"));
  const ids:number[]=profiles.map(p=>p.id);
  const keys=Array.from({length:count},(_,i)=>[`pwm#${i+1}#weather`,`pwm#${i+1}#onoff`]).flat().concat(ids.map(id=>`weather#setup#${id}#thunder#activated`));
  return thunderIds(await readSavedConfiguration(keys,refresh),count,ids);

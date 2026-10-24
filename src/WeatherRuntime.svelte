@@ -7,14 +7,16 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
+ import {type UiText} from './messages.js';
+
  import {source,t,renderText,language} from './i18n';
  import {getState,getWeatherRuntime,utc,type Firmware} from './api';
  import {parseRuntime,runtimeGroups,runtimeValue,type RuntimeChannel} from './weather-runtime';
  import {savedChannels,channelDisplay,listedChannels,showUnusedChannels} from './channels';
  import ChannelIdentity from './ui/ChannelIdentity.svelte';
  import ActionButton from './ui/ActionButton.svelte';
- let {busy,firmware,connectionStale,savedValues={},perform}:{busy:boolean;firmware:Firmware;connectionStale:boolean;savedValues?:Record<string,unknown>;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>}=$props();
- let channels=$state<RuntimeChannel[]>(),selected=$state(0),tick=$state<unknown>(),captured=$state(0),failed=$state(false),failure=$state('');
+ let {busy,firmware,connectionStale,savedValues={},perform}:{busy:boolean;firmware:Firmware;connectionStale:boolean;savedValues?:Record<string,unknown>;perform:(task:()=>Promise<void>,success: UiText,failure: UiText,pending: UiText)=>Promise<boolean>}=$props();
+ let channels=$state<RuntimeChannel[]>(),selected=$state(0),tick=$state<unknown>(),captured=$state(0),failed=$state(false),failure = $state<UiText>('');
  // Unused channels stay listed while the controller reports weather for them.
  const listed=$derived(channels?listedChannels($savedChannels,channels.length,$showUnusedChannels,n=>channels![n-1]!==null):[]);
  $effect(()=>{const shown=listed;if(shown.length&&!shown.includes(selected+1))selected=shown[0]-1;});
@@ -30,7 +32,7 @@ Third-party material retains its own terms.
 <section class="weather-runtime" aria-label={$t("weatherruntime.weatherRuntime_0b627")}>
  <div class="runtime-heading"><div><h2>{$t("weatherruntime.reportedWeatherRuntime_1ed1e")}</h2><p>{$t("weatherruntime.inspectChannelEffectsIndependentlyOfConfigurationDrafts_7df89")}</p></div><ActionButton secondary disabled={busy} onclick={read}>{$t("weatherruntime.readWeatherRuntime_82201")}</ActionButton></div>
  {#if channels}
- <p class:warning={failed||connectionStale}>{failed||connectionStale?$t("weatherruntime.staleRuntimeSnapshot_2f658"):$t("weatherruntime.runtimeSnapshot_32fa9")} · {utc(captured)}{$t("weatherruntime.timesAreRelativeToTheCapturedDeviceTickThis_28783")}</p>
+ <p class:warning={failed||connectionStale}>{failed||connectionStale?$t("weatherruntime.staleRuntimeSnapshot_2f658"):$t("weatherruntime.runtimeSnapshot_32fa9")} · {$renderText(utc(captured))}{$t("weatherruntime.timesAreRelativeToTheCapturedDeviceTickThis_28783")}</p>
  <div class="runtime-workspace"><div class="runtime-selection"><label for="runtime-channel">{$t("weatherruntime.runtimeChannel_6e67d")}</label><select id="runtime-channel" bind:value={selected}>{#each listed as n}{@const i=n-1}{@const channel=channels[i]}<option value={i}>{channelDisplay(i+1,$savedChannels[i],'',$language)}{channel===null?$t('common.inactiveSuffix'):''}</option>{/each}</select>
  <p>{#if inactive.length}{$t("weatherruntime.noActiveWeatherReportedForChannels_d0f0c")} {inactive.join(', ')}.{:else}{$t("weatherruntime.eachChannelHasARuntimeRecordInThisSnapshot_61cb0")}{/if}</p>
  <p>{$t("weatherruntime.phaseCodesAreFirmwareStateValuesNotOutputLevels_ec25c")}</p></div>
