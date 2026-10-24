@@ -66,9 +66,24 @@ Third-party material retains its own terms.
   // After the device rejected a restore upload with HTTP 413 (see FRAMING_HEADER in recovery.ts), the next deliberate,
   // separately confirmed restore changes the request's framing. Nothing is retried automatically.
   let restoreFraming = $state(false);
+  let confirmationOpener:HTMLElement|null=null;
+  function review(operation:Operation,event:MouseEvent){
+    // Safari does not necessarily focus a button on a pointer click.
+    confirmationOpener=event.currentTarget as HTMLElement;
+    confirm=operation;
+  }
   function modal(node: HTMLDialogElement) {
+    const opener=confirmationOpener;
     node.showModal();
     node.querySelector<HTMLButtonElement>("[data-cancel]")?.focus();
+    return {destroy(){if(opener?.isConnected)opener.focus({preventScroll:true});}};
+  }
+  function dialogKeys(event:KeyboardEvent){
+    if(event.key!=='Tab')return;
+    const buttons=Array.from((event.currentTarget as HTMLDialogElement).querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
+    const first=buttons[0],last=buttons.at(-1);
+    if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+    else if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
   }
   const labels: Record<Operation, string> = {
     restore: source("recovery.restoreConfiguration"),
@@ -293,7 +308,7 @@ Third-party material retains its own terms.
       {$t("recovery.restoreMergesSuppliedKeysAndRetainsOtherSettingsIt_390fa")}
     </p>
     <button
-      onclick={() => (confirm = "restore")}
+      onclick={event => review('restore',event)}
       disabled={busy || selecting || !backup}>{$t("recovery.reviewRestore_fcf3c")}</button
     >
     <div class="panel"><h3>{$t("recovery.bundledExamples_c484b")}</h3><p>{$t("recovery.previewPreparesALocalRestoreDraftOnlyAConfirmed_227fd")}</p>
@@ -339,7 +354,7 @@ Third-party material retains its own terms.
         <code class="recovery-keys">{imageInfo.sha256}</code>
       </p>{/if}
     <button
-      onclick={() => (confirm = "firmware")}
+      onclick={event => review('firmware',event)}
       disabled={busy || selecting || !image}>{$t("recovery.reviewFirmwareUpdate_52509")}</button
     >
   </section>
@@ -348,17 +363,17 @@ Third-party material retains its own terms.
     <p>
       {$t("recovery.configurationResetDeletesAllStoredOverridesIncludingNetworkSettings_30a2c")}
     </p>
-    <button class="danger" onclick={() => (confirm = "reset")} disabled={busy || selecting}
+    <button class="danger" onclick={event => review('reset',event)} disabled={busy || selecting}
       >{$t("recovery.reviewConfigurationReset_c5c18")}</button
     >
-    <button onclick={() => (confirm = "reboot")} disabled={busy || selecting}
+    <button onclick={event => review('reboot',event)} disabled={busy || selecting}
       >{$t("recovery.reviewReboot_88341")}</button
     >
     <div class="panel"><h3>{$t("recovery.replaceTheFactoryRecoveryImage_ddcd2")}</h3>    <p>
       {$t("recovery.factoryReplacementAlsoClearsConfigurationAndReplacesTheRecovery_0351a")}
     </p>
     <button class="danger"
-      onclick={() => (confirm = "factory")}
+      onclick={event => review('factory',event)}
       disabled={busy ||
         selecting ||
         !image ||
@@ -372,6 +387,7 @@ Third-party material retains its own terms.
     <dialog
       class="recovery-confirm"
       use:modal
+      onkeydown={dialogKeys}
       oncancel={() => (confirm = undefined)}
       aria-labelledby="confirm-title"
     >

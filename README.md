@@ -17,11 +17,17 @@ rhythm is separate from reported output.*
 - Service mode, blackout and configurable clouds, rain, thunderstorms and moonlight.
 - Sensor readings, corrections, thresholds, channel responses and confirmed removal.
 - Clock, network, lighting tools, diagnostics and Help.
+- Controller-aware getting-started guidance and an explicit saved-settings summary.
 - Backups, reviewed restores and separately confirmed firmware/reset operations.
 
 **English and German:** the compact **EN / DE** control remembers your preference.
 English is the default; switching languages preserves drafts and sends no device
 requests. Fonts, translations and photography are bundled locally.
+
+One consistent startup panel explains layout/font loading, interface setup and
+controller reads. Help, Diagnostics, Recovery and Lighting tools download on
+first visit and remain mounted afterwards, retaining drafts across navigation.
+The Help summary is read explicitly and warns when a verified save makes it old.
 
 <a href="docs/screenshots/overview-mobile-en.webp"><img src="docs/screenshots/overview-mobile-en.webp" width="250" alt="Mobile Overview with reference aquascape and Daily Rhythm"></a>
 <a href="docs/screenshots/schedules-mobile-de.webp"><img src="docs/screenshots/schedules-mobile-de.webp" width="250" alt="German mobile schedule curve and point editor"></a>

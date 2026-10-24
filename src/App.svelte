@@ -22,9 +22,15 @@ Third-party material retains its own terms.
   import UnusedChannels from './ui/UnusedChannels.svelte';
   import ChannelConfiguration from './ChannelConfiguration.svelte';
   import DevicePreferences from './DevicePreferences.svelte';
-  import Help from './Help.svelte';
-  import Diagnostics from './Diagnostics.svelte';
-  import LightingTools from './LightingTools.svelte';
+  // Each route is downloaded once and stays mounted afterwards to retain drafts.
+  const pageLoaders={help:()=>import('./Help.svelte'),diagnostics:()=>import('./Diagnostics.svelte'),recovery:()=>import('./Recovery.svelte'),'lighting-tools':()=>import('./LightingTools.svelte')};
+  type DeferredRoute=keyof typeof pageLoaders;
+  const deferredRoute=(value:string):value is DeferredRoute=>Object.hasOwn(pageLoaders,value);
+  type DeferredPages={[K in DeferredRoute]?:Awaited<ReturnType<(typeof pageLoaders)[K]>>['default']};
+  let pages=$state<DeferredPages>({});
+  let pageErrors=$state<Partial<Record<DeferredRoute,boolean>>>({});
+  let pendingPhotographs:Promise<unknown>=Promise.resolve();
+  const pageTitle=(value:DeferredRoute)=>({help:source('help.helpAndGettingStarted_f0eb5'),diagnostics:source('diagnostics.diagnostics_3af22'),recovery:source('help.recovery_ea924'),'lighting-tools':source('lightingtools.lightingTools_601b5')})[value];
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
   import RawMeter from './ui/RawMeter.svelte';
   import EditorPage from './ui/EditorPage.svelte';
@@ -33,8 +39,7 @@ Third-party material retains its own terms.
   import AppShell from "./ui/AppShell.svelte";
   import LightingDashboard from "./LightingDashboard.svelte";
   import ActionButton from "./ui/ActionButton.svelte";
-  import { onMount,untrack } from "svelte";
-  import Recovery from "./Recovery.svelte";
+  import { onMount,untrack,tick } from "svelte";
   import SystemSettings from "./SystemSettings.svelte";
   import Schedules from "./Schedules.svelte";
   import Weather from "./Weather.svelte";
@@ -134,9 +139,34 @@ Third-party material retains its own terms.
     refreshFailures = Math.min(2, refreshFailures + 1);
   }
   function navigate() {
+    // Capture image completion before navigation removes the Overview's DOM.
+    // A new page module must not race its still-downloading photograph on Wi-Fi.
+    pendingPhotographs=Promise.all([pendingPhotographs,...Array.from(document.images).filter(image=>!image.complete).map(image=>image.decode().catch(()=>undefined))]);
     route = location.hash.slice(1) || "index";
     schedule();
+    void tick().then(()=>{
+      const main=document.getElementById('main-content');
+      const heading=Array.from(main?.querySelectorAll('h1')??[]).find(h=>h.getClientRects().length);
+      if(heading){heading.setAttribute('tabindex','-1');heading.focus();}else main?.focus();
+    });
   }
+  async function loadPage(selected:DeferredRoute){
+    if(pages[selected]||pageErrors[selected]||!begin())return;
+    try{
+      await pendingPhotographs;
+      if(!mounted||route!==selected)return;
+      const module=await pageLoaders[selected]();
+      const loadingFocus=document.activeElement?.closest('.page-loading');
+      if(mounted)pages={...pages,[selected]:module.default};
+      await tick();
+      // Replace loading focus only; never interrupt typing or a different route.
+      if(route===selected&&loadingFocus&&document.activeElement===document.body){
+        const heading=Array.from(document.querySelectorAll<HTMLElement>('main h1')).find(h=>h.getClientRects().length);
+        heading?.setAttribute('tabindex','-1');heading?.focus();
+      }
+    }catch{if(mounted)pageErrors[selected]=true;}finally{end();}
+  }
+  $effect(()=>{if(loaded&&deferredRoute(route)&&!pages[route]&&!pageErrors[route]&&!busy)void loadPage(route);});
   const serviceValid = $derived(
     !!serviceSettings &&
       inRange(serviceSettings.timeout, 10080) &&
@@ -211,6 +241,8 @@ Third-party material retains its own terms.
   }
   async function load() {
     if (!begin()) return;
+    const startupStatus=document.getElementById('startup-status');
+    if(startupStatus)startupStatus.textContent=$t('startup.readingController');
     error = "";
     status = source("app.loadingDevice_f8d0a");
     loaded = false;
@@ -234,6 +266,8 @@ Third-party material retains its own terms.
       error = source("app.couldNotLoadDeviceCheckTheConnectionThenRetry_a39ae");
       status = "";
     } finally {
+      // Hand over once: show the ready app or its explicit connection retry.
+      document.getElementById('startup')?.remove();
       end();
     }
   }
@@ -361,7 +395,13 @@ Third-party material retains its own terms.
   }
   onMount(() => {
     mounted = true;
-    void load();
+    // Direct links load their page before starting the sequential API chain.
+    void (async()=>{
+      if(deferredRoute(route))await loadPage(route);
+      // Local Help must stay available even while controller reads are pending.
+      if(route==='help')document.getElementById('startup')?.remove();
+      if(mounted)await load();
+    })();
     const visibility=()=>{visible=document.visibilityState==='visible';schedule();};
     document.addEventListener("visibilitychange", visibility);
     return () => {
@@ -410,7 +450,7 @@ Third-party material retains its own terms.
           <div class="overview-top"><h2 id="channels-title">{$t("app.reportedChannelOutput_656b2")}</h2><span>{$t("app.rawCounts_d9b8b")}</span></div>
           <ol class="channels">
             {#each overviewListed as channel}
-              <li data-testid="channel"><button type="button" class="output-select" aria-label={$t("app.inspectV0ChannelV1SavedSchedule_327d9",{v0: channelLabel($savedChannels[channel-1],$language)?channelLabel($savedChannels[channel-1],$language)+' · ':'',v1: channel})} aria-pressed={overviewChannel===channel} onclick={()=>overviewChannel=channel}><span class="output-name"><ChannelIdentity number={channel}/></span><strong>{snapshot.pwms[String(channel)]} <small>{$t("app.raw_ce158")}</small></strong></button><RawMeter value={snapshot.pwms[String(channel)]} {stale}/></li>
+              <li data-testid="channel"><button type="button" class="output-select" aria-pressed={overviewChannel===channel} onclick={()=>overviewChannel=channel}><span class="output-name"><ChannelIdentity number={channel}/></span><strong>{snapshot.pwms[String(channel)]} <small>{$t("app.raw_ce158")}</small></strong><span class="visually-hidden">{$t("app.inspectV0ChannelV1SavedSchedule_327d9",{v0: channelLabel($savedChannels[channel-1],$language)?channelLabel($savedChannels[channel-1],$language)+' · ':'',v1: channel})}</span></button><RawMeter value={snapshot.pwms[String(channel)]} {stale}/></li>
             {/each}
           </ol>
           <div class="output-footnotes"><p class="meter-key">{$t("app.reportedRawCountsNotBrightnessPercentagesMeterReference0_26f24")}</p><UnusedChannels listed={overviewListed} count={firmware.pwm_count}/></div>
@@ -449,11 +489,18 @@ Third-party material retains its own terms.
         <EditorPage><section class="empty-state"><h1>{$t("app.pageUnavailable_0687f")}</h1><p>{$t("app.chooseADestinationFromLightingOrDeviceNavigationOr_fe862")}</p><a href="#index">{$t("app.returnToOverview_b401f")}</a></section></EditorPage>
       {/if}
     {/if}
-    <Help active={route === 'help'} {busy} {firmware} {perform}/>
+    {#if deferredRoute(route)&&!pages[route]&&(loaded||route==='help')}
+      <section class="page-loading" aria-busy={!pageErrors[route]}>
+        <h1>{$renderText(pageTitle(route))}</h1>
+        {#if pageErrors[route]}<p role="alert">{$t('pages.failed')}</p><p>{$t('pages.reloadWarning')}</p><a href={location.href}>{$t('startup.reload')}</a>
+        {:else}<p aria-live="polite">{$t('pages.loading')}</p>{/if}
+      </section>
+    {/if}
+    {#if pages.help}{@const Help=pages.help}<Help active={route === 'help'} {busy} {firmware} {snapshot} hostname={persisted} {stale} {perform}/>{/if}
     {#if loaded && firmware && snapshot}
-      <LightingTools active={route === 'lighting-tools'} {busy} {firmware} {snapshot} {stale} feedback={$renderText(error)} {perform} {command} refresh={()=>refresh()} readback={async()=>{try{await readState();}catch(e){uncertain();throw e;}}} onedit={clearFeedback}/>
-      <Diagnostics active={route === 'diagnostics'} {busy} {firmware} {perform}/>
-      <Recovery active={route === 'recovery'} {busy} {firmware} {perform} onconfigurationchange={recoveryChanged} onread={(next, info, name) => { ++revision; snapshot=next; firmware=info; configurationVerified(); if(hostname===persisted){hostname=name;hostnameRevision=configurationRevision();} persisted=name; hostnameStale=false;stale=false; overviewChannel=Math.min(overviewChannel,info.pwm_count); invalidateConfiguration(); }} />
+      {#if pages['lighting-tools']}{@const LightingTools=pages['lighting-tools']}<LightingTools active={route === 'lighting-tools'} {busy} {firmware} {snapshot} {stale} feedback={$renderText(error)} {perform} {command} refresh={()=>refresh()} readback={async()=>{try{await readState();}catch(e){uncertain();throw e;}}} onedit={clearFeedback}/>{/if}
+      {#if pages.diagnostics}{@const Diagnostics=pages.diagnostics}<Diagnostics active={route === 'diagnostics'} {busy} {firmware} {perform}/>{/if}
+      {#if pages.recovery}{@const Recovery=pages.recovery}<Recovery active={route === 'recovery'} {busy} {firmware} {perform} onconfigurationchange={recoveryChanged} onread={(next:DeviceState, info:Firmware, name:string) => { ++revision; snapshot=next; firmware=info; configurationVerified(); if(hostname===persisted){hostname=name;hostnameRevision=configurationRevision();} persisted=name; hostnameStale=false;stale=false; overviewChannel=Math.min(overviewChannel,info.pwm_count); invalidateConfiguration(); }} />{/if}
       <SystemSettings feedback={$renderText(error)} active={route === 'clock'} kind="clock" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
       <SystemSettings feedback={$renderText(error)} active={route === 'network'} kind="network" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
     {/if}

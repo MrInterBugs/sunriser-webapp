@@ -41,7 +41,7 @@ try {
  status.textContent=messages.starting;
  await import(${JSON.stringify(script[1].replace('./a/','./'))});
  if(!document.getElementById('app')?.childElementCount)throw Error('application');
- document.getElementById('startup')?.remove();
+ // App keeps this same panel through the first controller read, then removes it.
 } catch {
  status.textContent=messages.failed;
  status.setAttribute('role','alert');
@@ -49,12 +49,15 @@ try {
 `;
       const name = `a/boot-${createHash('sha256').update(source).digest('hex').slice(0,10)}.js`;
       this.emitFile({type:'asset', fileName:name, source});
-      const css = '#startup{max-width:40rem;margin:4rem auto;padding:1.5rem;font:1rem/1.5 system-ui,sans-serif;color:#eeeede;background:#163128}#startup h1{font-size:1.4rem}#startup a{color:inherit;display:inline-block;padding:.75rem 0}';
+      // Self-contained critical presentation: no font/image/style dependency and
+      // no layout change when the full stylesheet arrives. Hide the mounted app
+      // rather than exposing a second connection screen underneath this panel.
+      const css = '#startup{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:#142f29;color:#edf0e4;font:400 16px/1.5 system-ui,sans-serif}#startup,#startup *{box-sizing:border-box}#startup .startup-panel{width:min(100%,32rem);padding:32px;border:1px solid #41614f;border-radius:12px;background:#1b3a30}#startup h1{margin:0 0 16px;font:600 26px/1.25 system-ui,sans-serif;letter-spacing:-.5px}#startup p{min-height:6em;margin:0 0 16px;color:#bdcdbb;font:400 16px/1.5 system-ui,sans-serif}#startup a{display:inline-block;padding:12px 0;color:#e4c497;font:500 16px/1.5 system-ui,sans-serif}#startup a:focus-visible{outline:3px solid #ecd3a5;outline-offset:4px}#startup~#app{display:none}';
       const hash = createHash('sha256').update(css).digest('base64');
       html = html.replace(script[0],`<script type="module" src="./${name}"></script>`).replace(style[0],'')
         .replace("style-src 'self';",`style-src 'self' 'sha256-${hash}';`)
         .replace('</head>',`<style>${css}</style>\n</head>`)
-        .replace('<div id="app"></div>', '<section id="startup" aria-label="Interface loading"><h1>SunRiser</h1><p id="startup-status" role="status">Loading interface… If loading does not complete, check the connection and reload.</p><a href="">Reload interface</a></section>\n<div id="app"></div>');
+        .replace('<div id="app"></div>', '<section id="startup" aria-label="Interface loading"><div class="startup-panel"><h1>SunRiser</h1><p id="startup-status" role="status">'+en['startup.loading']+'</p><a href="">Reload interface</a></div></section>\n<div id="app"></div>');
       page.source = html;
     }},
   };

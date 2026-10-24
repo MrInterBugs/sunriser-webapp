@@ -8,6 +8,7 @@ import {source} from './messages.js';
  * Third-party material retains its own terms.
  */
 import { decode, encode } from "@msgpack/msgpack";
+import {configurationSaved} from './configuration-state.js';
 
 export interface Firmware {
   sunriser: string;
@@ -274,6 +275,7 @@ export async function saveConfiguration(
     if (JSON.stringify(actual[key]) !== JSON.stringify(value))
       throw Error(source("api.configurationReadbackMismatch_95937"));
   acceptSavedConfiguration(actual);
+  configurationSaved();
 }
 
 /** Raw configuration values for recovery: C copies stored MessagePack objects verbatim. */

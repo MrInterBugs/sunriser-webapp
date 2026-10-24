@@ -31,12 +31,12 @@ Third-party material retains its own terms.
 <div class="app-shell">
   <a class="skip" href="#main-content" onclick={(e)=>{e.preventDefault();close();document.getElementById('main-content')?.focus();}}>{$t("appshell.skipToContent_0a447")}</a>
   <header class="app-header">
-    <a class="wordmark" href="#index" aria-label={$t("appshell.sunriserOverview_ee5db")} onclick={close}>
+    <a class="wordmark" href="#index" aria-labelledby="brand-name brand-destination" onclick={close}>
       <svg width="40" height="40" viewBox="0 0 48 40" fill="none" aria-hidden="true"><path d="M8 23a16 16 0 0 1 32 0M3 25h42M10 31h28M18 37h12" stroke="var(--sr-accent)" stroke-width="1.7"/></svg>
-      <span>SunRiser<small>{$t("appshell.aquariumLighting_fff93")}</small></span>
+      <span id="brand-name">SunRiser<small>{$t("appshell.aquariumLighting_fff93")}</small></span><span id="brand-destination" class="visually-hidden">{$t("appshell.sunriserOverview_ee5db")}</span>
     </a>
     <button class="all-pages" aria-expanded={menuOpen} aria-controls="main-navigation" onclick={toggle}>{$t("appshell.allPages_921a7")}</button>
-    <nav id="main-navigation" aria-label={$t("appshell.mainNavigation_efd19")} class:open={menuOpen}><div class="language-choice" role="group" aria-label="Language / Sprache"><button type="button" lang="en" aria-label="English" aria-pressed={$language==='en'} onclick={()=>setLanguage('en')}>EN</button><button type="button" lang="de" aria-label="Deutsch" aria-pressed={$language==='de'} onclick={()=>setLanguage('de')}>DE</button></div>
+    <nav id="main-navigation" aria-label={$t("appshell.mainNavigation_efd19")} class:open={menuOpen}><div class="language-choice" role="group" aria-label="Language / Sprache"><button type="button" lang="en" aria-label={$t('appshell.english')} aria-pressed={$language==='en'} onclick={()=>setLanguage('en')}>EN</button><button type="button" lang="de" aria-label={$t('appshell.german')} aria-pressed={$language==='de'} onclick={()=>setLanguage('de')}>DE</button></div>
       <div class="lighting-links"><p class="group-label">{$t("appshell.lighting_6153d")}</p>{#each lighting as [id,label]}<a href={`#${id}`} aria-current={route===id?'page':undefined} onclick={close}>{$renderText(label)}</a>{/each}</div>
       <details class="device-menu" bind:open={deviceOpen}>
         <summary id="device-menu-label" class:selected={administration}>{$t("appshell.device_a5a74")}</summary>

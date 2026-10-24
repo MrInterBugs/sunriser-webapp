@@ -8,32 +8,44 @@ Third-party material retains its own terms.
 -->
 <script lang="ts">
  import {t,renderText,language,source} from './i18n';
- import {configurationRevision} from './configuration-state';
+ import {configurationRevision,configurationSaves} from './configuration-state';
  import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
  let snapshotRevision=$state(configurationRevision());
- import type {Firmware} from './api';
+ import type {Firmware,DeviceState} from './api';
  import {readConfig} from './api';
- import {decodeChannels,savedChannels} from './channels';
+ import {decodeChannels,savedChannels,channelLabel,channelUnused,type Channel} from './channels';
+ import {preferredReportedAddress} from './network-address';
  import {configurationKeys,configuredRows} from './guidance';
  import {helpSections} from './help-content';
  import ActionButton from './ui/ActionButton.svelte';
- import ChannelIdentity from './ui/ChannelIdentity.svelte';
- let {active,busy,firmware,perform}:{active:boolean;busy:boolean;firmware:Firmware|undefined;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>}=$props();
+ let {active,busy,firmware,snapshot,hostname,stale:stateStale,perform}:{active:boolean;busy:boolean;firmware:Firmware|undefined;snapshot:DeviceState|undefined;hostname:string;stale:boolean;perform:(task:()=>Promise<void>,success:string,failure:string,pending:string)=>Promise<boolean>}=$props();
  let rows=$state<ReturnType<typeof configuredRows>>(),readAt=$state(''),stale=$state(false);
- async function load(){if(!firmware||busy)return;const count=firmware.pwm_count;const ok=await perform(async()=>{const values=await readConfig(configurationKeys(count));rows=configuredRows(values,count);snapshotRevision=configurationRevision();savedChannels.set(decodeChannels(values,count));readAt=new Date().toISOString();stale=false;},source("help.configuredStateReadFromController_988c9"),source("help.couldNotReadConfiguredStatePreviousSnapshotRetainedAs_a2e62"),source("help.readingConfiguredState_50621"));if(!ok)stale=true;}
+ let identities=$state<Channel[]>([]),summarySave=$state(0);
+ const changed=$derived(!!rows&&summarySave!==$configurationSaves);
+ const unused=$derived(identities.filter(channelUnused).length);
+ const unnamed=$derived(identities.filter(c=>c.color==null&&!(typeof c.name==='string'&&c.name.trim())).length);
+ const address=$derived(snapshot&&firmware?preferredReportedAddress(snapshot,firmware.wifi)?.address:undefined);
+ async function load(){if(!firmware||busy)return;const count=firmware.pwm_count;const ok=await perform(async()=>{const values=await readConfig(configurationKeys(count));rows=configuredRows(values,count);snapshotRevision=configurationRevision();identities=decodeChannels(values,count);savedChannels.set(identities);summarySave=$configurationSaves;readAt=new Date().toISOString();stale=false;},source("help.configuredStateReadFromController_988c9"),source("help.couldNotReadConfiguredStatePreviousSnapshotRetainedAs_a2e62"),source("help.readingConfiguredState_50621"));if(!ok)stale=true;}
 </script>
 <div hidden={!active} class="help-page">
  <header><h1>{$t("help.helpAndGettingStarted_f0eb5")}</h1><p>{$t("help.localGuidanceForSunRiserReadingHelpNeverAppliesSettings_02fd6")}</p></header>
+ <section class="controller-context" aria-label={$t('guide.controller')}><h2>{$t('guide.controller')}</h2>
+ {#if firmware&&snapshot}<p><strong>{firmware.sunriser}</strong> · {$t('app.firmware_0dc5f')} {firmware.version} · {$t('guide.outputs',{v0:firmware.pwm_count})}</p><p>{hostname} · {address??$t('networkAddress.unavailable')} · {$t(stateStale?'app.readbackStale_e56ed':'app.readbackAvailable_465ca')}</p>
+ {:else}<p>{$t('guide.unavailable')}</p>{/if}</section>
  <div class="guidance-layout"><section aria-label={$t("help.gettingStarted_76e7a")}><h2>{$t("help.gettingStarted_76e7a")}</h2><ol>
  <li><a href="#index">{$t("help.checkReportedState_be740")}</a>{$t("help.confirmTheControllerIsReachableStaleReadingsAreNot_36705")}</li>
  <li><a href="#channels">{$t("help.identifyChannels_d64bf")}</a>{$t("help.savedChannelConfigurationLoadsAutomaticallyChooseDisplayPresetsAnd_08bd1")}</li>
  <li><a href="#clock">{$t("help.checkDeviceLocalTime_a999d")}</a>{$t("help.dailyAndWeeklySchedulesFollowTheControllerSLocal_fd319")}</li>
  <li><a href="#schedules">{$t("help.createOrInspectASchedule_6b0ad")}</a>{$t("help.chooseDailyOrWeeklyModeEditPreciseTimesAnd_a0edd")}</li>
+ <li><a href="#service">{$t('guide.reviewService')}</a> {$t('guide.service')}</li>
  <li><a href="#recovery">{$t("help.keepALocalBackup_f53f5")}</a>{$t("help.reviewRecoveryOperationsAndConnectivityGuidanceBeforeApplyingChanges_76ead")}</li>
  </ol><p>{$t("help.thisIsGuidanceNotASetupWizardNothingIs_5589d")}</p></section>
  <aside><h2>{$t("help.threeDifferentStates_a0dac")}</h2><dl><dt>{$t("help.draft_23d33")}</dt><dd>{$t("help.aLocalEditableValueItRemainsInTheMounted_2a57f")}</dd><dt>{$t("help.savedConfiguration_e4bfc")}</dt><dd>{$t("help.acknowledgedAndVerifiedStoredSettingsSaveScopeIsShown_07ba7")}</dd><dt>{$t("help.reportedOutput_ee68d")}</dt><dd>{$t("help.theControllerSIndependentReadingItCanDifferFrom_c71b2")}</dd></dl><p>{$t("help.rawChannelCommandsUse01000ScheduleServiceSettings_8e4f1")}</p></aside></div>
  <section aria-label={$t("help.configuredStateSummary_8380c")} class="configured"><div class="section-heading"><div><h2>{$t("help.configuredStateSummary_8380c")}</h2><p>{$t("help.aSnapshotOfSavedConfigurationNotProofOfActive_33242")}</p></div><ActionButton secondary disabled={busy||!firmware} onclick={load}>{rows?$t("help.refreshConfiguredState_3e878"):$t("help.readConfiguredState_23588")}</ActionButton></div>
- {#if !firmware}<p>{$t("help.connectToTheControllerToReadSavedConfigurationThe_70ea5")}</p>{:else if rows}<ConfigurationNotice revision={snapshotRevision}/><p class:warning={stale}>{stale?$t("help.staleSnapshot_3f3d6"):$t("help.configurationSnapshot_f860d")} · {readAt} {$t("help.refreshExplicitlyAfterEditingSettingsElsewhere_e082f")}</p><div class="summary-grid">{#each rows as row}<article><h3><ChannelIdentity number={row.number}/></h3><strong>{$renderText(row.mode)}</strong><p>{$renderText(row.plan)}</p><p>{$renderText(row.weather)}</p></article>{/each}</div>{:else}<p>{busy?$t("help.readingConfiguredState_50621"):stale?$t("help.configurationUnavailableExplicitlyRetryTheRead_fa385"):$t("help.readSavedSettingsOnRequestThisDoesNotChange_0812f")}</p>{/if}
+ {#if !firmware}<p>{$t("help.connectToTheControllerToReadSavedConfigurationThe_70ea5")}</p>{:else if rows}<ConfigurationNotice revision={snapshotRevision}/><p class:warning={stale||changed}>{stale?$t("help.staleSnapshot_3f3d6"):$t("help.configurationSnapshot_f860d")} · {readAt} {$t("help.refreshExplicitlyAfterEditingSettingsElsewhere_e082f")}</p>
+ {#if changed}<p class="warning" role="note">{$t('guide.changed')}</p>{/if}
+ <p class="summary-counts">{$t('guide.labelCounts',{v0:identities.length-unused-unnamed,v1:unused,v2:unnamed})}</p><p><a href="#channels">{$t('guide.reviewLabels')}</a> · <a href="#schedules">{$t('guide.reviewModes')}</a></p>
+ <div class="summary-grid">{#each rows as row}{@const identity=identities[row.number-1]}<article><h3>{channelLabel(identity,$language)||$t('channels.channelV0_04477',{v0:row.number})} <small>CH {String(row.number).padStart(2,'0')}</small></h3>{#if channelUnused(identity)}<p>{$t('channelconfiguration.notUsed_72a86')}</p>{/if}<strong>{$renderText(row.mode)}</strong><p>{$renderText(row.plan)}</p><p>{$renderText(row.weather)}</p></article>{/each}</div>{:else}<p>{busy?$t("help.readingConfiguredState_50621"):stale?$t("help.configurationUnavailableExplicitlyRetryTheRead_fa385"):$t("help.readSavedSettingsOnRequestThisDoesNotChange_0812f")}</p>{/if}
  </section>
  <section aria-label={$t("help.workflowReference_d6f06")}><h2>{$t("help.workflowReference_d6f06")}</h2><p>{$t("help.openATopicForTheCompleteLocalWorkflowAnd_9d351")}</p>
  {#each helpSections as section}<details><summary>{$renderText(section.name)}</summary><section aria-label={$t("help.helpV0_3d1b0",{v0: $renderText(section.name)})}>{#each section.text as paragraph}<p>{$renderText(paragraph)}</p>{/each}<a class="destination" href={`#${section.route}`}>{$t("help.open_cf9b7")} {$renderText(section.name)} →</a></section></details>{/each}

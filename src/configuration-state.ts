@@ -3,6 +3,11 @@
  */
 import { get, writable } from 'svelte/store';
 
+// A verified editor save ages read-only summaries without invalidating other
+// editors' baselines or discarding their drafts.
+export const configurationSaves=writable(0);
+export function configurationSaved(){configurationSaves.update(value=>value+1);}
+
 // A recovery write can replace many settings at once. Keep retained drafts, but
 // do not let an editor's pre-recovery baseline masquerade as current configuration.
 export const configurationState = writable({ revision: 0, recovery: '' as '' | 'acknowledged' | 'uncertain' });

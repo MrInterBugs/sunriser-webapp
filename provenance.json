@@ -1,8 +1,8 @@
 {
-  "source_commit": "8e819103bf9ddb04a87445bd6280605eceb8391d",
+  "source_commit": "af9d1f9dced7d23104b6f2fc1110949ad6d8fe83",
   "source_directory": "sunriser-webapp-modern",
   "captured_files": 87,
-  "source_snapshot_sha256": "c660173562e63d51f7d43b41996f83c5ab5a968eb1449f34f557acc688e0452e",
+  "source_snapshot_sha256": "c31f53d73485b629ab65eda3395fa984147a6b3ea163b542f30d435774ae237e",
   "snapshot_algorithm": "SHA-256 of sorted UTF-8 lines: <source-file SHA-256><two spaces><relative path><LF>. Scope: all src/ and public/ files, plus snapshot_extra_files. Hashes describe source inputs before standalone adaptations.",
   "snapshot_extra_files": [
     "LICENSE",
