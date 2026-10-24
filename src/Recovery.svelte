@@ -19,6 +19,7 @@ Third-party material retains its own terms.
     recoveryRequest,
     acknowledged,
     uploadFirmware,
+    supportsFirmwareChunkRetry,
     readRecovery,
     download,
     RecoveryError,
@@ -212,6 +213,7 @@ Third-party material retains its own terms.
   }
   function failureText(op: Operation, e: unknown, framing: boolean): string {
     const what = labels[op];
+    if (e instanceof RecoveryError && e.chunkOffset !== undefined) return e.message;
     if (e instanceof RecoveryError && e.stage === "upload") {
       if (op === "restore" && e.status === 413 && !framing) {
         restoreFraming = true;
@@ -229,7 +231,7 @@ Third-party material retains its own terms.
     if (op === "restore")
       await acknowledged("PUT", "/restore", "OK", backup!, undefined, framing);
     if (op === "firmware")
-      await uploadFirmware(image!, (s) => (progress = s));
+      await uploadFirmware(image!, (s) => (progress = s), firmware.version);
     if (op === "factory")
       await acknowledged("PUT", "/factory", "FACTORY.BEE", image!);
     if (op === "reset") await acknowledged("DELETE", "/", "OK");
@@ -408,7 +410,11 @@ Third-party material retains its own terms.
           {$t("recovery.interruptOperationAndRequestADeviceRebootNetworkSettings_6a51d")}
         </p>{/if}
       <p>
-        {$t("recovery.noAutomaticRetryALostResponseIsAnUncertain_12d02")}
+        {#if confirm === "firmware" && supportsFirmwareChunkRetry(firmware.version)}
+          {$t("recovery.chunkRetryNotice")}
+        {:else}
+          {$t("recovery.noAutomaticRetryALostResponseIsAnUncertain_12d02")}
+        {/if}
       </p>
       <div class="form-actions">
         <button class="danger" onclick={execute} disabled={busy}>{$t("recovery.confirmOperation_84d7c")}</button

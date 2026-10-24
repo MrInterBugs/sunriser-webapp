@@ -62,6 +62,7 @@ export function present(text:unknown,locale:Language):string{
    'recovery.v0TheDeviceAnsweredWithoutTheExpectedAcknowledgementThe_86c49':['v0'],
    'recovery.v0NoCompleteResponseFromTheDeviceV1The_6fd86':['v0','v1'],
    'recovery.v0V1NoResponseV2_acb82':['v2'],
+   'recovery.chunkStopped':['v2'],
    'schedules.pointV0V1_afc85':['v1'], 'schedules.channelV0V1_a8de0':['v1'],
    'schedules.programV0V1_ad394':['v1']
   };

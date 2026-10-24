@@ -253,6 +253,7 @@ export class RecoveryError extends Error {
     public stage: "upload" | "connection" | "acknowledgement",
     public status: number | undefined,
     message: string,
+    public chunkOffset?: number,
   ) {
     super(message);
   }
@@ -270,9 +271,10 @@ export async function recoveryRequest(
   body?: Uint8Array,
   offset?: number,
   framing = false,
+  timeoutMs = 30000,
 ) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 30000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     let response: Response;
     try {
@@ -324,8 +326,9 @@ export async function acknowledged(
   body?: Uint8Array,
   offset?: number,
   framing = false,
+  timeoutMs = 30000,
 ) {
-  const result = await recoveryRequest(method, path, body, offset, framing);
+  const result = await recoveryRequest(method, path, body, offset, framing, timeoutMs);
   if (utf8.decode(result).trim() !== expected)
     throw new RecoveryError(
       "acknowledgement",
@@ -333,21 +336,61 @@ export async function acknowledged(
       source("recovery.unexpectedAcknowledgementDetail",{v0:path}),
     );
 }
+// Only these verified contracts seek to X-SR-Offset before writing a chunk.
+// An older/unknown implementation might append a retransmission instead.
+export const supportsFirmwareChunkRetry = (version: string) =>
+  version === "1.006" || version === "1.007";
+
+async function uploadChunk(
+  bytes: Uint8Array,
+  offset: number,
+  retry: boolean,
+  progress: (message: string) => void,
+) {
+  // Stay below the firmware's 60 s inactivity watchdog. Recheck after waits,
+  // since a background/suspended tab may wake well after its scheduled delay.
+  const deadline = performance.now() + 45000;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await acknowledged(
+        "PUT", "/firmware-chunk", String(offset + bytes.length),
+        bytes, offset, false,
+        retry ? Math.max(1, Math.min(30000, deadline - performance.now())) : 30000,
+      );
+      return;
+    } catch (e) {
+      if (!(e instanceof RecoveryError)) throw e;
+      const stopped = () => new RecoveryError(
+        e.stage, e.status,
+        source("recovery.chunkStopped", { v0: offset, v1: attempt + 1, v2: e.message }),
+        offset,
+      );
+      const transient = e.stage === "connection" ||
+        (e.stage === "upload" && [408, 429, 502, 503, 504].includes(e.status ?? 0));
+      const delay = 1000 * 2 ** attempt + Math.floor(Math.random() * 250);
+      if (!retry || !transient || attempt >= 3 || performance.now() + delay >= deadline)
+        throw stopped();
+      progress(source("recovery.chunkRetrying", {
+        v0: attempt + 1, v1: offset, v2: (delay / 1000).toFixed(2),
+      }));
+      await new Promise<void>(resolve => setTimeout(resolve, delay));
+      if (performance.now() >= deadline) throw stopped();
+    }
+  }
+}
 export async function uploadFirmware(
   bytes: Uint8Array,
   progress: (message: string) => void,
+  firmwareVersion: string,
 ) {
   progress(source("recovery.initializingUpload_04d65"));
   await acknowledged("PUT", "/firmware-init", "INIT");
   for (let offset = 0; offset < bytes.length; offset += 8192) {
     const end = Math.min(offset + 8192, bytes.length);
     progress(source("recovery.uploadingV0V1Bytes_f1d33",{v0:offset,v1:bytes.length}));
-    await acknowledged(
-      "PUT",
-      "/firmware-chunk",
-      String(end),
-      bytes.subarray(offset, end),
-      offset,
+    await uploadChunk(
+      bytes.subarray(offset, end), offset,
+      supportsFirmwareChunkRetry(firmwareVersion), progress,
     );
   }
   progress(source("recovery.uploadAcceptedRequestingInstallation_d0e47"));

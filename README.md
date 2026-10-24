@@ -39,14 +39,20 @@ Weather, Sensors and German Overview. Select any image for its full resolution.
 
 Targets **SR8/SR10**. Firmware **1.006** has broad frontend coverage in isolated
 firmware-derived C simulators. **1.007** is the verified packaging input, with
-raw-PWM and sensor-removal contract probes on both boards. Complete frontend/hardware
-qualification remains incomplete. Other models/releases are unverified.
+raw-PWM and sensor-removal contract probes on both boards. Firmware chunk retries
+preserve staged-file bytes in native C tests on both boards and both releases.
+Complete frontend/hardware qualification remains incomplete. Other models/releases
+are unverified.
 
 Raw commands/meters use **0–1024**; firmware still applies configured limits
 (ordinary dimming defaults to **1000**). Percentage settings remain independent.
 Reported state, saved configuration and local drafts are distinct. Writes require
-explicit actions and are never automatically retried; acknowledgement does not
-prove a physical output changed.
+explicit actions. On running firmware **1.006/1.007**, a failed upload chunk may
+retry up to three times, with the same bytes and offset, increasing delays and a
+45-second budget. Upload initialization, installation and all other writes are
+never automatically retried. Acknowledgement does not prove a physical output
+changed. The webapp cannot pause Home Assistant traffic; physical SR10 Wi-Fi
+contention remains unqualified.
 
 Use a trusted network and retain backups. Network, clock, restore and firmware
 operations can interrupt aquarium control or access. Read the warnings and verify
