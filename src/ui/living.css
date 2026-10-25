@@ -12,6 +12,7 @@
 .app-shell .workspace{padding-inline:40px}
 .app-shell main{min-height:65vh}
 .app-shell .feedback{font-size:12px;min-height:38px}
+@media(max-width:800px){.app-shell .feedback{min-height:0}}
 .app-shell .feedback p{font-size:12px}
 .app-shell :is(.porcelain,.overview-outputs,.channel-row,.all-channels,.curve-editor,.sensor-readback,.schedule-identity,.weather-profiles,.hostname-form){
  color-scheme:light;--sr-ink:#29472f;--sr-muted:#526746;--sr-canvas:#eaeada;--sr-surface:#eaeada;--sr-soft:#dce2cb;--sr-input:#f4f3e7;--sr-line:#aebe97;--sr-control-line:#718558;--sr-accent:#6c813f;--sr-teal:#435d2f;--sr-teal-hover:#375126;--sr-action-ink:#f7f5e8;--sr-meter-track:#b6c3a0;--sr-disabled:#66765b;--sr-disabled-bg:#dbe1ce;--sr-focus:#5e7430;--sr-error:#993d28;--sr-error-bg:#f4dfd2;--sr-amber:#6a511e;--sr-amber-bg:#e8dfc6;--sr-active:#405e30;color:var(--sr-ink);background:var(--sr-canvas)

@@ -144,7 +144,10 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
     // Capture image completion before navigation removes the Overview's DOM.
     // A new page module must not race its still-downloading photograph on Wi-Fi.
     pendingPhotographs=Promise.all([pendingPhotographs,...Array.from(document.images).filter(image=>!image.complete).map(image=>image.decode().catch(()=>undefined))]);
-    route = location.hash.slice(1) || "index";
+    const next = location.hash.slice(1) || "index";
+    // The last-operation message describes the page it happened on.
+    if (next !== route) status = "";
+    route = next;
     schedule();
     void tick().then(()=>{
       const main=document.getElementById('main-content');
@@ -210,6 +213,7 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
   // Unused channels leave the Overview unless they are currently lit.
   const overviewListed=$derived(firmware?listedChannels($savedChannels,firmware.pwm_count,$showUnusedChannels,n=>Number(snapshot?.pwms[String(n)])>0):[]);
   $effect(()=>{const listed=overviewListed;if(listed.length&&!listed.includes(overviewChannel))untrack(()=>overviewChannel=listed[0]);});
+  const connection = $derived(busy?$t("app.operationPending_c929e"):stale?$t("app.readbackStale_e56ed"):loaded?$t("app.readbackAvailable_465ca"):$t("app.noReadback_429db"));
   const dirty = $derived(hostname !== persisted);
   const valid = $derived(validHostname(hostname));
 
@@ -429,10 +433,10 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
 </script>
 
 <svelte:window onhashchange={navigate} />
-<AppShell {route} {busy} onlanguage={chooseLanguage}>
+<AppShell {route} {busy} {connection} {stale} onlanguage={chooseLanguage}>
   <main id="main-content" tabindex="-1" aria-busy={busy}>
     <div class="feedback" class:stale>
-      <span class="connection-state">{busy?$t("app.operationPending_c929e"):stale?$t("app.readbackStale_e56ed"):loaded?$t("app.readbackAvailable_465ca"):$t("app.noReadback_429db")}</span>
+      <span class="connection-state">{connection}</span>
       <div class="operation-status">{#if status}<span aria-hidden="true">{$t("app.lastOperation_ab986")}</span>{/if}<p role="status" aria-label={$t("app.lastOperation_961a2")} aria-live="polite">{$renderText(status)}</p></div>
       {#if error}<p role="alert">{$renderText(error)}</p>{/if}
       {#if languageFailure}<p role="alert">{$t(languageFailure==='de'?"app.languageDownloadFailedGerman":"app.languageDownloadFailedEnglish")}</p>{/if}
@@ -479,13 +483,13 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
 
             <div><dt>{$t("app.firmware_0dc5f")}</dt><dd data-testid="version">{firmware.version}</dd></div>
             <div><dt>{$t(reportedAddress?.interface==='lan'?"networkAddress.lanAddress":reportedAddress?.interface==='wifi'?"networkAddress.wifiAddress":"networkAddress.reportedAddress")}</dt><dd data-testid="lan">{reportedAddress?.address??$t("networkAddress.unavailable")}</dd></div>
-            <div><dt>{$t("systemsettings.deviceLocalTime_50001")}</dt><dd><span data-testid="localtime">{snapshot.localtime?timestampDisplay(snapshot.localtime,$language):$t("systemsettings.notReported_98e85")}</span>{#if snapshot.utc_offset!==undefined}<small class="utc-offset" data-testid="utc-offset">{utcOffsetText(snapshot.utc_offset)}</small>{/if}<small class="utc-time" data-testid="utc">{timestampDisplay(utc(snapshot.time),$language)}</small></dd></div>
+            <div><dt>{$t("systemsettings.deviceLocalTime_50001")}</dt><dd><span data-testid="localtime">{snapshot.localtime?timestampDisplay(snapshot.localtime,$language):$t("systemsettings.notReported_98e85")}</span>{#if snapshot.utc_offset!==undefined}<small class="utc-offset" data-testid="utc-offset">{utcOffsetText(snapshot.utc_offset)}</small>{/if}</dd></div>
             <div><dt>{$t("app.uptime_6aafa")}</dt><dd data-testid="uptime">{durationText(snapshot.uptime,$language)}</dd></div>
             <div><dt>{$t("app.wiFiCapability_28a30")}</dt><dd data-testid="wifi">{firmware.wifi ? $t("app.available_7c62a") : $t("app.notAvailable_d1a17")}</dd></div>
           </dl>
         </section>
         <details class="reading-details"><summary>{$t("app.readingDetails_28520")}{stale?$t("app.readbackStale_e56ed"):''}</summary>
-        <p class:stale data-testid="snapshot">{stale ? $t("app.lastSnapshotStale_329af") : $t("app.snapshot_b08ae")} · {timestampDisplay(utc(snapshot.time),$language)} {$t("app.refreshesEvery30SecondsWhileVisibleFailuresBackOff_809d6")}</p>
+        <p class:stale data-testid="snapshot">{stale ? $t("app.lastSnapshotStale_329af") : $t("app.snapshot_b08ae")} · <span data-testid="utc">{timestampDisplay(utc(snapshot.time),$language)}</span> {$t("app.refreshesEvery30SecondsWhileVisibleFailuresBackOff_809d6")}</p>
         </details>
         </EditorPage>
       {:else if route === 'help' || route === 'lighting-tools' || route === 'diagnostics' || route === 'recovery' || route === 'schedules' || route === 'sensors' || route === "weather" || route === 'clock' || route === 'network'}
@@ -546,6 +550,7 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
   .connection-state { font-size:13px; font-weight:650; letter-spacing:.25px; }
   .connection-state::before { content:""; display:inline-block; width:6px; height:6px; background:currentColor; border-radius:50%; margin-right:8px; }
   .feedback p { margin:0; }
+  @media(max-width:800px) { .feedback .connection-state { display:none; } .feedback { min-height:0; padding:0; } .feedback:has(.operation-status > p:not(:empty)), .feedback:has([role="alert"]) { padding:0 0 8px; } }
   .operation-status { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 6px; font-size:12px; }
   .feedback [role="status"]:not(:empty)::before { content:""; color:var(--sr-muted); }
   .feedback [role="alert"] { flex-basis:100%; }
@@ -575,7 +580,6 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
   .overview-details :global(.facts) { grid-template-columns:1fr 1fr 1.7fr .7fr 1fr; gap:16px; }
   .overview-details :global(dd) { font-size:13px; font-weight:500; }
   .utc-offset { margin-left:8px; font-size:12px; font-weight:400; color:var(--sr-muted); white-space:nowrap; }
-  .utc-time { display:block; margin-top:2px; font-size:12px; font-weight:400; color:var(--sr-muted); }
   @media(max-width:1200px) { .monitor-workspace { grid-template-columns:minmax(0,1fr) 250px; gap:24px; } .overview-outputs :global(.channels) { grid-template-columns:1fr; } }
   @media(max-width:800px) { .monitor-workspace { grid-template-columns:1fr; gap:24px; margin-top:20px; } .overview-outputs :global(.channels li) { padding:15px 0; } .overview-details :global(.facts) { grid-template-columns:1fr 1fr; } .overview-details :global(.facts > div:nth-child(3)) { grid-column:1/-1; } }
   .hostname-workspace { display:grid; grid-template-columns:minmax(0,560px) minmax(0,360px); gap:48px; align-items:start; margin-top:28px; }

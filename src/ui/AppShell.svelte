@@ -10,7 +10,7 @@ Third-party material retains its own terms.
  import {t,renderText,language,source} from '../i18n';
  import {catalogueLoaded,type Locale} from '../messages';
   import {tick, type Snippet} from 'svelte';
-  let {children,route,busy=false,onlanguage}:{children:Snippet; route:string; busy?:boolean; onlanguage:(value:Locale)=>unknown}=$props();
+  let {children,route,busy=false,connection='',stale=false,onlanguage}:{children:Snippet; route:string; busy?:boolean; connection?:string; stale?:boolean; onlanguage:(value:Locale)=>unknown}=$props();
   let menuOpen=$state(false), deviceOpen=$state(false);
   let opener:HTMLButtonElement|undefined;
   const lighting=[['index',source("app.overview_0efc2")],['channels',source("lightingdashboard.channels_18e03")],['service',source("lightingdashboard.service_329cb")],['schedules',source("schedules.schedules_26d9d")],['weather',source("weather.weather_284af")],['sensors',source("sensors.sensors_711bf")]];
@@ -36,7 +36,8 @@ Third-party material retains its own terms.
       <svg width="40" height="40" viewBox="0 0 48 40" fill="none" aria-hidden="true"><path d="M8 23a16 16 0 0 1 32 0M3 25h42M10 31h28M18 37h12" stroke="var(--sr-accent)" stroke-width="1.7"/></svg>
       <span id="brand-name">SunRiser<small>{$t("appshell.aquariumLighting_fff93")}</small></span><span id="brand-destination" class="visually-hidden">{$t("appshell.sunriserOverview_ee5db")}</span>
     </a>
-    <button class="all-pages" aria-expanded={menuOpen} aria-controls="main-navigation" onclick={toggle}>{$t("appshell.allPages_921a7")}</button>
+    <!-- Phones: the bottom bar's Menu opens navigation; the header shows connection status instead. -->
+    <p class="header-connection" class:stale>{connection}</p>
     <nav id="main-navigation" aria-label={$t("appshell.mainNavigation_efd19")} class:open={menuOpen}><div class="language-choice" role="group" aria-label="Language / Sprache"><button type="button" lang="en" aria-label={$t('appshell.english')} aria-pressed={$language==='en'} disabled={busy&&!catalogueLoaded('en')} onclick={()=>onlanguage('en')}>EN</button><button type="button" lang="de" aria-label={$t('appshell.german')} aria-pressed={$language==='de'} disabled={busy&&!catalogueLoaded('de')} onclick={()=>onlanguage('de')}>DE</button></div>
       <div class="lighting-links"><p class="group-label">{$t("appshell.lighting_6153d")}</p>{#each lighting as [id,label]}<a href={`#${id}`} aria-current={route===id?'page':undefined} onclick={close}>{$renderText(label)}</a>{/each}</div>
       <details class="device-menu" bind:open={deviceOpen}>
@@ -76,14 +77,15 @@ Third-party material retains its own terms.
   .language-choice button:hover:not(:disabled){background:var(--sr-soft);color:var(--sr-ink)}
   .language-choice button[aria-pressed=true]:hover{color:var(--sr-accent)}
   footer{font-size:12px;color:var(--sr-muted);padding:20px 0;margin-top:16px;border:0}footer span{margin:0 8px}
-  .all-pages,.mobile-dock,.mobile-device,.group-label{display:none}
+  .header-connection,.mobile-dock,.mobile-device,.group-label{display:none}
   .skip{position:fixed;z-index:30;top:8px;left:8px;padding:12px 20px;background:var(--sr-surface);transform:translateY(-160%)}.skip:focus{transform:none}
   a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--sr-focus);outline-offset:3px}
   @media(max-width:1100px){.app-header{gap:18px;padding:0 20px}nav a{padding:12px 10px}.device-menu{margin-left:8px}.wordmark{font-size:21px;gap:6px}}
   @media(max-width:800px){
     .app-header{justify-content:space-between;min-height:72px;padding:12px 16px}.wordmark{font-size:23px}
-    .all-pages{display:block;min-height:44px;padding:8px 12px;background:var(--sr-surface);color:var(--sr-ink);border:1px solid var(--sr-control-line);font-size:14px}
-    .all-pages:hover:not(:disabled),.mobile-dock button:hover:not(:disabled){background:var(--sr-soft);color:var(--sr-ink)}
+    .header-connection{display:flex;align-items:center;gap:8px;margin:0 0 0 12px;max-width:50%;font-size:13px;font-weight:650;line-height:1.3;letter-spacing:.25px;color:var(--sr-muted);text-align:right}
+    .header-connection::before{content:"";flex:0 0 auto;width:6px;height:6px;background:currentColor;border-radius:50%}
+    .mobile-dock button:hover:not(:disabled){background:var(--sr-soft);color:var(--sr-ink)}
     #main-navigation{display:none}#main-navigation.open{position:fixed;z-index:15;inset:72px 0 calc(55px + max(6px,env(safe-area-inset-bottom)));display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:16px;padding:20px 16px;overflow:auto;scroll-padding-block:8px;background:var(--sr-canvas)}
     .language-choice{order:-1;grid-column:1/-1;justify-self:start;margin:0}.lighting-links,.mobile-device{display:block;min-width:0}.group-label{display:block;margin:0 10px 12px;color:var(--sr-muted);font-size:13px}.lighting-links a,nav a{min-height:48px;border:0;border-radius:4px;padding:12px 10px}.lighting-links a[aria-current]{background:var(--sr-soft)}
     .device-menu{display:none}.device-tabs{flex-wrap:wrap;padding:4px 12px;gap:0;justify-content:space-between}.device-tabs a{font-size:13px;padding:10px 8px}

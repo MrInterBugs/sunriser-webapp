@@ -1068,7 +1068,6 @@ export const en = {
   "appshell.skipToContent_0a447": "Skip to content",
   "appshell.sunriserOverview_ee5db": "SunRiser overview",
   "appshell.aquariumLighting_fff93": "Aquarium lighting",
-  "appshell.allPages_921a7": "All pages",
   "appshell.mainNavigation_efd19": "Main navigation",
   "appshell.lighting_6153d": "Lighting",
   "appshell.device_a5a74": "Device",

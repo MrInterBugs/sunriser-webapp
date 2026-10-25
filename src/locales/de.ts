@@ -1069,7 +1069,6 @@ export const de = {
   "appshell.skipToContent_0a447": "Zum Inhalt springen",
   "appshell.sunriserOverview_ee5db": "SunRiser-Übersicht",
   "appshell.aquariumLighting_fff93": "Aquarienbeleuchtung",
-  "appshell.allPages_921a7": "Alle Seiten",
   "appshell.mainNavigation_efd19": "Hauptnavigation",
   "appshell.lighting_6153d": "Beleuchtung",
   "appshell.device_a5a74": "Gerät",

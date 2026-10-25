@@ -18,7 +18,7 @@ Third-party material retains its own terms.
 </script>
 <button {type} {onclick} {disabled} aria-label={label?$renderText(label):undefined} class:secondary>{@render children()}</button>
 <style>
-  button { min-height:44px; padding:10px 16px; border:1px solid var(--sr-teal); border-radius:var(--sr-radius); background:var(--sr-teal); color:var(--sr-action-ink); font:600 14px/1.4 var(--sr-font); cursor:pointer; white-space:normal; overflow-wrap:anywhere; hyphens:auto; transition:none; }
+  button { min-height:44px; padding:10px 16px; border:1px solid var(--sr-teal); border-radius:var(--sr-radius); background:var(--sr-teal); color:var(--sr-action-ink); font:600 14px/1.4 var(--sr-font); cursor:pointer; white-space:normal; overflow-wrap:break-word; hyphens:manual; transition:none; }
   button:hover:not(:disabled) { background:var(--sr-teal-hover); }
   button.secondary { background:var(--sr-surface); color:var(--sr-teal); border-color:var(--sr-control-line); }
   button.secondary:hover:not(:disabled) { background:var(--sr-soft); color:var(--sr-teal-hover); }

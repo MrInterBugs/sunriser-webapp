@@ -451,13 +451,11 @@ import {type Message, type UiText, errorText} from './messages.js';
     .save-bar { position:static; }
     .view-switch { gap:0; justify-content:space-between; } .view-switch button { padding:10px 6px; font-size:12px; }
     input,select { font-size:16px; }
-    .page-heading { align-items:flex-start; gap:12px; margin:16px 0; }
+    .page-heading { align-items:flex-start; flex-direction:column; gap:12px; margin:16px 0; }
     .page-heading>div:first-child { min-width:0; }
     .page-heading p { font-size:13px; }
-    .reload { align-items:flex-end; max-width:132px; text-align:right; flex-shrink:1; }
-    .save-bar { gap:12px; flex-wrap:wrap; padding:12px 0; }
-    .save-bar>div { flex:1 1 170px; }
-    .save-bar p { max-width:210px; }
+    .reload { align-items:flex-start; max-width:none; text-align:left; }
+    .save-bar { flex-direction:column; align-items:flex-start; gap:12px; padding:12px 0; }
     .selectors { grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; }
     .selectors>label:first-child { grid-column:auto; } .edit-points { display:flex; justify-content:flex-end; align-items:center; min-height:44px; margin-bottom:12px; font-size:13px; } .curve-editor { scroll-margin-top:16px; } .points { max-height:260px; }
     .program-picker { grid-column:1/-1; }
