@@ -6,7 +6,8 @@ import {type Message, MessageError, source} from './messages.js';
  * Upstream: https://github.com/LEDaquaristik/sunriser
  * Adapted for this frontend in 2026; see LICENSING.md and LICENSE.
  */
-import { readConfig } from "./api.js";
+import { readSavedConfiguration } from "./api.js";
+import { parseStoredJson } from "./stored-json.js";
 export const key = (rom: string, field: string) =>
   `sensors#sensor#${rom}#${field}`;
 const object = (v: unknown): v is Record<string, unknown> =>
@@ -59,7 +60,7 @@ export function sensorCatalogue(value: unknown): Catalogue {
   if (value != null && value !== "") {
     if (typeof value !== "string")
       throw new MessageError(source("sensors.invalidSensorCatalogue_cd8df"));
-    const parsed: unknown = JSON.parse(value);
+    const parsed: unknown = parseStoredJson("sensors#web", value);
     if (!object(parsed)) throw new MessageError(source("sensors.invalidSensorCatalogue_cd8df"));
     for (const [rom, entry] of Object.entries(parsed)) {
       if (
@@ -75,11 +76,13 @@ export function sensorCatalogue(value: unknown): Catalogue {
   }
   return catalogue;
 }
-export async function loadSensorIndex(count: number) {
+/** Channel names, binary flags and planning modes are usually already in the
+ * session cache from the Overview or Schedules; refresh reads everything again. */
+export async function loadSensorIndex(count: number, refresh = false) {
   const keys = ["sensors#web"];
   for (let n = 1; n <= count; n++)
     keys.push(`pwm#${n}#onoff`, `pwm#${n}#manager`, `pwm#${n}#name`);
-  const values = await readConfig(keys);
+  const values = await readSavedConfiguration(keys, refresh);
   const catalogue = sensorCatalogue(values["sensors#web"]);
   const channels = Array.from({ length: count }, (_, i) => {
     const binary = values[`pwm#${i + 1}#onoff`] ?? false,
@@ -164,11 +167,12 @@ export async function loadSensor(
   rom: string,
   entry: Record<string, unknown>,
   channels: Channel[],
+  refresh = false,
 ): Promise<SensorEditor> {
   const keys = fields.map((f) => key(rom, f));
   for (let n = 1; n <= channels.length; n++)
     keys.push(...assignmentFields.map((f) => key(rom, `pwm#${n}#${f}`)));
-  const baseline = await readConfig(keys);
+  const baseline = await readSavedConfiguration(keys, refresh);
   const value = (f: string, fallback: unknown) =>
     baseline[key(rom, f)] ?? fallback;
   const num = (f: string, fallback: number) => {

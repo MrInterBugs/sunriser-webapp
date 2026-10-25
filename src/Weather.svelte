@@ -7,7 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
- import {type UiText} from './messages.js';
+ import {type UiText, errorText} from './messages.js';
 
  import {t,renderText,language,source} from './i18n';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
@@ -69,6 +69,7 @@ Third-party material retains its own terms.
   // Unused channels stay listed while a saved or drafted weather profile is assigned.
   const listed = $derived(book ? listedChannels($savedChannels, book.channels.length, $showUnusedChannels, n => book!.channels[n-1].profile !== 0 || (book!.baseline[`pwm#${n}#weather`] ?? 0) !== 0) : []);
   let attempted = $state(false);
+  let loadReason = $state<UiText>('');
   let attemptedIds = $state<Record<number, boolean>>({});
   let selected = $state(0);
   let selectedEffect = $state<Effect>("clouds");
@@ -95,9 +96,11 @@ Third-party material retains its own terms.
   });
   async function reload() {
     attempted = true;
+    loadReason = '';
     await perform(
       async () => {
-        const next = await loadBook(firmware.pwm_count);
+        let next: Awaited<ReturnType<typeof loadBook>>;
+        try { next = await loadBook(firmware.pwm_count); } catch (e) { loadReason = errorText(e); throw e; }
         const id = next.profiles.some((p) => p.id === selected)
           ? selected
           : (next.profiles[0]?.id ?? 0);
@@ -141,8 +144,8 @@ Third-party material retains its own terms.
   }
   function add() {
     if (!book) return;
-    const id = addProfile(book);
-    if (id) {book.profiles.find(profile=>profile.id===id)!.name=$t("weather.newProfileV0_3363f",{v0:id});selected = id;}
+    const id = addProfile(book, $language);
+    if (id) selected = id;
     onedit();
   }
   function remove() {
@@ -331,7 +334,7 @@ Third-party material retains its own terms.
       {$t("weather.reloadDiscardsAllWeatherDraftsStateRefreshAndNavigation_d2c5f")}
     </p>
   </section>
-<div class="empty-state"><h2>{busy?$t("weather.loadingWeather_bc236"):$t("weather.weatherSettingsUnavailable_c09c1")}</h2><p>{busy?$t("weather.readingSavedProfilesAndChannelAssignments_76a87"):$t("weather.useReloadWeatherToTryAgainNoDraftHas_6c1b6")}</p></div>{/if}
+<div class="empty-state"><h2>{busy?$t("weather.loadingWeather_bc236"):$t("weather.weatherSettingsUnavailable_c09c1")}</h2><p>{busy?$t("weather.readingSavedProfilesAndChannelAssignments_76a87"):$t("weather.useReloadWeatherToTryAgainNoDraftHas_6c1b6")}</p>{#if !busy && loadReason}<p class="load-reason" data-testid="load-reason">{$renderText(loadReason)}</p>{/if}</div>{/if}
   <details class="reading-details"><summary>{$t("app.readingDetails_28520")}{stale?$t("app.readbackStale_e56ed"):''}</summary><p>{$t("weather.stateRefreshesEvery30SecondsWhileVisibleFailuresBack_a0363")}</p></details>
   <section class="panel readback weather-commands">
     <h2>{$t("weather.globalThunderstormCommands_2f34e")}</h2>

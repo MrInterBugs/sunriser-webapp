@@ -241,7 +241,10 @@
       "PUT": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
       "Z": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
       "service_timeout": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
-      "service_value": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys."
+      "service_value": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
+      "X-SR-Framing": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
+      "sunriser.framing": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys.",
+      "x": "HTTP protocol tokens, ISO timestamp suffix and exact controller setting keys."
     },
     "channels.ts": {
       "color": "Controller field suffixes and language code.",
@@ -263,7 +266,8 @@
       "message": "Internal message discriminant, language and developer-only missing-parameter diagnostic.",
       "Missing message parameter:": "Internal message discriminant, language and developer-only missing-parameter diagnostic.",
       "en": "Internal message discriminant, language and developer-only missing-parameter diagnostic.",
-      "Render a message with its locale before converting to text": "Developer-only guard against silently discarding a message key."
+      "Render a message with its locale before converting to text": "Developer-only guard against silently discarding a message key.",
+      "Catalogue not loaded:": "Developer-only diagnostic when a language catalogue is rendered before it is registered."
     },
     "network-address.ts": {
       "lan": "Internal transport identifier; labels are translated separately.",
@@ -281,7 +285,6 @@
       "description": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
       "author": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
       "timestamp": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
-      "X-SR-Framing": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
       "x": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
       "connection": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
       "upload": "Encoding, BEE record names, metadata keys, HTTP tokens and DOM tag; never translated.",
@@ -374,8 +377,7 @@
       "thunder": "Internal effect identifiers, catalogue fields and language code.",
       "moon": "Internal effect identifiers, catalogue fields and language code.",
       "name": "Internal effect identifiers, catalogue fields and language code.",
-      "deleted": "Internal effect identifiers, catalogue fields and language code.",
-      "en": "Internal effect identifiers, catalogue fields and language code."
+      "deleted": "Internal effect identifiers, catalogue fields and language code."
     },
     "ui/ActionButton.svelte": {
       "button": "HTML button type."
@@ -441,12 +443,20 @@
       "reason": "Pinned vendor channel catalogue and explicit bilingual descriptor mapping; covered by every-preset tests."
     },
     "timezone-labels.ts": {
-      "sha256": "05d2a5b5fba4ed510c9786fa1ace2dc53b52a44f1cbe31670ce8f1745c416604",
-      "reason": "Pinned German translation table for vendor timezone names; unchanged proper place names are intentional."
+      "sha256": "a7d85ae8b16ce63a8084e1c7842bd3a96c2f9aefa27087fa77d09878d32501dd",
+      "reason": "Pinned German translation table for vendor timezone names and its display-only label lookup; unchanged proper place names are intentional."
     },
     "startup-build.ts": {
       "sha256": "d5fb647ee23fbc8f7866f9a270c31cc9f8457ba210a4a7efe10a9c3c6bff8ae1",
       "reason": "Reviewed build-time JavaScript/CSS/HTML generator; startup display text reads the bilingual catalogue. Changes require renewed review."
+    },
+    "message-keys-build.ts": {
+      "sha256": "8c8b1f400ed7f48193d7bb1717ac56253222a86207534fe6d2b6b2e1aa677cf5",
+      "reason": "Build-time Vite plugin; its strings are build diagnostics, chunk names and identifiers, never shipped interface text."
+    },
+    "chunks-build.ts": {
+      "sha256": "096fd8b5003da3e01c0f6a8e27ddfbd1165a74051ff2a48a69118a39691f2c7b",
+      "reason": "Build-time Vite plugin; its strings are build diagnostics, chunk names and identifiers, never shipped interface text."
     }
   }
 }

@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Retained UI messages keep their identity until rendering. No controller effects.
-import {en, type MessageKey} from './locales/en.js';
-import {de} from './locales/de.js';
+import type {MessageKey} from './locales/en.js';
+export type Locale = 'en' | 'de';
+export type Catalogue = Readonly<Record<MessageKey, string>>;
+// Rendering requires the language's catalogue to be registered first
+// (catalogues.ts loads it on demand; see main.ts).
+const catalogues: Partial<Record<Locale, Catalogue>> = {};
+export function registerCatalogue(locale: Locale, catalogue: Catalogue) { catalogues[locale] = catalogue; }
+export const catalogueLoaded = (locale: Locale) => !!catalogues[locale];
 export type MessageValue = string | number | boolean | null | undefined | Message;
 export type MessageValues = Readonly<Record<string, MessageValue>>;
 const messageIdentity=Symbol();
@@ -23,7 +29,9 @@ export function isMessage(value: unknown): value is Message {
 }
 export function renderMessage(value: unknown, locale: 'en' | 'de'): string {
   if (!isMessage(value)) return String(value ?? '');
-  const template = (locale === 'de' ? de : en)[value.key];
+  const catalogue = catalogues[locale];
+  if (!catalogue) throw new Error(`Catalogue not loaded: ${locale}`);
+  const template = catalogue[value.key];
   return template.replace(/\{(v\d+)\}/g, (_, slot: string) => {
     if (!Object.hasOwn(value.values, slot)) throw new Error(`Missing message parameter: ${value.key}/${slot}`);
     const child = value.values[slot];
@@ -31,7 +39,8 @@ export function renderMessage(value: unknown, locale: 'en' | 'de'): string {
   });
 }
 export class MessageError extends Error {
-  constructor(readonly uiMessage: Message) { super(renderMessage(uiMessage, 'en')); }
+  // Diagnostic text only: English when loaded, otherwise the message key.
+  constructor(readonly uiMessage: Message) { super(catalogues.en ? renderMessage(uiMessage, 'en') : uiMessage.key); }
 }
 /** Error.message is for diagnostics; UI consumers keep the structured reason. */
 export function errorText(error: unknown, prefix = false): Message {

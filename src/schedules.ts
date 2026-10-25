@@ -7,6 +7,7 @@ import {type Message, MessageError, source} from './messages.js';
  * Adapted for this frontend in 2026; see LICENSING.md and LICENSE.
  */
 import { readSavedConfiguration, saveConfiguration, type Firmware } from "./api.js";
+import { parseStoredJson } from "./stored-json.js";
 import {writable,get} from 'svelte/store';
 export interface Point {
   time: string;
@@ -185,7 +186,7 @@ export async function getSchedules(count: number, refresh=true): Promise<Schedul
   const v = await readSavedConfiguration(keys,refresh);
   if (v["programs#web"] != null && typeof v["programs#web"] !== "string")
     throw new MessageError(source("schedules.invalidCatalogueType_56c2e"));
-  const entries: unknown = JSON.parse((v["programs#web"] ?? "[]") as string);
+  const entries: unknown = parseStoredJson("programs#web", (v["programs#web"] ?? "[]") as string);
   const lastId = v["programs#last_setup_id"] ?? 0;
   if (!Array.isArray(entries) || !integer(lastId, 65535))
     throw new MessageError(source("schedules.invalidCatalogue_27a60"));
@@ -283,8 +284,8 @@ function publishScheduleBook(book:ScheduleBook,changed?:Set<number>){
   savedDailyPlans.update(previous=>({...previous,...Object.fromEntries(book.channels.flatMap((channel,i)=>changed&&!changed.has(i+1)?[]:[[i+1,{phase:channel.manager===1&&validateCurve(channel.points).length?'error':'ready',channel:clone(channel),...(channel.manager===2?{programs:weeklyPrograms(book,channel)}:{})}]]))}));
 }
 /** One selected channel, through the same bounded configuration reader as the editor.
- * Weekly channels also read their eight slots and only the programmes those slots
- * reference; other channels and draft data are never requested here. */
+ * Mode, daily curve and weekly slots share one read; weekly channels then read only
+ * the programmes their slots reference. Other channels and drafts are never requested. */
 export function loadDailyPlan(number:number,refresh=false):Promise<ScheduleChannel>{
   if(!Number.isInteger(number)||number<1||number>10) return Promise.reject(new MessageError(source("schedules.invalidChannel_f48c8")));
   const existing=get(savedDailyPlans)[number];
@@ -294,14 +295,14 @@ export function loadDailyPlan(number:number,refresh=false):Promise<ScheduleChann
   savedDailyPlans.update(all=>({...all,[number]:{...existing,phase:'loading'}}));
   const task=(async()=>{
     try{
-      const keys=[`pwm#${number}#manager`,`dayplanner#marker#${number}`];
+      const keys=[`pwm#${number}#manager`,`dayplanner#marker#${number}`,`weekplanner#programs#${number}`];
       const values=await readSavedConfiguration(keys,refresh),manager=values[keys[0]]??0;
       if(!integer(manager,4))throw new MessageError(source("schedules.invalidChannelPlan_17ece"));
       const channel:ScheduleChannel={manager,points:manager===1?fromFlat(values[keys[1]]):[],week:[]};
       if(manager===1&&validateCurve(channel.points).length)throw new MessageError(source("schedules.invalidDailyPoints_55861"));
       let programs:WeeklyProgram[]|undefined;
       if(manager===2){
-        const weekKey=`weekplanner#programs#${number}`,week=(await readSavedConfiguration([weekKey],refresh))[weekKey]??Array(8).fill(0);
+        const week=values[keys[2]]??Array(8).fill(0);
         if(!Array.isArray(week)||week.length!==8||week.some(id=>!integer(id,65535)))throw new MessageError(source("schedules.invalidChannelPlan_17ece"));
         channel.week=week as number[];
         const ids=[...new Set(channel.week)].filter(id=>id!==0);

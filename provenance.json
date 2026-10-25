@@ -1,12 +1,14 @@
 {
-  "source_commit": "74e587a37db5d1584c3ef378bbacd280d4f80f30",
+  "source_commit": "0afc275212034501dbf9d7dcd0da75515fa738f6",
   "source_directory": "sunriser-webapp-modern",
-  "captured_files": 88,
-  "source_snapshot_sha256": "42390b945dbe6b830067f0c098f2ced7c08508a42224b5056a642a7b2375b6b4",
+  "captured_files": 94,
+  "source_snapshot_sha256": "a7200a092ba29cf1ffed3da807650d920f30cad5c190acf481d924a9b2255e89",
   "snapshot_algorithm": "SHA-256 of sorted UTF-8 lines: <source-file SHA-256><two spaces><relative path><LF>. Scope: all src/ and public/ files, plus snapshot_extra_files. Hashes describe source inputs before standalone adaptations.",
   "snapshot_extra_files": [
     "LICENSE",
     "LICENSING.md",
+    "assets/fonts/Manrope-ui.json",
+    "assets/fonts/Manrope-ui.woff2",
     "assets/fonts/OFL-Manrope.txt",
     "assets/notices-copy.json",
     "assets/photo/ATTRIBUTION.txt",

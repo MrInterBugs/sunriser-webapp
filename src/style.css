@@ -439,3 +439,6 @@ nav {
   html { scroll-padding-block:16px 88px; }
   main :is(button,input,select,a,summary) { scroll-margin-bottom:96px; }
 }
+
+/* Specific reason a page could not load its saved settings. */
+.load-reason{max-width:75ch;margin:8px 0 0;padding-left:10px;border-left:2px solid var(--sr-accent);font-size:13px;color:var(--sr-ink)}

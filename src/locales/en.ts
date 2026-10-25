@@ -76,7 +76,6 @@ export const en = {
   "app.couldNotLoadDeviceCheckTheConnectionThenRetry_a39ae": "Could not load device. Check the connection, then retry.",
   "app.refreshingState_66f03": "Refreshing state…",
   "app.stateRefreshed_0e050": "State refreshed",
-  "app.stateRefreshFailed_7ccca": "State refresh failed",
   "app.stateRefreshFailedTheLastSnapshotIsStaleReconnecting_d1a6a": "State refresh failed. The last snapshot is stale. Reconnecting with bounded read-only refresh.",
   "app.sendingCommand_49557": "Sending command…",
   "app.timeLapseCommandAcknowledgedDisplayingIndependentControllerReadbackPhysical_87775": "Time-lapse command acknowledged; displaying independent controller readback. Physical output is not verified.",
@@ -1269,5 +1268,11 @@ export const en = {
   "appshell.german": "DE · Deutsch",
   "guide.reviewService": "Review service and blackout.",
   "guide.service": "Check levels, excluded channels and the timeout before starting. Saving these settings and starting service are separate actions.",
+  "app.languageDownloadFailedGerman": "German text could not be downloaded, so the interface stays in English. Reload the interface to try again.",
+  "app.languageDownloadFailedEnglish": "English text could not be downloaded, so the interface stays in German. Reload the interface to try again.",
+  "duration.days": "{v0} d",
+  "duration.hours": "{v0} h",
+  "duration.minutes": "{v0} min",
+  "common.storedJsonInvalid": "The controller's stored {v0} value is damaged (not valid JSON), so this page cannot load it. Restoring a backup replaces it.",
 } as const;
 export type MessageKey = keyof typeof en;

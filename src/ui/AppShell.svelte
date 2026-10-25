@@ -7,9 +7,10 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
- import {t,renderText,language,setLanguage,source} from '../i18n';
+ import {t,renderText,language,source} from '../i18n';
+ import {catalogueLoaded,type Locale} from '../messages';
   import {tick, type Snippet} from 'svelte';
-  let {children,route}:{children:Snippet; route:string}=$props();
+  let {children,route,busy=false,onlanguage}:{children:Snippet; route:string; busy?:boolean; onlanguage:(value:Locale)=>unknown}=$props();
   let menuOpen=$state(false), deviceOpen=$state(false);
   let opener:HTMLButtonElement|undefined;
   const lighting=[['index',source("app.overview_0efc2")],['channels',source("lightingdashboard.channels_18e03")],['service',source("lightingdashboard.service_329cb")],['schedules',source("schedules.schedules_26d9d")],['weather',source("weather.weather_284af")],['sensors',source("sensors.sensors_711bf")]];
@@ -36,7 +37,7 @@ Third-party material retains its own terms.
       <span id="brand-name">SunRiser<small>{$t("appshell.aquariumLighting_fff93")}</small></span><span id="brand-destination" class="visually-hidden">{$t("appshell.sunriserOverview_ee5db")}</span>
     </a>
     <button class="all-pages" aria-expanded={menuOpen} aria-controls="main-navigation" onclick={toggle}>{$t("appshell.allPages_921a7")}</button>
-    <nav id="main-navigation" aria-label={$t("appshell.mainNavigation_efd19")} class:open={menuOpen}><div class="language-choice" role="group" aria-label="Language / Sprache"><button type="button" lang="en" aria-label={$t('appshell.english')} aria-pressed={$language==='en'} onclick={()=>setLanguage('en')}>EN</button><button type="button" lang="de" aria-label={$t('appshell.german')} aria-pressed={$language==='de'} onclick={()=>setLanguage('de')}>DE</button></div>
+    <nav id="main-navigation" aria-label={$t("appshell.mainNavigation_efd19")} class:open={menuOpen}><div class="language-choice" role="group" aria-label="Language / Sprache"><button type="button" lang="en" aria-label={$t('appshell.english')} aria-pressed={$language==='en'} disabled={busy&&!catalogueLoaded('en')} onclick={()=>onlanguage('en')}>EN</button><button type="button" lang="de" aria-label={$t('appshell.german')} aria-pressed={$language==='de'} disabled={busy&&!catalogueLoaded('de')} onclick={()=>onlanguage('de')}>DE</button></div>
       <div class="lighting-links"><p class="group-label">{$t("appshell.lighting_6153d")}</p>{#each lighting as [id,label]}<a href={`#${id}`} aria-current={route===id?'page':undefined} onclick={close}>{$renderText(label)}</a>{/each}</div>
       <details class="device-menu" bind:open={deviceOpen}>
         <summary id="device-menu-label" class:selected={administration}>{$t("appshell.device_a5a74")}</summary>

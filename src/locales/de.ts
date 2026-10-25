@@ -77,7 +77,6 @@ export const de = {
   "app.couldNotLoadDeviceCheckTheConnectionThenRetry_a39ae": "Verbindung zum Controller fehlgeschlagen. Prüfen Sie die Verbindung und versuchen Sie es erneut.",
   "app.refreshingState_66f03": "Status wird aktualisiert…",
   "app.stateRefreshed_0e050": "Status aktualisiert",
-  "app.stateRefreshFailed_7ccca": "Statusaktualisierung fehlgeschlagen",
   "app.stateRefreshFailedTheLastSnapshotIsStaleReconnecting_d1a6a": "Statusaktualisierung fehlgeschlagen. Die letzte Rückmeldung ist veraltet. Die Verbindung wird mit begrenzten, nur lesenden Abfragen erneut geprüft.",
   "app.sendingCommand_49557": "Befehl wird gesendet…",
   "app.timeLapseCommandAcknowledgedDisplayingIndependentControllerReadbackPhysical_87775": "Zeitrafferbefehl bestätigt; unabhängige Controllerrückmeldung wird angezeigt. Der tatsächliche Ausgang ist nicht überprüft.",
@@ -1270,4 +1269,10 @@ export const de = {
   "appshell.german": "DE · Deutsch",
   "guide.reviewService": "Wartung und Verdunkelung prüfen.",
   "guide.service": "Prüfen Sie Werte, ausgeschlossene Kanäle und das Zeitlimit vor dem Start. Das Speichern der Einstellungen und der Start der Wartung sind getrennte Aktionen.",
+  "app.languageDownloadFailedGerman": "Der deutsche Text konnte nicht heruntergeladen werden, daher bleibt die Oberfläche auf Englisch. Laden Sie die Oberfläche neu, um es erneut zu versuchen.",
+  "app.languageDownloadFailedEnglish": "Der englische Text konnte nicht heruntergeladen werden, daher bleibt die Oberfläche auf Deutsch. Laden Sie die Oberfläche neu, um es erneut zu versuchen.",
+  "duration.days": "{v0} T",
+  "duration.hours": "{v0} Std.",
+  "duration.minutes": "{v0} Min.",
+  "common.storedJsonInvalid": "Der auf dem Controller gespeicherte Wert {v0} ist beschädigt (kein gültiges JSON), daher kann diese Seite ihn nicht laden. Das Wiederherstellen einer Sicherung ersetzt ihn.",
 } satisfies Record<MessageKey,string>;

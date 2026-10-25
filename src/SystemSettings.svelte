@@ -8,7 +8,7 @@ Third-party material retains its own terms.
 -->
 <script lang="ts">
 import {type UiText, errorText} from './messages.js';
- import {timezoneLabel} from "./i18n";
+ import {timezoneLabel} from "./timezone-labels";
  import {source,t,renderText,language} from './i18n';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
  let snapshotRevision=$state(configurationRevision());

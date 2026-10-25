@@ -46,6 +46,9 @@ of this frontend's independently sourced assets:
 
 - `src/ui/font.css`: embedded Manrope font, **OFL-1.1**, copyright 2018
   The Manrope Project Authors. Full terms: `assets/fonts/OFL-Manrope.txt`.
+  It embeds `assets/fonts/Manrope-ui.woff2`, a character subset of the variable
+  Manrope TTF recorded with its source hash in `assets/fonts/Manrope-ui.json`
+  (same licence; the licence declares no reserved font name).
 - `public/p/*`: photograph by 조재선 and its adaptations, **CC BY-SA 3.0**.
   Credits, source, modifications and full terms: `assets/photo/`.
 - The inline horizon mark and interface styles are covered by their source-file

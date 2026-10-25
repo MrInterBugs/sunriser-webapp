@@ -7,7 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
-import {type Message, type UiText} from './messages.js';
+import {type Message, type UiText, errorText} from './messages.js';
  import {t,renderText,language,source} from './i18n';
  import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
@@ -59,6 +59,7 @@ import {type Message, type UiText} from './messages.js';
   } = $props();
   let book = $state<ScheduleBook>(),
     baseline = $state<ScheduleBook>();
+  let loadReason = $state<UiText>('');
   let attempted = $state(false),
     view = $state("day"),
     channel = $state(1),
@@ -175,9 +176,11 @@ import {type Message, type UiText} from './messages.js';
   $effect(()=>{const value=!!edited;untrack(()=>ondraftview?.(value));});
   async function load(refresh=false) {
     attempted = true;
+    loadReason = '';
     await perform(
       async () => {
-        const next = await getSchedules(firmware.pwm_count,refresh);
+        let next: ScheduleBook;
+        try { next = await getSchedules(firmware.pwm_count,refresh); } catch (e) { loadReason = errorText(e); throw e; }
         book = next;
         toolsReset++;
         baseline = clone(next);
@@ -357,7 +360,7 @@ import {type Message, type UiText} from './messages.js';
       </fieldset>
     </form></div>
   {:else}
-    <div class="unavailable"><h2>{busy ? $t("schedules.loadingSchedules_8ef1a") : $t("schedules.schedulesUnavailable_c3cb0")}</h2><p>{busy ? $t("schedules.readingSavedChannelsAndProgramsFromTheDevice_d7412") : $t("schedules.checkTheConnectionAndUseReloadSchedulesToTry_0d144")}</p></div>
+    <div class="unavailable"><h2>{busy ? $t("schedules.loadingSchedules_8ef1a") : $t("schedules.schedulesUnavailable_c3cb0")}</h2><p>{busy ? $t("schedules.readingSavedChannelsAndProgramsFromTheDevice_d7412") : $t("schedules.checkTheConnectionAndUseReloadSchedulesToTry_0d144")}</p>{#if !busy && loadReason}<p class="load-reason" data-testid="load-reason">{$renderText(loadReason)}</p>{/if}</div>
   {/if}
 </div>
 

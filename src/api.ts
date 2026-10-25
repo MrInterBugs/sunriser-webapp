@@ -36,13 +36,32 @@ const record = (value: unknown): value is Record<string, unknown> =>
 const integer = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 
-/** All API calls stay same-origin, have a deadline, and never automatically retry writes. */
-async function request(
-  method: "GET" | "POST" | "PUT",
-  path: "/" | "/state" | "/firmware.mp" | "/bootload.mp" | "/weather",
-  value?: unknown,
-  raw = false,
-) {
+/** Header the firmware ignores; it moves the end of the request headers by 17 bytes.
+ * Firmware 1.006 and 1.007 drop or reject (HTTP 413) a request whose header block ends
+ * 1-3 bytes past a 536-byte TCP segment boundary. That length depends on headers the
+ * browser adds, so one request shape can fail every time in one browser. */
+export const FRAMING_HEADER = "X-SR-Framing";
+const framingStorage = "sunriser.framing";
+// Request shapes (method, path, Content-Length digits) that needed the header.
+const framed = new Set<string>(((): string[] => {
+  try { const v = JSON.parse(localStorage.getItem(framingStorage) ?? "[]"); return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []; }
+  catch { return []; }
+})());
+function rememberFraming(shape: string, padded: boolean) {
+  if (framed.has(shape) === padded) return;
+  if (padded) framed.add(shape); else framed.delete(shape);
+  try { localStorage.setItem(framingStorage, JSON.stringify([...framed])); } catch { /* Session memory still applies. */ }
+}
+class HttpStatus extends MessageError {
+  constructor(readonly status: number) { super(source("common.httpStatus", {v0: status})); }
+}
+// Transient read failures: another client holding the controller's only Wi-Fi
+// link, a busy SR8 slot (503), or the header-framing defect (413 or no reply).
+const retryStatuses = new Set([408, 413, 429, 502, 503, 504]);
+const transient = (error: unknown) =>
+  error instanceof HttpStatus ? retryStatuses.has(error.status)
+    : error instanceof TypeError || (error instanceof Error && /^(AbortError|TimeoutError)$/.test(error.name));
+async function exchange(method: string, path: string, body: Uint8Array<ArrayBuffer> | undefined, padded: boolean, accept: (response: Response) => Promise<unknown>) {
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort(), 8000);
   try {
@@ -52,11 +71,45 @@ async function request(
       cache: "no-store",
       redirect: "error",
       credentials: "same-origin",
-      headers:
-        value === undefined ? {} : { "Content-Type": "application/x-msgpack" },
-      body: value === undefined ? undefined : new Uint8Array(encode(value)),
+      headers: {
+        ...(body === undefined ? {} : { "Content-Type": "application/x-msgpack" }),
+        ...(padded ? { [FRAMING_HEADER]: "x" } : {}),
+      },
+      body,
     });
-    if (!response.ok) throw new MessageError(source("common.httpStatus",{v0:response.status}));
+    if (!response.ok) throw new HttpStatus(response.status);
+    return await accept(response);
+  } finally {
+    clearTimeout(deadline);
+  }
+}
+/** Same-origin calls with an 8 s deadline per attempt. A read is retried once after
+ * a short pause with the opposite framing; writes are never retried automatically.
+ * A write rejected with 413 was not parsed, so its next deliberate attempt is reframed. */
+async function exchangeWithRetry(method: "GET" | "POST" | "PUT", path: string, body: Uint8Array<ArrayBuffer> | undefined, accept: (response: Response) => Promise<unknown>) {
+  const read = method !== "PUT";
+  const shape = `${method} ${path} ${body ? String(body.length).length : 0}`;
+  let padded = framed.has(shape);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const result = await exchange(method, path, body, padded, accept);
+      if (attempt) rememberFraming(shape, padded);
+      return result;
+    } catch (error) {
+      if (!read && error instanceof HttpStatus && error.status === 413) rememberFraming(shape, !padded);
+      if (!read || attempt || !transient(error)) throw error;
+      padded = !padded;
+      await new Promise(resolve => setTimeout(resolve, 300 + Math.floor(Math.random() * 200)));
+    }
+  }
+}
+async function request(
+  method: "GET" | "POST" | "PUT",
+  path: "/" | "/state" | "/firmware.mp" | "/bootload.mp" | "/weather",
+  value?: unknown,
+  raw = false,
+) {
+  return exchangeWithRetry(method, path, value === undefined ? undefined : new Uint8Array(encode(value)), async response => {
     if (method === "PUT") {
       if ((await response.text()).trim() !== "OK")
         throw new MessageError(source("api.unexpectedSaveAcknowledgement_eec64"));
@@ -72,9 +125,7 @@ async function request(
       throw new MessageError(source("api.unexpectedResponseType_3a3f3"));
     const bytes = new Uint8Array(await response.arrayBuffer());
     return raw ? bytes : decode(bytes);
-  } finally {
-    clearTimeout(deadline);
-  }
+  });
 }
 export async function getFirmware(): Promise<Firmware> {
   const v = await request("GET", "/firmware.mp");
@@ -97,13 +148,10 @@ export async function getBootloader(): Promise<Record<string,unknown>> {
 export const getWeatherRuntime=()=>request('GET','/weather');
 /** Explicit local file download. Preserve bytes; do not normalize log newlines. */
 export async function getLog(path:'/errors'|'/log'):Promise<Uint8Array>{
-  const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),8000);
-  try{
-    const response=await fetch(path,{method:'GET',signal:controller.signal,cache:'no-store',redirect:'error',credentials:'same-origin'});
-    if(!response.ok)throw new MessageError(source("common.httpStatus",{v0:response.status}));
+  return await exchangeWithRetry('GET',path,undefined,async response=>{
     if(response.headers.get('content-type')?.split(';')[0].trim().toLowerCase()!=='text/plain')throw new MessageError(source("api.unexpectedLogResponseType_53729"));
     return new Uint8Array(await response.arrayBuffer());
-  }finally{clearTimeout(deadline);}
+  }) as Uint8Array;
 }
 export async function getState(channels: number): Promise<DeviceState> {
   const v = await request("GET", "/state");
@@ -158,8 +206,10 @@ export interface ServiceSettings {
   timeout: number;
   channels: { percent: number; ignore: boolean; binary: boolean }[];
 }
+/** Fresh read of exactly these keys. Values already in the session cache are
+ * refreshed too, so an explicit editor reload never leaves another page an older copy. */
 export async function readConfig(keys: string[]) {
-  const result: Record<string, unknown> = {};
+  const result: Record<string, unknown> = {}, epoch = configurationEpoch;
   for (let i = 0; i < keys.length; i += 15) {
     const v = await request("POST", "/", keys.slice(i, i + 15));
     if (!record(v)) throw new MessageError(source("api.invalidConfiguration_0444e"));
@@ -168,10 +218,12 @@ export async function readConfig(keys: string[]) {
       result[key] = v[key];
     }
   }
+  if (epoch === configurationEpoch)
+    for (const key of keys) if (savedConfiguration.has(key)) savedConfiguration.set(key, structuredClone(result[key]));
   return result;
 }
-// Session-local saved configuration only. Raw readConfig and write verification always
-// bypass this cache. Callers still use App's existing operation gate.
+// Session-local saved configuration only. Raw readConfig and write verification never
+// read from this cache (they refresh entries already in it). Callers still use App's existing operation gate.
 const savedConfiguration = new Map<string, unknown>();
 const pendingSavedReads = new Map<string, Promise<Record<string, unknown>>>();
 let savedReadTail: Promise<unknown> = Promise.resolve(), configurationEpoch = 0;

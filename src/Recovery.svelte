@@ -21,6 +21,7 @@ import {errorText, type Message, type UiText, MessageError, sourceCount} from '.
     uploadFirmware,
     supportsFirmwareChunkRetry,
     readRecovery,
+    uploadTimeout,
     download,
     RecoveryError,
     BACKUP_LIMIT,
@@ -229,11 +230,11 @@ import {errorText, type Message, type UiText, MessageError, sourceCount} from '.
   }
   async function run(op: Operation, framing: boolean) {
     if (op === "restore")
-      await acknowledged("PUT", "/restore", "OK", backup!, undefined, framing);
+      await acknowledged("PUT", "/restore", "OK", backup!, undefined, framing, uploadTimeout(backup!.length));
     if (op === "firmware")
       await uploadFirmware(image!, (s) => (progress = s), firmware.version);
     if (op === "factory")
-      await acknowledged("PUT", "/factory", "FACTORY.BEE", image!);
+      await acknowledged("PUT", "/factory", "FACTORY.BEE", image!, undefined, false, uploadTimeout(image!.length));
     if (op === "reset") await acknowledged("DELETE", "/", "OK");
     if (op === "reboot") await acknowledged("GET", "/reboot", "REBOOT");
   }

@@ -7,6 +7,7 @@ import {type Message, MessageError, source, renderMessage} from './messages.js';
  * Adapted for this frontend in 2026; see LICENSING.md and LICENSE.
  */
 import { readConfig } from "./api.js";
+import { parseStoredJson } from "./stored-json.js";
 export type Effect = "clouds" | "rain" | "thunder" | "moon";
 export type Value = string | boolean | number[];
 export interface Field {
@@ -418,8 +419,9 @@ export async function loadBook(count: number): Promise<Book> {
     keys.push(`pwm#${n}#weather`, `pwm#${n}#onoff`);
   const baseline = await readConfig(keys);
   const raw = baseline["weather#web"];
-  const profiles: Profile[] =
-    raw == null ? [] : typeof raw === "string" ? JSON.parse(raw) : null;
+  const profiles = (
+    raw == null ? [] : typeof raw === "string" ? parseStoredJson("weather#web", raw) : null
+  ) as Profile[];
   if (
     !Array.isArray(profiles) ||
     profiles.some(
@@ -489,10 +491,11 @@ export const nextId = (book: Book) =>
     ...book.removed,
     0,
   ) + 1;
-export function addProfile(book: Book) {
+/** Default name in the interface language: only that language's catalogue is loaded. */
+export function addProfile(book: Book, locale: "en" | "de") {
   const id = nextId(book);
   if (id > 65535) return;
-  book.profiles.push({ id, name: renderMessage(source("weather.newProfileV0_3363f",{v0:id}), "en") });
+  book.profiles.push({ id, name: renderMessage(source("weather.newProfileV0_3363f",{v0:id}), locale) });
   book.counter = id;
   book.drafts[id] = defaults();
   return id;

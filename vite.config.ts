@@ -9,8 +9,10 @@
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { sequentialStartup } from "./src/startup-build.js";
+import { shortMessageKeys } from "./src/message-keys-build.js";
+import { singleFileEntry, entryModules } from "./src/chunks-build.js";
 export default defineConfig({
-  plugins: [svelte(), sequentialStartup()],
+  plugins: [svelte(), shortMessageKeys(), singleFileEntry(), sequentialStartup()],
   base: "./",
   build: {
     target: "es2022",
@@ -18,5 +20,8 @@ export default defineConfig({
     cssCodeSplit: false,
     assetsDir: "a",
     sourcemap: false,
+    rolldownOptions: {
+      output: { codeSplitting: { groups: [{ name: "index", test: (id: string) => entryModules.has(id) }] } },
+    },
   },
 });

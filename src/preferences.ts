@@ -7,6 +7,7 @@ import {MessageError, source} from './messages.js';
  * Adapted for this frontend in 2026; see LICENSING.md and LICENSE.
  */
 import {readSavedConfiguration} from './api.js';
+import {parseStoredJson} from './stored-json.js';
 export type Preferences=Record<string,unknown>;
 const buttonActions=[{value:0,label:source("weather.none_6eef6")},{value:1,label:source("preferences.toggleServiceMode_0572f")},{value:2,label:source("preferences.toggleThunderstorms_f2208")},{value:3,label:source("preferences.restartController_df85d")},{value:4,label:source("preferences.toggleBlackout_48d54")}];
 export const actions=(press:'short'|'long'|'double')=>buttonActions.filter(a=>press!=='short'||a.value!==3);
@@ -27,7 +28,7 @@ export function preferencePatch(draft:Preferences,base:Preferences,board:8|10){
 export const thunderIds=(values:Preferences,count:number,ids:number[])=>ids.filter(id=>values[`weather#setup#${id}#thunder#activated`]===true&&Array.from({length:count},(_,i)=>i+1).some(n=>values[`pwm#${n}#weather`]===id&&(values[`pwm#${n}#onoff`]==null||values[`pwm#${n}#onoff`]===false)));
 export async function readThunderEligibility(count:number,refresh=false){
  const catalogue=(await readSavedConfiguration(['weather#web'],refresh))['weather#web'];
- const profiles:unknown=catalogue==null?[]:typeof catalogue==='string'?JSON.parse(catalogue):null;
+ const profiles:unknown=catalogue==null?[]:typeof catalogue==='string'?parseStoredJson('weather#web',catalogue):null;
  if(!Array.isArray(profiles)||profiles.some(p=>!p||!Number.isInteger(p.id)||p.id<1||p.id>65535))throw new MessageError(source("preferences.invalidWeatherCatalogue_313d1"));
  const ids:number[]=profiles.map(p=>p.id);
  const keys=Array.from({length:count},(_,i)=>[`pwm#${i+1}#weather`,`pwm#${i+1}#onoff`]).flat().concat(ids.map(id=>`weather#setup#${id}#thunder#activated`));

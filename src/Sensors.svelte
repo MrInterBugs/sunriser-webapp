@@ -7,7 +7,7 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
-import {type UiText, MessageError} from './messages.js';
+import {type UiText, MessageError, errorText} from './messages.js';
  import {t,renderText,language,source,numberText,decimalDraft,canonicalDecimal} from './i18n';
  import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
  import {configurationState,configurationRevision,configurationCurrent} from './configuration-state';
@@ -62,6 +62,7 @@ import {type UiText, MessageError} from './messages.js';
     refresh: () => Promise<void>;
     onedit: () => void;
   } = $props();
+  let loadReason = $state<UiText>('');
   let attempted = $state(false),
     ready = $state(false),
     selected = $state("");
@@ -84,7 +85,7 @@ import {type UiText, MessageError} from './messages.js';
   const listed = $derived(editor ? listedChannels($savedChannels, channels.length, $showUnusedChannels, responseSet) : []);
   const patch = $derived(editor ? sensorPatch(selected, editor, catalogue) : {});
   $effect(() => {
-    if (active && !attempted && !busy && !$configurationState.recovery) void reload();
+    if (active && !attempted && !busy && !$configurationState.recovery) void reload(false);
   });
   $effect(() => {
     if (ready && (!selected || !ids.includes(selected))) selected = ids[0] ?? "";
@@ -102,26 +103,30 @@ import {type UiText, MessageError} from './messages.js';
     )
       void selectLoad(selected);
   });
-  async function reload() {
+  // The first visit reuses cached channel identity/modes; Reload reads everything again.
+  async function reload(refresh: boolean) {
     attempted = true;
+    loadReason = '';
     await perform(
       async () => {
-        const index = await loadSensorIndex(firmware.pwm_count);
-        const target =
-          selected && index.catalogue[selected]
-            ? selected
-            : Object.keys(index.catalogue)[0];
-        const next = target
-          ? await loadSensor(target, index.catalogue[target], index.channels)
-          : undefined;
-        catalogue = index.catalogue;
-        channels = index.channels;
-        editors = next ? { [target]: next } : {};
-        attemptedSensors = target ? { [target]: true } : {};
-        names = {};
-        ready = true;
-        snapshotRevision=configurationRevision();
-        removalUncertain=false;
+        try {
+          const index = await loadSensorIndex(firmware.pwm_count, refresh);
+          const target =
+            selected && index.catalogue[selected]
+              ? selected
+              : Object.keys(index.catalogue)[0];
+          const next = target
+            ? await loadSensor(target, index.catalogue[target], index.channels, refresh)
+            : undefined;
+          catalogue = index.catalogue;
+          channels = index.channels;
+          editors = next ? { [target]: next } : {};
+          attemptedSensors = target ? { [target]: true } : {};
+          names = {};
+          ready = true;
+          snapshotRevision=configurationRevision();
+          removalUncertain=false;
+        } catch (e) { loadReason = errorText(e); throw e; }
       },
       source("sensors.sensorConfigurationLoaded_de09a"),
       source("sensors.couldNotLoadSensorsRetryReloadSensorConfiguration_88a6c"),
@@ -150,7 +155,7 @@ import {type UiText, MessageError} from './messages.js';
         await saveConfiguration(patch, firmware);
         // Registration leaves existing assignment keys intact. Read them before
         // offering activation; an absent catalogue is not proof of empty settings.
-        const registered = await loadSensor(rom, entry, channels);
+        const registered = await loadSensor(rom, entry, channels, true);
         catalogue = { ...catalogue, [rom]: entry };
         editors[rom] = registered;
         attemptedSensors[rom] = true;
@@ -288,7 +293,7 @@ import {type UiText, MessageError} from './messages.js';
     {:else}<p>{$t("sensors.unsupportedSensorDeviceTypeRawReadingsAreShownRegistration_721fd")}</p>{/if}
    {/if}
   {/if}
- {:else}<div class="empty-state"><h2>{busy?$t("sensors.loadingSensors_9e8a1"):$t("sensors.sensorSettingsUnavailable_dd572")}</h2><p>{busy?$t("sensors.readingTheSensorCatalogueAndSavedConfiguration_5093d"):$t("sensors.useReloadSensorConfigurationToTryAgain_e241c")}</p></div>{/if}<div class="form-actions"><button id="sensor-reload" class="secondary" onclick={reload} disabled={busy}>{$t("sensors.reloadSensorConfiguration_360e6")}</button></div><p>{$t("sensors.reloadDiscardsUnsavedSensorDraftsReadingRefreshesDoNot_31fee")}</p>
+ {:else}<div class="empty-state"><h2>{busy?$t("sensors.loadingSensors_9e8a1"):$t("sensors.sensorSettingsUnavailable_dd572")}</h2><p>{busy?$t("sensors.readingTheSensorCatalogueAndSavedConfiguration_5093d"):$t("sensors.useReloadSensorConfigurationToTryAgain_e241c")}</p>{#if !busy && loadReason}<p class="load-reason" data-testid="load-reason">{$renderText(loadReason)}</p>{/if}</div>{/if}<div class="form-actions"><button id="sensor-reload" class="secondary" onclick={() => reload(true)} disabled={busy}>{$t("sensors.reloadSensorConfiguration_360e6")}</button></div><p>{$t("sensors.reloadDiscardsUnsavedSensorDraftsReadingRefreshesDoNot_31fee")}</p>
 <details class="reading-details"><summary>{$t("app.readingDetails_28520")}{stale?$t("app.readbackStale_e56ed"):''}</summary> <p class:stale>{stale?$t("app.lastSnapshotStale_329af"):$t("sensors.deviceSnapshot_35538")} {$t("sensors.readingsRefreshEvery30SecondsWhileVisibleFailuresBack_2eda5")}</p></details>
 </section>
  {#if editor}

@@ -13,8 +13,10 @@ import {
   getState,
   readConfig,
   readConfigBytes,
+  FRAMING_HEADER,
   type Firmware,
 } from "./api.js";
+export { FRAMING_HEADER };
 export const BACKUP_LIMIT = 8 * 1024 * 1024,
   BEE_LIMIT = 32 * 1024 * 1024;
 const utf8 = new TextDecoder("utf-8", { fatal: true });
@@ -258,13 +260,15 @@ export class RecoveryError extends MessageError {
     super(message);
   }
 }
-/** A header the firmware ignores. Sent only on a deliberate resubmission after an upload was rejected with HTTP 413:
- * the original v1.006 firmware never finds a header terminator that a network segment boundary splits,
- * takes the body for more header and rejects the request when its 6 KiB header buffer fills. That happens when the
- * request's header block length is 1 to 3 bytes past a multiple of the 536-byte segment size, which depends on
- * headers the browser adds and the page cannot see. This line moves the header block by 17 bytes, out of that
- * window; the request is otherwise unchanged. */
-export const FRAMING_HEADER = "X-SR-Framing";
+/** Single-request uploads (restore, factory image) get 30 s plus 1 s per 10 KiB.
+ * A ~1.3 MB factory image needs over 26 s at the ~50 kB/s measured on SR10 Wi-Fi. */
+export const uploadTimeout = (bytes: number) => 30000 + Math.ceil(bytes / 10240) * 1000;
+/** `framing` adds FRAMING_HEADER, a header the firmware ignores. Recovery sends it only on a deliberate restore
+ * resubmission after an upload was rejected with HTTP 413: the original v1.006 firmware never finds a
+ * header terminator that a network segment boundary splits, takes the body for more header and rejects the request
+ * when its 6 KiB header buffer fills. That happens when the request's header block length is 1 to 3 bytes past a
+ * multiple of the 536-byte segment size, which depends on headers the browser adds and the page cannot see. The
+ * header moves the header block by 17 bytes, out of that window; the request is otherwise unchanged. */
 export async function recoveryRequest(
   method: "GET" | "PUT" | "DELETE",
   path: string,

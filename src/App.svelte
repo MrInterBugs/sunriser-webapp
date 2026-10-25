@@ -7,8 +7,9 @@ Frontend adaptation (2026); see LICENSING.md and LICENSE.
 Third-party material retains its own terms.
 -->
 <script lang="ts">
-import {type UiText, MessageError} from './messages.js';
- import {t,renderText,language,source} from './i18n';
+import {type UiText, MessageError, catalogueLoaded, type Locale} from './messages.js';
+ import {loadCatalogue} from './catalogues.js';
+ import {t,renderText,language,source,setLanguage,timestampDisplay,utcOffsetText,durationText} from './i18n';
   import {PWM_RAW_MAX} from "./pwm";
   import {preferredReportedAddress} from './network-address';
   import OverviewLighting from "./ui/OverviewLighting.svelte";
@@ -24,14 +25,15 @@ import {type UiText, MessageError} from './messages.js';
   import ChannelConfiguration from './ChannelConfiguration.svelte';
   import DevicePreferences from './DevicePreferences.svelte';
   // Each route is downloaded once and stays mounted afterwards to retain drafts.
-  const pageLoaders={help:()=>import('./Help.svelte'),diagnostics:()=>import('./Diagnostics.svelte'),recovery:()=>import('./Recovery.svelte'),'lighting-tools':()=>import('./LightingTools.svelte')};
+  // Overview data (daily plan, labels, state) stays in the main module; these pages are editors.
+  const pageLoaders={help:()=>import('./Help.svelte'),diagnostics:()=>import('./Diagnostics.svelte'),recovery:()=>import('./Recovery.svelte'),'lighting-tools':()=>import('./LightingTools.svelte'),schedules:()=>import('./Schedules.svelte'),weather:()=>import('./Weather.svelte'),sensors:()=>import('./Sensors.svelte'),clock:()=>import('./SystemSettings.svelte'),network:()=>import('./SystemSettings.svelte')};
   type DeferredRoute=keyof typeof pageLoaders;
   const deferredRoute=(value:string):value is DeferredRoute=>Object.hasOwn(pageLoaders,value);
   type DeferredPages={[K in DeferredRoute]?:Awaited<ReturnType<(typeof pageLoaders)[K]>>['default']};
   let pages=$state<DeferredPages>({});
   let pageErrors=$state<Partial<Record<DeferredRoute,boolean>>>({});
   let pendingPhotographs:Promise<unknown>=Promise.resolve();
-  const pageTitle=(value:DeferredRoute)=>({help:source('help.helpAndGettingStarted_f0eb5'),diagnostics:source('diagnostics.diagnostics_3af22'),recovery:source('help.recovery_ea924'),'lighting-tools':source('lightingtools.lightingTools_601b5')})[value];
+  const pageTitle=(value:DeferredRoute)=>({help:source('help.helpAndGettingStarted_f0eb5'),diagnostics:source('diagnostics.diagnostics_3af22'),recovery:source('help.recovery_ea924'),'lighting-tools':source('lightingtools.lightingTools_601b5'),schedules:source('schedules.schedules_26d9d'),weather:source('weather.weather_284af'),sensors:source('sensors.sensors_711bf'),clock:source('systemsettings.clockAndTimezone_798fe'),network:source('help.network_53ebc')})[value];
   import ChannelIdentity from './ui/ChannelIdentity.svelte';
   import RawMeter from './ui/RawMeter.svelte';
   import EditorPage from './ui/EditorPage.svelte';
@@ -41,10 +43,6 @@ import {type UiText, MessageError} from './messages.js';
   import LightingDashboard from "./LightingDashboard.svelte";
   import ActionButton from "./ui/ActionButton.svelte";
   import { onMount,untrack,tick } from "svelte";
-  import SystemSettings from "./SystemSettings.svelte";
-  import Schedules from "./Schedules.svelte";
-  import Weather from "./Weather.svelte";
-  import Sensors from "./Sensors.svelte";
   import {
     invalidateSavedConfiguration,
     getFirmware,
@@ -81,6 +79,8 @@ import {type UiText, MessageError} from './messages.js';
   const serviceReconciled=$derived(!$configurationState.recovery&&serviceRevision===$configurationState.revision);
   let serviceAttempted = $state(false);
   let refreshFailures = 0;
+  // Last successful state read (monotonic clock); a returning tab refreshes if older than one poll.
+  let lastStateRead = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let mounted = false;
   let revision = 0;
@@ -123,6 +123,7 @@ import {type UiText, MessageError} from './messages.js';
       if (mounted && ticket === revision) {
         const reconnecting=stale;
         snapshot = next;
+        lastStateRead = performance.now();
         stale = false;
         refreshFailures = 0;
         if(reconnecting){
@@ -233,6 +234,14 @@ import {type UiText, MessageError} from './messages.js';
       end();
     }
   }
+  // Downloading the other language's text uses the same gate as controller requests.
+  async function chooseLanguage(value:Locale){
+    if(catalogueLoaded(value)){setLanguage(value);return;}
+    if(!begin())return;
+    try{await pendingPhotographs;await loadCatalogue(value);setLanguage(value);if(typeof error!=='string'&&(error.key==="app.languageDownloadFailedGerman"||error.key==="app.languageDownloadFailedEnglish"))error='';}
+    catch{error=source(value==='de'?"app.languageDownloadFailedGerman":"app.languageDownloadFailedEnglish");}
+    finally{end();}
+  }
   function clearFeedback() {
     error = "";
     status = "";
@@ -254,6 +263,7 @@ import {type UiText, MessageError} from './messages.js';
       const name = await getHostname();
       firmware = info;
       snapshot = initialState;
+      lastStateRead = performance.now();
       hostname = persisted = name;
       hostnameStale=false;
       raw = Object.fromEntries(
@@ -281,7 +291,7 @@ import {type UiText, MessageError} from './messages.js';
     try {
       await readState();
       if (!background) status = source("app.stateRefreshed_0e050");
-      if (typeof error!=="string" && error.key==="app.stateRefreshFailed_7ccca") error = "";
+      if (typeof error!=="string" && error.key==="app.stateRefreshFailedTheLastSnapshotIsStaleReconnecting_d1a6a") error = "";
     } catch {
       uncertain();
       error =
@@ -403,7 +413,8 @@ import {type UiText, MessageError} from './messages.js';
       if(route==='help')document.getElementById('startup')?.remove();
       if(mounted)await load();
     })();
-    const visibility=()=>{visible=document.visibilityState==='visible';schedule();};
+    // A tab returning after a poll interval shows old values as current; read once now.
+    const visibility=()=>{visible=document.visibilityState==='visible';if(visible&&mounted&&loaded&&!busy&&statePage()&&performance.now()-lastStateRead>=30000)void refresh(true);else schedule();};
     document.addEventListener("visibilitychange", visibility);
     return () => {
       mounted = false;
@@ -415,7 +426,7 @@ import {type UiText, MessageError} from './messages.js';
 </script>
 
 <svelte:window onhashchange={navigate} />
-<AppShell {route}>
+<AppShell {route} {busy} onlanguage={chooseLanguage}>
   <main id="main-content" tabindex="-1" aria-busy={busy}>
     <div class="feedback" class:stale>
       <span class="connection-state">{busy?$t("app.operationPending_c929e"):stale?$t("app.readbackStale_e56ed"):loaded?$t("app.readbackAvailable_465ca"):$t("app.noReadback_429db")}</span>
@@ -464,13 +475,13 @@ import {type UiText, MessageError} from './messages.js';
 
             <div><dt>{$t("app.firmware_0dc5f")}</dt><dd data-testid="version">{firmware.version}</dd></div>
             <div><dt>{$t(reportedAddress?.interface==='lan'?"networkAddress.lanAddress":reportedAddress?.interface==='wifi'?"networkAddress.wifiAddress":"networkAddress.reportedAddress")}</dt><dd data-testid="lan">{reportedAddress?.address??$t("networkAddress.unavailable")}</dd></div>
-            <div><dt>{$t("app.deviceTimeUTC_99f56")}</dt><dd data-testid="utc">{utc(snapshot.time)}</dd></div>
-            <div><dt>{$t("app.uptime_6aafa")}</dt><dd data-testid="uptime">{snapshot.uptime} s</dd></div>
+            <div><dt>{$t("systemsettings.deviceLocalTime_50001")}</dt><dd><span data-testid="localtime">{snapshot.localtime?timestampDisplay(snapshot.localtime,$language):$t("systemsettings.notReported_98e85")}</span>{#if snapshot.utc_offset!==undefined}<small class="utc-offset" data-testid="utc-offset">{utcOffsetText(snapshot.utc_offset)}</small>{/if}<small class="utc-time" data-testid="utc">{timestampDisplay(utc(snapshot.time),$language)}</small></dd></div>
+            <div><dt>{$t("app.uptime_6aafa")}</dt><dd data-testid="uptime">{durationText(snapshot.uptime,$language)}</dd></div>
             <div><dt>{$t("app.wiFiCapability_28a30")}</dt><dd data-testid="wifi">{firmware.wifi ? $t("app.available_7c62a") : $t("app.notAvailable_d1a17")}</dd></div>
           </dl>
         </section>
         <details class="reading-details"><summary>{$t("app.readingDetails_28520")}{stale?$t("app.readbackStale_e56ed"):''}</summary>
-        <p class:stale data-testid="snapshot">{stale ? $t("app.lastSnapshotStale_329af") : $t("app.snapshot_b08ae")} · {utc(snapshot.time)} {$t("app.refreshesEvery30SecondsWhileVisibleFailuresBackOff_809d6")}</p>
+        <p class:stale data-testid="snapshot">{stale ? $t("app.lastSnapshotStale_329af") : $t("app.snapshot_b08ae")} · {timestampDisplay(utc(snapshot.time),$language)} {$t("app.refreshesEvery30SecondsWhileVisibleFailuresBackOff_809d6")}</p>
         </details>
         </EditorPage>
       {:else if route === 'help' || route === 'lighting-tools' || route === 'diagnostics' || route === 'recovery' || route === 'schedules' || route === 'sensors' || route === "weather" || route === 'clock' || route === 'network'}
@@ -502,11 +513,11 @@ import {type UiText, MessageError} from './messages.js';
       {#if pages['lighting-tools']}{@const LightingTools=pages['lighting-tools']}<LightingTools active={route === 'lighting-tools'} {busy} {firmware} {snapshot} {stale} feedback={$renderText(error)} {perform} {command} refresh={()=>refresh()} readback={async()=>{try{await readState();}catch(e){uncertain();throw e;}}} onedit={clearFeedback}/>{/if}
       {#if pages.diagnostics}{@const Diagnostics=pages.diagnostics}<Diagnostics active={route === 'diagnostics'} {busy} {firmware} {perform}/>{/if}
       {#if pages.recovery}{@const Recovery=pages.recovery}<Recovery active={route === 'recovery'} {busy} {firmware} {perform} onconfigurationchange={recoveryChanged} onread={(next:DeviceState, info:Firmware, name:string) => { ++revision; snapshot=next; firmware=info; configurationVerified(); if(hostname===persisted){hostname=name;hostnameRevision=configurationRevision();} persisted=name; hostnameStale=false;stale=false; overviewChannel=Math.min(overviewChannel,info.pwm_count); invalidateConfiguration(); }} />{/if}
-      <SystemSettings feedback={$renderText(error)} active={route === 'clock'} kind="clock" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
-      <SystemSettings feedback={$renderText(error)} active={route === 'network'} kind="network" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />
+      {#if pages.clock}{@const Clock=pages.clock}<Clock feedback={$renderText(error)} active={route === 'clock'} kind="clock" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />{/if}
+      {#if pages.network}{@const Network=pages.network}<Network feedback={$renderText(error)} active={route === 'network'} kind="network" {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />{/if}
     {/if}
-    {#if loaded && firmware && snapshot}<Weather feedback={$renderText(error)} active={route === 'weather'} {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />{/if}
-    {#if loaded && firmware && snapshot}<Sensors feedback={$renderText(error)} active={route === 'sensors'} {busy} {firmware} {snapshot} {stale} {perform} refresh={() => refresh()} onedit={clearFeedback} />{/if}
+    {#if loaded && firmware && snapshot && pages.weather}{@const Weather=pages.weather}<Weather feedback={$renderText(error)} active={route === 'weather'} {busy} {firmware} {snapshot} {stale} {perform} {command} refresh={() => refresh()} onedit={clearFeedback} />{/if}
+    {#if loaded && firmware && snapshot && pages.sensors}{@const Sensors=pages.sensors}<Sensors feedback={$renderText(error)} active={route === 'sensors'} {busy} {firmware} {snapshot} {stale} {perform} refresh={() => refresh()} onedit={clearFeedback} />{/if}
     {#if loaded && firmware}<ChannelConfiguration feedback={$renderText(error)} bind:this={channelConfiguration} active={route === 'channels'} {busy} {firmware} {perform} onedit={clearFeedback} onsaved={(channels)=>{
       if(serviceSettings){
         const accepted=JSON.parse(serviceBaseline) as ServiceSettings;
@@ -522,7 +533,7 @@ import {type UiText, MessageError} from './messages.js';
       }
     }}/>{/if}
     {#if loaded && firmware}<DevicePreferences active={route === 'settings'} {busy} {firmware} feedback={$renderText(error)} {perform} onedit={clearFeedback}/>{/if}
-    {#if loaded && firmware}<Schedules ondraftview={value=>scheduleUnsaved=value} active={route === 'schedules'} {busy} {firmware} {perform} onedit={clearFeedback} />{/if}
+    {#if loaded && firmware && pages.schedules}{@const Schedules=pages.schedules}<Schedules ondraftview={value=>scheduleUnsaved=value} active={route === 'schedules'} {busy} {firmware} {perform} onedit={clearFeedback} />{/if}
   </main>
 </AppShell>
 
@@ -559,6 +570,8 @@ import {type UiText, MessageError} from './messages.js';
   .overview-details :global(h2) { font-size:15px; }
   .overview-details :global(.facts) { grid-template-columns:1fr 1fr 1.7fr .7fr 1fr; gap:16px; }
   .overview-details :global(dd) { font-size:13px; font-weight:500; }
+  .utc-offset { margin-left:8px; font-size:12px; font-weight:400; color:var(--sr-muted); white-space:nowrap; }
+  .utc-time { display:block; margin-top:2px; font-size:12px; font-weight:400; color:var(--sr-muted); }
   @media(max-width:1200px) { .monitor-workspace { grid-template-columns:minmax(0,1fr) 250px; gap:24px; } .overview-outputs :global(.channels) { grid-template-columns:1fr; } }
   @media(max-width:800px) { .monitor-workspace { grid-template-columns:1fr; gap:24px; margin-top:20px; } .overview-outputs :global(.channels li) { padding:15px 0; } .overview-details :global(.facts) { grid-template-columns:1fr 1fr; } .overview-details :global(.facts > div:nth-child(3)) { grid-column:1/-1; } }
   .hostname-workspace { display:grid; grid-template-columns:minmax(0,560px) minmax(0,360px); gap:48px; align-items:start; margin-top:28px; }

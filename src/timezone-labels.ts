@@ -47,3 +47,6 @@ export const germanTimezoneLabels:Readonly<Record<string,string>> = {
   "(GMT+11:00) Magadan, Solomon Is., New Caledonia": "(GMT+11:00) Magadan, Salomonen, Neukaledonien",
   "(GMT+12:00) Fiji, Kamchatka, Marshall Is.": "(GMT+12:00) Fidschi, Kamchatka, Marshallinseln"
 };
+
+/** Timezone option label in the selected language; only the Clock page uses it. */
+export const timezoneLabel=(label:string,locale:'en'|'de')=>locale==='de'?(germanTimezoneLabels[label]??label):label;
