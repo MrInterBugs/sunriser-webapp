@@ -10,7 +10,8 @@ Third-party material retains its own terms.
  import {type UiText} from './messages.js';
 
  import {t,renderText,language,source} from './i18n';
- import {configurationRevision,configurationSaves} from './configuration-state';
+ import {configurationRevision,configurationSaves,rawCommands} from './configuration-state';
+ import {untrack} from 'svelte';
  import ConfigurationNotice from './ui/ConfigurationNotice.svelte';
  let snapshotRevision=$state(configurationRevision());
  import type {Firmware,DeviceState} from './api';
@@ -23,11 +24,14 @@ Third-party material retains its own terms.
  let {active,busy,firmware,snapshot,hostname,stale:stateStale,perform}:{active:boolean;busy:boolean;firmware:Firmware|undefined;snapshot:DeviceState|undefined;hostname:string;stale:boolean;perform:(task:()=>Promise<void>,success: UiText,failure: UiText,pending: UiText)=>Promise<boolean>}=$props();
  let rows=$state<ReturnType<typeof configuredRows>>(),readAt=$state(''),stale=$state(false);
  let identities=$state<Channel[]>([]),summarySave=$state(0);
- const changed=$derived(!!rows&&summarySave!==$configurationSaves);
+ // A raw command to a channel the summary shows in fixed mode changes its stored value.
+ let summaryCommand=0,fixedTouched=$state(false);
+ $effect(()=>{const command=$rawCommands;untrack(()=>{if(rows&&command.sequence>summaryCommand&&command.channels.some(n=>rows![n-1]?.manager===3))fixedTouched=true;});});
+ const changed=$derived(!!rows&&(summarySave!==$configurationSaves||fixedTouched));
  const unused=$derived(identities.filter(channelUnused).length);
  const unnamed=$derived(identities.filter(c=>c.color==null&&!(typeof c.name==='string'&&c.name.trim())).length);
  const address=$derived(snapshot&&firmware?preferredReportedAddress(snapshot,firmware.wifi)?.address:undefined);
- async function load(){if(!firmware||busy)return;const count=firmware.pwm_count;const ok=await perform(async()=>{const values=await readConfig(configurationKeys(count));rows=configuredRows(values,count);snapshotRevision=configurationRevision();identities=decodeChannels(values,count);savedChannels.set(identities);summarySave=$configurationSaves;readAt=new Date().toISOString();stale=false;},source("help.configuredStateReadFromController_988c9"),source("help.couldNotReadConfiguredStatePreviousSnapshotRetainedAs_a2e62"),source("help.readingConfiguredState_50621"));if(!ok)stale=true;}
+ async function load(){if(!firmware||busy)return;const count=firmware.pwm_count;const ok=await perform(async()=>{const values=await readConfig(configurationKeys(count));rows=configuredRows(values,count);snapshotRevision=configurationRevision();identities=decodeChannels(values,count);savedChannels.set(identities);summarySave=$configurationSaves;summaryCommand=$rawCommands.sequence;fixedTouched=false;readAt=new Date().toISOString();stale=false;},source("help.configuredStateReadFromController_988c9"),source("help.couldNotReadConfiguredStatePreviousSnapshotRetainedAs_a2e62"),source("help.readingConfiguredState_50621"));if(!ok)stale=true;}
 </script>
 <div hidden={!active} class="help-page">
  <header><h1>{$t("help.helpAndGettingStarted_f0eb5")}</h1><p>{$t("help.localGuidanceForSunRiserReadingHelpNeverAppliesSettings_02fd6")}</p></header>

@@ -467,7 +467,7 @@ export const en = {
   "recovery.recoveryRequestFailedOrOutcomeUncertainNoAutomaticRetry_70175": "Recovery request stopped or outcome uncertain. No further automatic attempts.",
   "recovery.chunkRetrying": "Connection interrupted; retry {v0} of 3 for the chunk at byte {v1} in {v2} s. Keep this page open.",
   "recovery.chunkStopped": "Upload stopped at byte {v0}. Attempts: {v1}. {v2} Installation was not requested. Pause other controller clients before reviewing the upload again; the staged file may be incomplete.",
-  "recovery.chunkRetryNotice": "Interrupted firmware chunks can retry up to three times at the same byte offset. Initialization and installation are never retried automatically. Pause Home Assistant and close other controller tabs for the most reliable upload. Keep this page open until the upload finishes.",
+  "recovery.chunkRetryNotice": "Interrupted firmware chunks, and chunks the controller rejects because of how their headers fell on a network packet, can retry up to three times at the same byte offset. Initialization and installation are never retried automatically. Pause Home Assistant and close other controller tabs for the most reliable upload. Keep this page open until the upload finishes.",
   "recovery.sendingRecoveryRequest_3cd5b": "Sending recovery request…",
   "recovery.v0UploadRejectedByTheDeviceWithHTTP413_cd6ac": "{v0}: upload rejected by the device with HTTP 413 before it was accepted. The device did not acknowledge a restore. This firmware can misread a request whose headers end exactly at a network packet boundary, which depends on headers your browser adds. Nothing was retried. Treat the outcome as uncertain until device readback confirms it. You may review and submit the same backup again: the next attempt adds a small header to change the request's framing.",
   "recovery.v0TheDeviceAnsweredHTTPV1InsteadOfAn_29214": "{v0}: the device answered HTTP {v1} instead of an acknowledgement. The outcome is uncertain: part of the operation may have been applied. Do not assume it was rolled back. No write was retried. Check device readback before deciding to submit again.",
@@ -1274,5 +1274,11 @@ export const en = {
   "duration.hours": "{v0} h",
   "duration.minutes": "{v0} min",
   "common.storedJsonInvalid": "The controller's stored {v0} value is damaged (not valid JSON), so this page cannot load it. Restoring a backup replaces it.",
+  "recovery.chunkReframing": "The controller rejected the chunk at byte {v1} because of how its headers fell on a network packet; resending it with adjusted headers in {v2} s (retry {v0} of 3). Keep this page open.",
+  "system.invalidNetmask": "Use a valid netmask between /1 and /30, for example 255.255.255.0.",
+  "system.invalidControllerAddress": "Use a usable host address for the controller: not the subnet's network or broadcast address, and not a loopback, multicast or reserved address.",
+  "system.gatewayUnusable": "The gateway is not a usable host in the controller's subnet. The controller stays reachable on the local network, but services that need the gateway, such as NTP, may fail.",
+  "system.wifiPasswordUnusual": "Most WPA2 networks need 8 to 63 printable ASCII characters or 64 hexadecimal digits. If this password is wrong, the controller cannot join the Wi-Fi network after a restart.",
+  "recovery.factoryTooLarge": "This image is {v0} bytes. Factory replacement sends it in one request, and the controller accepts at most 8,388,608 bytes (8 MiB).",
 } as const;
 export type MessageKey = keyof typeof en;

@@ -22,6 +22,7 @@ import {errorText, type Message, type UiText, MessageError, sourceCount} from '.
     supportsFirmwareChunkRetry,
     readRecovery,
     uploadTimeout,
+    REQUEST_BODY_LIMIT,
     download,
     RecoveryError,
     BACKUP_LIMIT,
@@ -375,11 +376,13 @@ import {errorText, type Message, type UiText, MessageError, sourceCount} from '.
     <div class="panel"><h3>{$t("recovery.replaceTheFactoryRecoveryImage_ddcd2")}</h3>    <p>
       {$t("recovery.factoryReplacementAlsoClearsConfigurationAndReplacesTheRecovery_0351a")}
     </p>
+    {#if image && image.length > REQUEST_BODY_LIMIT}<p role="note">{$t("recovery.factoryTooLarge",{v0: image.length})}</p>{/if}
     <button class="danger"
       onclick={event => review('factory',event)}
       disabled={busy ||
         selecting ||
         !image ||
+        image.length > REQUEST_BODY_LIMIT ||
         imageInfo?.timestamp !== firmware.timestamp}
       >{$t("recovery.reviewFactoryReplacement_7948d")}</button
     >

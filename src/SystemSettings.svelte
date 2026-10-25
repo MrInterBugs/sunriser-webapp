@@ -29,6 +29,7 @@ import {type UiText, errorText} from './messages.js';
     keysFor,
     loadSettings,
     validation,
+    networkWarnings,
     settingsPatch,
     recoveryURL,
     type SettingsPage,
@@ -86,6 +87,8 @@ import {type UiText, errorText} from './messages.js';
   }
   const wifi = $derived(firmware.wifi && firmware.pwm_count === 10);
   const invalid = $derived(editor ? validation(kind, editor.draft, wifi) : "");
+  // Advice only: Save stays available because the controller remains reachable.
+  const warnings = $derived(editor && kind === "network" ? networkWarnings(editor.draft, wifi) : []);
   const dirty = $derived(
     !!editor &&
       JSON.stringify(editor.draft) !== JSON.stringify(editor.baseline),
@@ -331,6 +334,7 @@ import {type UiText, errorText} from './messages.js';
               </p>{/if}
           {/if}
           {#if invalid}<p class="notice" role="note">{$renderText(invalid)}</p>{/if}
+          {#each warnings as warning}<p class="notice" role="note">{$renderText(warning)}</p>{/each}
         </fieldset>
       </form>
       {#if kind === "clock"}<section class="panel clock-command"><h2>{$t("systemsettings.setDeviceTime_8355e")}</h2>

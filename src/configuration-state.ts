@@ -29,3 +29,9 @@ export const configurationConnection = writable(0);
 export function configurationReconnected() {
   configurationConnection.update(value => value + 1);
 }
+// A raw output command persists pwm#N#fixed for channels in fixed mode (C
+// set_pwm_fixed_value), so read-only summaries showing those values age.
+export const rawCommands = writable({ sequence: 0, channels: [] as number[] });
+export function rawCommandSent(channels: number[]) {
+  rawCommands.update(state => ({ sequence: state.sequence + 1, channels }));
+}

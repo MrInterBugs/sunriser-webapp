@@ -263,8 +263,8 @@ export class RecoveryError extends MessageError {
 /** Single-request uploads (restore, factory image) get 30 s plus 1 s per 10 KiB.
  * A ~1.3 MB factory image needs over 26 s at the ~50 kB/s measured on SR10 Wi-Fi. */
 export const uploadTimeout = (bytes: number) => 30000 + Math.ceil(bytes / 10240) * 1000;
-/** `framing` adds FRAMING_HEADER, a header the firmware ignores. Recovery sends it only on a deliberate restore
- * resubmission after an upload was rejected with HTTP 413: the original v1.006 firmware never finds a
+/** `framing` adds FRAMING_HEADER, a header the firmware ignores. Recovery sends it on a deliberate restore
+ * resubmission and on a resent firmware chunk after HTTP 413: the original v1.006 firmware never finds a
  * header terminator that a network segment boundary splits, takes the body for more header and rejects the request
  * when its 6 KiB header buffer fills. That happens when the request's header block length is 1 to 3 bytes past a
  * multiple of the 536-byte segment size, which depends on headers the browser adds and the page cannot see. The
@@ -293,7 +293,7 @@ export async function recoveryRequest(
           ...(method === "PUT"
             ? { "Content-Type": "application/octet-stream" }
             : {}),
-          ...(offset === undefined ? {} : { "X-SR-Offset": String(offset) }),
+          ...(offset === undefined ? {} : { "X-SR-Offset": offsetHeader(offset) }),
           ...(framing ? { [FRAMING_HEADER]: "x" } : {}),
         },
       });
@@ -344,13 +344,22 @@ export async function acknowledged(
 // An older/unknown implementation might append a retransmission instead.
 export const supportsFirmwareChunkRetry = (version: string) =>
   version === "1.006" || version === "1.007";
+/** C's decimal parser (HTTPD_MAX_CONTENT_LENGTH) accepts leading zeros but no value above
+ * 8 MiB, for Content-Length and X-SR-Offset alike. A larger single upload (factory image) is
+ * refused; past that offset a chunk cannot seek and is appended, so it is never resent. */
+export const REQUEST_BODY_LIMIT = 8 * 1024 * 1024;
+export const SEEKABLE_OFFSET_LIMIT = REQUEST_BODY_LIMIT;
+/** Fixed width keeps every full chunk's header block the same size. */
+export const offsetHeader = (offset: number) => String(offset).padStart(8, "0");
 
 async function uploadChunk(
   bytes: Uint8Array,
   offset: number,
   retry: boolean,
   progress: (message: Message) => void,
+  framing: { padded: boolean },
 ) {
+  retry &&= offset <= SEEKABLE_OFFSET_LIMIT;
   // Stay below the firmware's 60 s inactivity watchdog. Recheck after waits,
   // since a background/suspended tab may wake well after its scheduled delay.
   const deadline = performance.now() + 45000;
@@ -358,7 +367,7 @@ async function uploadChunk(
     try {
       await acknowledged(
         "PUT", "/firmware-chunk", String(offset + bytes.length),
-        bytes, offset, false,
+        bytes, offset, framing.padded,
         retry ? Math.max(1, Math.min(30000, deadline - performance.now())) : 30000,
       );
       return;
@@ -369,12 +378,17 @@ async function uploadChunk(
         source("recovery.chunkStopped", { v0: offset, v1: attempt + 1, v2: e.uiMessage }),
         offset,
       );
-      const transient = e.stage === "connection" ||
+      // 413: the header block ended just past a TCP segment boundary, so C rejected
+      // the request before parsing it and staged nothing. Resend with the other framing.
+      const reframe = e.stage === "upload" && e.status === 413;
+      const transient = reframe || e.stage === "connection" ||
         (e.stage === "upload" && [408, 429, 502, 503, 504].includes(e.status ?? 0));
       const delay = 1000 * 2 ** attempt + Math.floor(Math.random() * 250);
       if (!retry || !transient || attempt >= 3 || performance.now() + delay >= deadline)
         throw stopped();
-      progress(source("recovery.chunkRetrying", {
+      // Later chunks start with the framing that was accepted.
+      if (reframe) framing.padded = !framing.padded;
+      progress(source(reframe ? "recovery.chunkReframing" : "recovery.chunkRetrying", {
         v0: attempt + 1, v1: offset, v2: (delay / 1000).toFixed(2),
       }));
       await new Promise<void>(resolve => setTimeout(resolve, delay));
@@ -389,12 +403,13 @@ export async function uploadFirmware(
 ) {
   progress(source("recovery.initializingUpload_04d65"));
   await acknowledged("PUT", "/firmware-init", "INIT");
+  const framing = { padded: false };
   for (let offset = 0; offset < bytes.length; offset += 8192) {
     const end = Math.min(offset + 8192, bytes.length);
     progress(source("recovery.uploadingV0V1Bytes_f1d33",{v0:offset,v1:bytes.length}));
     await uploadChunk(
       bytes.subarray(offset, end), offset,
-      supportsFirmwareChunkRetry(firmwareVersion), progress,
+      supportsFirmwareChunkRetry(firmwareVersion), progress, framing,
     );
   }
   progress(source("recovery.uploadAcceptedRequestingInstallation_d0e47"));

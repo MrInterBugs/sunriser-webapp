@@ -92,6 +92,38 @@ export function parseIPv4(s: string): number[] | null {
     throw new MessageError(source("system.useFourIPv4OctetsFrom0To255_bf691"));
   return v;
 }
+// Static LAN addressing that the controller cannot use can make it unreachable after a
+// restart, so those cases block Save. Address arithmetic uses unsigned 32-bit numbers.
+const ipNumber = (v: number[]) => ((v[0] << 24) >>> 0) + (v[1] << 16) + (v[2] << 8) + v[3];
+/** Prefix length of a contiguous netmask, or undefined. */
+function prefixLength(mask: number[]): number | undefined {
+  const host = ~ipNumber(mask) >>> 0;
+  if ((host & (host + 1)) !== 0) return undefined;
+  return 32 - Math.round(Math.log2(host + 1));
+}
+const unicast = (v: number[]) => v[0] !== 0 && v[0] !== 127 && v[0] < 224;
+/** A host address inside the subnet: not its network or broadcast address. */
+function hostIn(address: number[], mask: number[]) {
+  const n = ipNumber(address), m = ipNumber(mask), network = (n & m) >>> 0, broadcast = (network | (~m >>> 0)) >>> 0;
+  return unicast(address) && n !== network && n !== broadcast;
+}
+const parsed = (value: unknown) => { try { return parseIPv4(String(value ?? "")); } catch { return null; } };
+/** Non-blocking advice: the controller stays reachable, but a setting probably does not work. */
+export function networkWarnings(draft: Values, wifi: boolean): Message[] {
+  const warnings: Message[] = [];
+  const ip = parsed(draft.ip4), mask = parsed(draft.ip4_netmask), gateway = parsed(draft.ip4_gateway);
+  const length = mask ? prefixLength(mask) : undefined;
+  if (draft.useip4 && ip && mask && gateway && length !== undefined && length >= 1 && length <= 30 && hostIn(ip, mask)) {
+    const sameSubnet = ((ipNumber(gateway) & ipNumber(mask)) >>> 0) === ((ipNumber(ip) & ipNumber(mask)) >>> 0);
+    if (!sameSubnet || !hostIn(gateway, mask) || ipNumber(gateway) === ipNumber(ip))
+      warnings.push(source("system.gatewayUnusable"));
+  }
+  const pass = typeof draft.wifi_pass === "string" ? draft.wifi_pass : "";
+  if (wifi && draft.wifi_connect && !draft.nowifi && pass !== "" &&
+      !(/^[\x20-\x7e]{8,63}$/.test(pass) || /^[0-9a-fA-F]{64}$/.test(pass)))
+    warnings.push(source("system.wifiPasswordUnusual"));
+  return warnings;
+}
 export function recoveryURL(s: string): string {
   try {
     const u = new URL(s);
@@ -222,6 +254,11 @@ export function validation(
       ["ip4", "ip4_netmask", "ip4_gateway", "ip4_dns"].some((k) => !draft[k])
     )
       return source("system.staticLANAddressingRequiresAllFourIPv4Fields_f34d6");
+    if (draft.useip4) {
+      const ip = parsed(draft.ip4)!, mask = parsed(draft.ip4_netmask)!, length = prefixLength(mask);
+      if (length === undefined || length < 1 || length > 30) return source("system.invalidNetmask");
+      if (!hostIn(ip, mask)) return source("system.invalidControllerAddress");
+    }
     if (
       wifi &&
       draft.wifi_ip4 &&

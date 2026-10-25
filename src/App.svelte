@@ -14,7 +14,7 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
   import {preferredReportedAddress} from './network-address';
   import OverviewLighting from "./ui/OverviewLighting.svelte";
   import {savedDailyPlans,loadDailyPlan,resetSavedDailyPlans} from "./schedules";
-  import {configurationState,configurationRevision,configurationCurrent,configurationChanged,configurationVerified,configurationReconnected,configurationConnection} from './configuration-state';
+  import {configurationState,configurationRevision,configurationCurrent,configurationChanged,configurationVerified,configurationReconnected,configurationConnection,rawCommandSent} from './configuration-state';
   import OperatingState from './ui/OperatingState.svelte';
   let overviewChannel=$state(1),scheduleUnsaved=$state(false);
   let labelsPhase=$state<'idle'|'loading'|'ready'|'error'>('idle');
@@ -235,11 +235,13 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
     }
   }
   // Downloading the other language's text uses the same gate as controller requests.
+  // Its failure has its own message, so it never hides a controller error.
+  let languageFailure=$state<Locale|''>('');
   async function chooseLanguage(value:Locale){
-    if(catalogueLoaded(value)){setLanguage(value);return;}
+    if(catalogueLoaded(value)){setLanguage(value);languageFailure='';return;}
     if(!begin())return;
-    try{await pendingPhotographs;await loadCatalogue(value);setLanguage(value);if(typeof error!=='string'&&(error.key==="app.languageDownloadFailedGerman"||error.key==="app.languageDownloadFailedEnglish"))error='';}
-    catch{error=source(value==='de'?"app.languageDownloadFailedGerman":"app.languageDownloadFailedEnglish");}
+    try{await pendingPhotographs;await loadCatalogue(value);setLanguage(value);languageFailure='';}
+    catch{languageFailure=value;}
     finally{end();}
   }
   function clearFeedback() {
@@ -313,7 +315,8 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
     error = "";
     status = source("app.sendingCommand_49557");
     try {
-      await putState(value);
+      // Even an unconfirmed raw command may have changed a fixed channel's stored value.
+      try { await putState(value); } finally { if (value.pwms) rawCommandSent(Object.keys(value.pwms).map(Number)); }
       await readState();
       status = value.timewarp !== undefined
         ? source("app.timeLapseCommandAcknowledgedDisplayingIndependentControllerReadbackPhysical_87775")
@@ -432,6 +435,7 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
       <span class="connection-state">{busy?$t("app.operationPending_c929e"):stale?$t("app.readbackStale_e56ed"):loaded?$t("app.readbackAvailable_465ca"):$t("app.noReadback_429db")}</span>
       <div class="operation-status">{#if status}<span aria-hidden="true">{$t("app.lastOperation_ab986")}</span>{/if}<p role="status" aria-label={$t("app.lastOperation_961a2")} aria-live="polite">{$renderText(status)}</p></div>
       {#if error}<p role="alert">{$renderText(error)}</p>{/if}
+      {#if languageFailure}<p role="alert">{$t(languageFailure==='de'?"app.languageDownloadFailedGerman":"app.languageDownloadFailedEnglish")}</p>{/if}
     </div>
     {#if loaded&&$configurationState.recovery}<div class="configuration-recovery" aria-live="polite"><strong>{$configurationState.recovery==='acknowledged'?$t("app.configurationChangeAcknowledgedVerificationRequired_defa1"):$t("app.configurationOutcomeUncertain_d08a6")}</strong><p>{$t("app.savedLabelsAndPlanningAreNotVerifiedRetainedEditor_d87f3")} <a href="#recovery">{$t("app.checkDeviceReadbackInRecovery_3826c")}</a></p></div>{/if}
     {#if loaded&&$configurationConnection>0&&!$configurationState.recovery}<p class="reconnect-notice" role="note">{$t("app.deviceReconnectedEditorsRetainTheirLastLoadedConfigurationSnapshots_9083c")}</p>{/if}

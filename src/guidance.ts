@@ -20,6 +20,6 @@ export function configuredRows(values:Record<string,unknown>,count:number){
   if(manager===4){mode=source("guidance.otherMode_31ced");plan=source("guidance.existingMode4IsPreserved_845d4");}
   const id=values[`pwm#${n}#weather`]??0;let weather=source("guidance.noAssignedWeatherProfile_59497");
   if(id!==0){const profile=profiles.find(p=>p.id===id);weather=typeof id==='number'&&Number.isInteger(id)&&id>0&&id<=65535?source(profile?"guidance.namedProfile":"guidance.unnamedProfile",{v0:id,v1:profile?.name??''}):source("guidance.unknownWeather",{v0:JSON.stringify(id)});}
-  return {number:n,mode,plan,weather};
+  return {number:n,manager,mode,plan,weather};
  });
 }
