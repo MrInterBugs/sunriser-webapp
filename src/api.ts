@@ -61,6 +61,11 @@ const retryStatuses = new Set([408, 413, 429, 502, 503, 504]);
 const transient = (error: unknown) =>
   error instanceof HttpStatus ? retryStatuses.has(error.status)
     : error instanceof TypeError || (error instanceof Error && /^(AbortError|TimeoutError)$/.test(error.name));
+// SR10 Wi-Fi admits one connection, so a photograph still downloading resets any
+// request beside it. App supplies the wait; every attempt starts after it.
+let linkReady: () => Promise<unknown> = () => Promise.resolve();
+export function waitBeforeRequests(wait: () => Promise<unknown>) { linkReady = wait; }
+export const requestsReady = () => linkReady();
 async function exchange(method: string, path: string, body: Uint8Array<ArrayBuffer> | undefined, padded: boolean, accept: (response: Response) => Promise<unknown>) {
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort(), 8000);
@@ -92,6 +97,7 @@ async function exchangeWithRetry(method: "GET" | "POST" | "PUT", path: string, b
   let padded = framed.has(shape);
   for (let attempt = 0; ; attempt++) {
     try {
+      await linkReady();
       const result = await exchange(method, path, body, padded, accept);
       if (attempt) rememberFraming(shape, padded);
       return result;

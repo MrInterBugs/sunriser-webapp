@@ -14,6 +14,7 @@ import {
   readConfig,
   readConfigBytes,
   FRAMING_HEADER,
+  requestsReady,
   type Firmware,
 } from "./api.js";
 export { FRAMING_HEADER };
@@ -277,6 +278,7 @@ export async function recoveryRequest(
   framing = false,
   timeoutMs = 30000,
 ) {
+  await requestsReady();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

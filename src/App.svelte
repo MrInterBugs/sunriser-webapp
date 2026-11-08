@@ -48,6 +48,7 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
     getFirmware,
     getState,
     putState,
+    waitBeforeRequests,
     getService,
     saveService,
     inRange,
@@ -140,10 +141,18 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
     stale = true;
     refreshFailures = Math.min(2, refreshFailures + 1);
   }
+  // Photographs still downloading, including those navigation has removed. Bounded so a
+  // stalled image cannot hold controller requests indefinitely.
+  function photographsSettled(){
+    const loading=Array.from(document.images).filter(image=>!image.complete).map(image=>image.decode().catch(()=>undefined));
+    if(loading.length)pendingPhotographs=Promise.all([pendingPhotographs,...loading]);
+    return Promise.race([pendingPhotographs,new Promise(resolve=>setTimeout(resolve,15000))]);
+  }
+  waitBeforeRequests(photographsSettled);
   function navigate() {
     // Capture image completion before navigation removes the Overview's DOM.
     // A new page module must not race its still-downloading photograph on Wi-Fi.
-    pendingPhotographs=Promise.all([pendingPhotographs,...Array.from(document.images).filter(image=>!image.complete).map(image=>image.decode().catch(()=>undefined))]);
+    photographsSettled();
     const next = location.hash.slice(1) || "index";
     // The last-operation message describes the page it happened on.
     if (next !== route) status = "";
@@ -158,7 +167,7 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
   async function loadPage(selected:DeferredRoute){
     if(pages[selected]||pageErrors[selected]||!begin())return;
     try{
-      await pendingPhotographs;
+      await photographsSettled();
       if(!mounted||route!==selected)return;
       const module=await pageLoaders[selected]();
       const loadingFocus=document.activeElement?.closest('.page-loading');
@@ -244,7 +253,7 @@ import {type UiText, MessageError, catalogueLoaded, type Locale} from './message
   async function chooseLanguage(value:Locale){
     if(catalogueLoaded(value)){setLanguage(value);languageFailure='';return;}
     if(!begin())return;
-    try{await pendingPhotographs;await loadCatalogue(value);setLanguage(value);languageFailure='';}
+    try{await photographsSettled();await loadCatalogue(value);setLanguage(value);languageFailure='';}
     catch{languageFailure=value;}
     finally{end();}
   }
