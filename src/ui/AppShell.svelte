@@ -86,8 +86,9 @@ Third-party material retains its own terms.
   .theme-choice button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 10px;border:0;border-radius:4px;background:transparent;color:var(--sr-ink);font:600 14px/1.3 var(--sr-font);text-align:left;transition:none}
   .theme-choice button:hover:not(:disabled){background:var(--sr-soft);color:var(--sr-ink)}
   .theme-choice button[aria-pressed=true]{color:var(--sr-accent);box-shadow:inset 3px 0 var(--sr-accent)}.theme-choice button[aria-pressed=true]:hover{color:var(--sr-accent)}
-  .swatch{display:block;flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:1px solid #ffffff66}
-  .swatch-aquascape{background:linear-gradient(135deg,#142f29 50%,#e4c497 50%)}.swatch-reef{background:linear-gradient(135deg,#0e2536 50%,#f4bfa0 50%)}.swatch-planted{background:linear-gradient(135deg,#0c2316 50%,#c6de8f 50%)}.swatch-sun{background:linear-gradient(135deg,#12100c 50%,#f3b23f 50%)}
+  /* A one-pixel blend keeps the diagonal anti-aliased; hard gradient stops render as steps. */
+  .swatch{display:block;flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:1px solid #ffffff66;background:linear-gradient(135deg,var(--swatch-canvas) calc(50% - .5px),var(--swatch-accent) calc(50% + .5px))}
+  .swatch-aquascape{--swatch-canvas:#142f29;--swatch-accent:#e4c497}.swatch-reef{--swatch-canvas:#0e2536;--swatch-accent:#f4bfa0}.swatch-planted{--swatch-canvas:#0c2316;--swatch-accent:#c6de8f}.swatch-sun{--swatch-canvas:#12100c;--swatch-accent:#f3b23f}
   footer{font-size:12px;color:var(--sr-muted);padding:20px 0;margin-top:16px;border:0}footer span{margin:0 8px}
   .header-connection,.mobile-dock,.mobile-device,.mobile-theme,.device-theme,.group-label{display:none}
   /* The header picker only uses spare width (measured in English and German); elsewhere the choice
