@@ -49,8 +49,16 @@ of this frontend's independently sourced assets:
   It embeds `assets/fonts/Manrope-ui.woff2`, a character subset of the variable
   Manrope TTF recorded with its source hash in `assets/fonts/Manrope-ui.json`
   (same licence; the licence declares no reserved font name).
-- `public/p/*`: photograph by 조재선 and its adaptations, **CC BY-SA 3.0**.
+- `public/p/aquascape-c-*`: photograph by 조재선 and its adaptations, **CC BY-SA 3.0**.
   Credits, source, modifications and full terms: `assets/photo/`.
+- `public/p/planted-*` (Deep green theme): photograph by 조재선 and its adaptations, **CC BY-SA 3.0**.
+- `public/p/reef-*` and `public/p/sun-*` (Coral reef and African sun themes): photographs by
+  Жанна Алимкулова and Santiago Sauceda González via Pexels, **Pexels Licence**. Bundled only as the
+  Overview backdrop; not licensed under the GPL or Creative Commons and not offered for reuse on
+  their own (the licence prohibits standalone redistribution). The public standalone repository
+  does not store them: `scripts/fetch-theme-photos.py` downloads each original from Pexels,
+  verifies its SHA-256 and rebuilds these files at build time. Theme photograph credits, sources,
+  modifications and terms: `assets/photo/themes/`.
 - The inline horizon mark and interface styles are covered by their source-file
   notices and the frontend's project attribution. Their new presentation is not
   evidence that the interface was designed without upstream influence.

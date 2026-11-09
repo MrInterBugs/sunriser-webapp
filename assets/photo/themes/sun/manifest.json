@@ -1,0 +1,143 @@
+{
+  "theme": "sun",
+  "caption": "Reference cichlid aquarium",
+  "original": {
+    "title": "A group of fish swimming in an aquarium",
+    "author": "Santiago Sauceda González",
+    "author_page": "https://www.pexels.com/@santiago-sauceda-gonzalez-3426899/",
+    "source_page": "https://www.pexels.com/photo/a-group-of-fish-swimming-in-an-aquarium-28036863/",
+    "original_url": "https://images.pexels.com/photos/28036863/pexels-photo-28036863.jpeg",
+    "published": "2024-08-27",
+    "description": "An enchanting underwater view of colorful fish swimming in an illuminated aquarium.",
+    "licence": "Pexels Licence",
+    "licence_url": "https://www.pexels.com/license/",
+    "width": 5999,
+    "height": 3494,
+    "bytes": 3205518,
+    "sha256": "977250a7dfc37f9f50c1b020f13b50894114bc19c6d3c458499adb29d3015072",
+    "downloaded_utc": "2026-11-09T09:43:22Z"
+  },
+  "rights": {
+    "commercial_use": true,
+    "crop_modify": true,
+    "convert_optimise": true,
+    "bundle_with_open_source_application": true,
+    "redistribute_with_SunRiser": true,
+    "additional_permission_required": false,
+    "conditions": "Pexels Licence (Pexels Terms of Service section 5, last updated 2026-10-20): irrevocable, worldwide, non-exclusive, royalty-free right to use, copy, modify or adapt. Prohibited: selling or distributing the photograph on a Standalone basis (as an image file, print, wallpaper, on a stock platform or merchandise; cropping/resizing alone remains Standalone), implying endorsement, trademark use, misleading use or claiming ownership. Bundled here only as the decorative Overview backdrop of the application, combined with its interface. Not licensed under GPL or any Creative Commons licence; the files are not offered for reuse on their own. Attribution is not required; credited as \"by [Contributor] via Pexels\".",
+    "provenance_uncertainty": "Pexels does not warrant third-party consents (section 5). The photograph shows aquarium animals only: no people, brands, logos or architecture were identified."
+  },
+  "modifications": {
+    "AVIF": {
+      "quality": 58,
+      "speed": 6,
+      "subsampling": "4:4:4"
+    },
+    "WebP": {
+      "quality": 84,
+      "method": 6
+    },
+    "resize": "Lanczos, native crop then downsample; no upscaling, sharpening or colour edits",
+    "encoder": "Pillow 13.0.0"
+  },
+  "assets": [
+    {
+      "file": "sun-1600-fb7046c2.avif",
+      "variant": "desktop",
+      "width": 1600,
+      "height": 236,
+      "bytes": 29878,
+      "sha256": "fb7046c25e4f02b9d62c4c71c3a2b490b4416456cf52bacfeb761a570d7444cb",
+      "source_crop": [
+        0,
+        1467,
+        5999,
+        2352
+      ],
+      "path": "public/p/sun-1600-fb7046c2.avif",
+      "licence": "Pexels Licence"
+    },
+    {
+      "file": "sun-1600-413c656d.webp",
+      "variant": "desktop",
+      "width": 1600,
+      "height": 236,
+      "bytes": 39286,
+      "sha256": "413c656da4ac17657a97c2d9dbafbe9d35068f1330a7eb955b6b455c63d98edc",
+      "source_crop": [
+        0,
+        1467,
+        5999,
+        2352
+      ],
+      "path": "public/p/sun-1600-413c656d.webp",
+      "licence": "Pexels Licence"
+    },
+    {
+      "file": "sun-3040-afeaa6b7.avif",
+      "variant": "retina",
+      "width": 3040,
+      "height": 448,
+      "bytes": 98807,
+      "sha256": "afeaa6b745593267be6aa330f9b8e97fc65ef66b6dd30a91d7879982d5bab315",
+      "source_crop": [
+        0,
+        1467,
+        5999,
+        2352
+      ],
+      "path": "public/p/sun-3040-afeaa6b7.avif",
+      "licence": "Pexels Licence"
+    },
+    {
+      "file": "sun-3040-99cb8aa9.webp",
+      "variant": "retina",
+      "width": 3040,
+      "height": 448,
+      "bytes": 158572,
+      "sha256": "99cb8aa9cf5e9194d8b8b3fbe0339894aa024a7f772d27d79b3b9b7b455cfb4e",
+      "source_crop": [
+        0,
+        1467,
+        5999,
+        2352
+      ],
+      "path": "public/p/sun-3040-99cb8aa9.webp",
+      "licence": "Pexels Licence"
+    },
+    {
+      "file": "sun-800-993b88c7.avif",
+      "variant": "mobile",
+      "width": 800,
+      "height": 302,
+      "bytes": 21269,
+      "sha256": "993b88c722bd4d1b788fbd56e5ba77e06ec802196d2d5a90ae28746ba9c15657",
+      "source_crop": [
+        0,
+        800,
+        5999,
+        3064
+      ],
+      "path": "public/p/sun-800-993b88c7.avif",
+      "licence": "Pexels Licence"
+    },
+    {
+      "file": "sun-800-c575cb92.webp",
+      "variant": "mobile",
+      "width": 800,
+      "height": 302,
+      "bytes": 28768,
+      "sha256": "c575cb92ac0095266e5290d3f78aad8c2655952b3c0f6af0ffd21ca15fb9569d",
+      "source_crop": [
+        0,
+        800,
+        5999,
+        3064
+      ],
+      "path": "public/p/sun-800-c575cb92.webp",
+      "licence": "Pexels Licence"
+    }
+  ],
+  "credits": "ATTRIBUTION.txt",
+  "legal_code": "../PEXELS-LICENSE.txt"
+}

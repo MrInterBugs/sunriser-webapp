@@ -1,0 +1,143 @@
+{
+  "theme": "planted",
+  "caption": "Reference aquascape",
+  "original": {
+    "title": "2021 IAPLC Time",
+    "author": "조재선",
+    "author_page": "https://commons.wikimedia.org/wiki/User:Kaquascape",
+    "source_page": "https://commons.wikimedia.org/wiki/File:2021_IAPLC_Time.jpg",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/2/21/2021_IAPLC_Time.jpg",
+    "published": "2021-12-16",
+    "description": "2021 IAPLC rank 13 (own work, uploaded by Kaquascape; same author as the default theme photograph).",
+    "licence": "CC BY-SA 3.0",
+    "licence_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "width": 5051,
+    "height": 1785,
+    "bytes": 4027474,
+    "sha256": "15371994fe186966e1de058f6ad7d3cf9ea6c1bfb4de733d73d212d23d8bd988",
+    "downloaded_utc": "2026-11-09T08:44:46Z"
+  },
+  "rights": {
+    "commercial_use": true,
+    "crop_modify": true,
+    "convert_optimise": true,
+    "bundle_with_open_source_application": true,
+    "redistribute_with_SunRiser": true,
+    "additional_permission_required": false,
+    "conditions": "Credit original title, author 조재선, source and licence; identify crop/resize/recompression; retain notices and CC BY-SA 3.0 on photograph adaptations; no endorsement, extra legal restrictions or DRM on image. Image and code have separate licences.",
+    "provenance_uncertainty": "Like the default photograph by the same author, the page retains a generic unreviewed Korean-Wikipedia import notice. Own-work CC BY-SA 3.0 release ({{self|cc-by-sa-3.0}}) verified in the page wikitext; single upload 2021-12-16 by Kaquascape; no VRT approval claimed and no specific dispute found."
+  },
+  "modifications": {
+    "AVIF": {
+      "quality": 58,
+      "speed": 6,
+      "subsampling": "4:4:4"
+    },
+    "WebP": {
+      "quality": 84,
+      "method": 6
+    },
+    "resize": "Lanczos, native crop then downsample; no upscaling, sharpening or colour edits",
+    "encoder": "Pillow 13.0.0"
+  },
+  "assets": [
+    {
+      "file": "planted-1600-bd305472.avif",
+      "variant": "desktop",
+      "width": 1600,
+      "height": 236,
+      "bytes": 65966,
+      "sha256": "bd305472e7013d9771408c851c4a54ecfa3ad43262811e10f266015358ab72e4",
+      "source_crop": [
+        0,
+        450,
+        5051,
+        1193
+      ],
+      "path": "public/p/planted-1600-bd305472.avif",
+      "licence": "CC BY-SA 3.0"
+    },
+    {
+      "file": "planted-1600-d4548467.webp",
+      "variant": "desktop",
+      "width": 1600,
+      "height": 236,
+      "bytes": 98922,
+      "sha256": "d45484677dd55ff74c22e1bc33180141fae3da22509dc283452bbe07f0740e9c",
+      "source_crop": [
+        0,
+        450,
+        5051,
+        1193
+      ],
+      "path": "public/p/planted-1600-d4548467.webp",
+      "licence": "CC BY-SA 3.0"
+    },
+    {
+      "file": "planted-3040-a6d116ee.avif",
+      "variant": "retina",
+      "width": 3040,
+      "height": 448,
+      "bytes": 203862,
+      "sha256": "a6d116ee2c538e8f1fb3bc99416d9b121293d4fa3617ba6709d8dc7b628c605a",
+      "source_crop": [
+        0,
+        450,
+        5051,
+        1193
+      ],
+      "path": "public/p/planted-3040-a6d116ee.avif",
+      "licence": "CC BY-SA 3.0"
+    },
+    {
+      "file": "planted-3040-85bd60f9.webp",
+      "variant": "retina",
+      "width": 3040,
+      "height": 448,
+      "bytes": 323676,
+      "sha256": "85bd60f9e095cd87ee89d5c7aea5df5c1f5fba9be130622bb5661f7ee85ad014",
+      "source_crop": [
+        0,
+        450,
+        5051,
+        1193
+      ],
+      "path": "public/p/planted-3040-85bd60f9.webp",
+      "licence": "CC BY-SA 3.0"
+    },
+    {
+      "file": "planted-800-3bc60c0f.avif",
+      "variant": "mobile",
+      "width": 800,
+      "height": 302,
+      "bytes": 58439,
+      "sha256": "3bc60c0f4252dbe59d6fecb9e71ef1df5feaf8aed9246d0ad04f792c6bdd0412",
+      "source_crop": [
+        326,
+        60,
+        4725,
+        1720
+      ],
+      "path": "public/p/planted-800-3bc60c0f.avif",
+      "licence": "CC BY-SA 3.0"
+    },
+    {
+      "file": "planted-800-c5a7128e.webp",
+      "variant": "mobile",
+      "width": 800,
+      "height": 302,
+      "bytes": 94330,
+      "sha256": "c5a7128e17256d0984aa40df29b8d3ddbcffc81d1dcc018315aa8eec9dd9e224",
+      "source_crop": [
+        326,
+        60,
+        4725,
+        1720
+      ],
+      "path": "public/p/planted-800-c5a7128e.webp",
+      "licence": "CC BY-SA 3.0"
+    }
+  ],
+  "credits": "ATTRIBUTION.txt",
+  "legal_code": "../../CC-BY-SA-3.0.txt"
+}
