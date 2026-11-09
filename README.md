@@ -6,9 +6,9 @@ no separate backend, cloud account or remote assets are required by the frontend
 
 [![Living Aquascape Overview with reference photograph, saved Daily Rhythm and reported channel outputs](docs/screenshots/overview-desktop-en.webp)](docs/screenshots/overview-desktop-en.webp)
 
-*Current application with SR10 readback (firmware 1.007), captured on 23 October
-2026. The photograph is a reference aquascape, not a live view; the saved lighting
-rhythm is separate from reported output.*
+*Current application rendered from read-only SR10 readback (firmware 1.007, read on
+24 October 2026), captured on 9 November 2026. The photograph is a reference aquascape,
+not a live view; the saved lighting rhythm is separate from reported output.*
 
 ## Features
 
@@ -24,6 +24,15 @@ rhythm is separate from reported output.*
 English is the default; switching languages preserves drafts and sends no device
 requests. Fonts, translations and photography are bundled locally.
 
+**Colour themes:** Living Aquascape (default), Coral reef, Deep green and African sun.
+Choose one from the swatch menu beside **EN / DE** (in the Device menu on narrower
+screens and in the Menu on phones). The choice is remembered in the browser and sends
+no device requests; each theme downloads only its own reference photograph.
+
+<a href="docs/screenshots/overview-desktop-reef.webp"><img src="docs/screenshots/overview-desktop-reef.webp" width="260" alt="Coral reef theme Overview"></a>
+<a href="docs/screenshots/overview-desktop-planted.webp"><img src="docs/screenshots/overview-desktop-planted.webp" width="260" alt="Deep green theme Overview"></a>
+<a href="docs/screenshots/overview-desktop-sun.webp"><img src="docs/screenshots/overview-desktop-sun.webp" width="260" alt="African sun theme Overview"></a>
+
 One consistent startup panel explains layout/font loading, interface setup and
 controller reads. Help, Diagnostics, Recovery and Lighting tools download on
 first visit and remain mounted afterwards, retaining drafts across navigation.
@@ -32,8 +41,8 @@ The Help summary is read explicitly and warns when a verified save makes it old.
 <a href="docs/screenshots/overview-mobile-en.webp"><img src="docs/screenshots/overview-mobile-en.webp" width="250" alt="Mobile Overview with reference aquascape and Daily Rhythm"></a>
 <a href="docs/screenshots/schedules-mobile-de.webp"><img src="docs/screenshots/schedules-mobile-de.webp" width="250" alt="German mobile schedule curve and point editor"></a>
 
-[More screenshots](docs/screenshots/README.md): Channels, desktop/mobile Schedules,
-Weather, Sensors and German Overview. Select any image for its full resolution.
+[More screenshots](docs/screenshots/README.md): colour themes, Channels, desktop/mobile
+Schedules, Weather, Sensors and German Overview. Select any image for its full resolution.
 
 ## Compatibility and safety
 
@@ -61,16 +70,27 @@ Wi-Fi access-point scanning is unsupported.
 
 ## Build and installation
 
-Requires **Node.js 22.12+** and **Python 3.10+**.
-Download the original [vendor v1.007 NEW.BEE](http://sunriser.ledaquaristik.de/NEW.BEE)
-to the repository root as `NEW.BEE`. Firmware binaries are not tracked here.
-The build verifies this exact SHA-256 and rejects other input:
+Requires **Node.js 22.12+** and **Python 3.10+**. One command downloads and verifies the
+inputs this repository does not store, then builds and tests:
+
+```sh
+npm run setup
+```
+
+It fetches the original [vendor v1.007 NEW.BEE](http://sunriser.ledaquaristik.de/NEW.BEE)
+to the repository root and the two Pexels theme photographs (see Credits); each download
+must match its recorded SHA-256 or nothing is kept. The photographs are re-encoded locally
+with the reference Pillow version in `.venv-photos`. Firmware binaries and these photographs
+are not tracked here. The build verifies this exact vendor SHA-256 and rejects other input:
 
 ```text
 725b39aba735740b55e51c06f9626f4949454d37fe4678f72583b0d6e2415377
 ```
 
+Step by step instead:
+
 ```sh
+npm run fetch          # vendor NEW.BEE and theme photographs, verified
 npm ci --ignore-scripts
 npm run check
 npm run build
@@ -80,7 +100,7 @@ npm test
 Outputs: `dist/` contains the static site; `build/NEW.BEE` is the installable
 package. `build/SHA256SUMS` and `build/package.json` record its checksum/provenance.
 All **51 non-website vendor records** are retained byte for byte. `npm run verify`
-independently checks them and the packaged website. Builds never download or deploy.
+independently checks them and the packaged website. `npm run build` never downloads or deploys.
 
 **Installation is a firmware update, not a website-only upload:** the package
 contains original **v1.007 C applications**. Confirm the
@@ -129,3 +149,16 @@ Aquascape: *Positive nihilism-2, 2021 IIAC R.25, RFLAC R.14* by **조재선**,
 resized and format-converted photograph, including its appearance in screenshots.
 Adaptations retain CC BY-SA 3.0; keep the credits when redistributing. No endorsement
 is implied.
+
+Colour-theme photographs: Deep green uses *2021 IAPLC Time* by **조재선**,
+[original source](https://commons.wikimedia.org/wiki/File:2021_IAPLC_Time.jpg),
+[CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/), under the same terms as above.
+Coral reef uses *Vibrant Underwater Coral Close-up Image* by **Жанна Алимкулова** and
+African sun *A group of fish swimming in an aquarium* by **Santiago Sauceda González**, via
+[Pexels](https://www.pexels.com/) under the [Pexels Licence](https://www.pexels.com/license/)
+([archived terms](assets/photo/themes/PEXELS-LICENSE.txt)). These two are bundled only as the
+Overview backdrop: they are not licensed under the GPL or Creative Commons, and the licence
+does not allow redistributing them as standalone images. This repository does not store them;
+`npm run setup` (or `npm run fetch`) downloads them from Pexels. Credits and modifications:
+[reef](assets/photo/themes/reef/ATTRIBUTION.txt), [planted](assets/photo/themes/planted/ATTRIBUTION.txt),
+[sun](assets/photo/themes/sun/ATTRIBUTION.txt).
