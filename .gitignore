@@ -5,3 +5,7 @@ build/
 /NEW.BEE.download
 __pycache__/
 .DS_Store
+# Pexels theme photographs are downloaded at build time (scripts/fetch-theme-photos.py)
+/public/p/reef-*
+/public/p/sun-*
+.venv-photos/
