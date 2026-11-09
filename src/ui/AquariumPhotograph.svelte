@@ -19,9 +19,17 @@ Third-party material retains its own terms.
   onMount(()=>{mounted=true;return()=>{mounted=false;}});
   const captions={aquascape:message("aquariumphotograph.referenceAquascapeIndependentOfYourController_d65a3"),planted:message("aquariumphotograph.referenceAquascapeIndependentOfYourController_d65a3"),reef:message("aquariumphotograph.referenceReefAquarium"),sun:message("aquariumphotograph.referenceCichlidAquarium")};
   const credits={aquascape:message("aquariumphotograph.photoCreditCCBYSA30_e6493"),planted:message("aquariumphotograph.photoCreditCCBYSA30_e6493"),reef:message("aquariumphotograph.photoCreditPexels"),sun:message("aquariumphotograph.photoCreditPexels")};
-  let shown=$state<Theme>($theme);
-  // A theme change replaces the photograph through the same deferred, idle-only start.
-  $effect(()=>{if($theme!==shown){shown=$theme;started=false;source=false;decoded=false;failed=false;}});
+  let shown=$state<Theme>($theme),swaps=0;
+  // Settles when an image finishes or fails; capped like the controller hold so a stall cannot block.
+  const settled=(img?:HTMLImageElement)=>!img||img.complete?Promise.resolve():new Promise<void>(resolve=>{img.addEventListener('load',()=>resolve(),{once:true});img.addEventListener('error',()=>resolve(),{once:true});setTimeout(resolve,15000);});
+  // SR10 Wi-Fi admits one connection: a theme change waits for a photograph still downloading, then
+  // replaces it through the same deferred, idle-only start. Only the latest choice is requested.
+  $effect(()=>{if($theme!==shown)void swap(++swaps);});
+  async function swap(ticket:number){
+    await settled(image);
+    if(ticket!==swaps||!mounted)return;
+    shown=$theme;started=false;source=false;decoded=false;failed=false;
+  }
   $effect(()=>{if(mounted&&ready&&!started&&!hidden){started=true;void queue();}});
   async function queue(){
     variant=innerWidth<=700?'mobile':devicePixelRatio>1?'retina':'desktop';
@@ -29,10 +37,11 @@ Third-party material retains its own terms.
     await document.fonts.ready;await tick();
     if(mounted)source=true;
   }
-  async function loaded(){try{await image?.decode();if(mounted)decoded=true;}catch{failed=true;}}
+  // Results of a replaced image are ignored.
+  async function loaded(event:Event){const img=event.currentTarget as HTMLImageElement;try{await img.decode();if(mounted&&img===image)decoded=true;}catch{if(img===image)failed=true;}}
 </script>
 {#if !hidden&&!failed}<figure class="aquarium-window" class:photo-ready={decoded} aria-label={$t("aquariumphotograph.decorativeReferenceAquariumPhotograph_1c538")}>
- {#if source}<picture><source srcset={photographs[shown][variant][0]} type="image/avif"/><img bind:this={image} src={photographs[shown][variant][1]} width={photographs[shown][variant][2]} height={photographs[shown][variant][3]} alt="" decoding="async" fetchpriority="low" onload={loaded} onerror={()=>failed=true}/></picture>{/if}
+ {#if source}<picture><source srcset={photographs[shown][variant][0]} type="image/avif"/><img bind:this={image} src={photographs[shown][variant][1]} width={photographs[shown][variant][2]} height={photographs[shown][variant][3]} alt="" decoding="async" fetchpriority="low" onload={loaded} onerror={event=>{if(event.currentTarget===image)failed=true;}}/></picture>{/if}
 </figure>{/if}
 <div class="photo-boundary"><span>{$renderText(captions[shown])}{failed?$t("aquariumphotograph.imageUnavailable_d7596"):''}</span><a href={shown==='aquascape'?'notices.html#photography':`notices.html#photography-${shown}`}>{$renderText(credits[shown])}</a></div>
 <style>
