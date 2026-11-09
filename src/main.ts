@@ -13,6 +13,7 @@ import { loadCatalogue } from "./catalogues.js";
 import { language, setLanguage } from "./i18n.js";
 import "./style.css";
 import "./ui/tokens.css";
+import "./ui/themes.css";
 import "./ui/font.css";
 import "./ui/living.css";
 // Only the selected language's catalogue is downloaded. A failure rejects this

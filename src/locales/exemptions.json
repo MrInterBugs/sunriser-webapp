@@ -83,6 +83,10 @@
     "common.httpStatus": {
       "text": "HTTP {v0}",
       "reason": "HTTP status is protocol notation in both languages."
+    },
+    "appshell.themeAquascape": {
+      "text": "Aquascape",
+      "reason": "Name of the default Living Aquascape colour theme; the hobby term is used unchanged in German."
     }
   },
   "literals": {
@@ -410,7 +414,27 @@
       "p/aquascape-c-800-833afa56.webp": "Local asset URLs and internal photo loading identifiers.",
       "imagery": "Local asset URLs and internal photo loading identifiers.",
       "mobile": "Local asset URLs and internal photo loading identifiers.",
-      "retina": "Local asset URLs and internal photo loading identifiers."
+      "retina": "Local asset URLs and internal photo loading identifiers.",
+      "p/planted-1600-bd305472.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/planted-1600-d4548467.webp": "Local asset URLs and internal photo loading identifiers.",
+      "p/planted-3040-85bd60f9.webp": "Local asset URLs and internal photo loading identifiers.",
+      "p/planted-3040-a6d116ee.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/planted-800-3bc60c0f.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/planted-800-c5a7128e.webp": "Local asset URLs and internal photo loading identifiers.",
+      "p/reef-1600-c5d26255.webp": "Local asset URLs and internal photo loading identifiers.",
+      "p/reef-1600-d2bb82ba.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/reef-3040-5e53bb57.webp": "Local asset URLs and internal photo loading identifiers.",
+      "p/reef-3040-ba210ec7.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/reef-800-6299d473.webp": "Local asset URLs and internal photo loading identifiers.",
+      "p/reef-800-b572c34f.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/sun-1600-413c656d.webp": "Local asset URLs and internal photo loading identifiers.",
+      "p/sun-1600-fb7046c2.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/sun-3040-99cb8aa9.webp": "Local asset URLs and internal photo loading identifiers.",
+      "p/sun-3040-afeaa6b7.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/sun-800-993b88c7.avif": "Local asset URLs and internal photo loading identifiers.",
+      "p/sun-800-c575cb92.webp": "Local asset URLs and internal photo loading identifiers.",
+      "notices.html#photography": "Local credit anchors and the default theme identifier; displayed captions and credits use messages.",
+      "notices.html#photography-": "Local credit anchors and the default theme identifier; displayed captions and credits use messages."
     },
     "ui/SchedulePreview.svelte": {
       "ArrowLeft": "KeyboardEvent key identifiers.",
@@ -435,6 +459,13 @@
     },
     "ui/LevelControl.svelte": {
       "-unit": "Internal view, style, DOM identity or operation code; displayed labels use translation messages."
+    },
+    "theme.ts": {
+      "aquascape": "Theme identifiers and the browser-local preference key; displayed theme names use messages.",
+      "reef": "Theme identifiers and the browser-local preference key; displayed theme names use messages.",
+      "planted": "Theme identifiers and the browser-local preference key; displayed theme names use messages.",
+      "sun": "Theme identifiers and the browser-local preference key; displayed theme names use messages.",
+      "sunriser.theme": "Theme identifiers and the browser-local preference key; displayed theme names use messages."
     }
   },
   "files": {
@@ -447,7 +478,7 @@
       "reason": "Pinned German translation table for vendor timezone names and its display-only label lookup; unchanged proper place names are intentional."
     },
     "startup-build.ts": {
-      "sha256": "d5fb647ee23fbc8f7866f9a270c31cc9f8457ba210a4a7efe10a9c3c6bff8ae1",
+      "sha256": "c075ade2574a81ca2f13b788a743c88390a50f7316245c5e6a527d99d14e48de",
       "reason": "Reviewed build-time JavaScript/CSS/HTML generator; startup display text reads the bilingual catalogue. Changes require renewed review."
     },
     "message-keys-build.ts": {

@@ -9,14 +9,16 @@ Third-party material retains its own terms.
 <script lang="ts">
  import {t,renderText,language,source} from '../i18n';
  import {catalogueLoaded,type Locale} from '../messages';
+ import {theme,themes,setTheme} from '../theme';
   import {tick, type Snippet} from 'svelte';
   let {children,route,busy=false,connection='',stale=false,onlanguage}:{children:Snippet; route:string; busy?:boolean; connection?:string; stale?:boolean; onlanguage:(value:Locale)=>unknown}=$props();
-  let menuOpen=$state(false), deviceOpen=$state(false);
+  let menuOpen=$state(false), deviceOpen=$state(false), themeOpen=$state(false);
+  const themeLabels={aquascape:source('appshell.themeAquascape'),reef:source('appshell.themeReef'),planted:source('appshell.themePlanted'),sun:source('appshell.themeSun')};
   let opener:HTMLButtonElement|undefined;
   const lighting=[['index',source("app.overview_0efc2")],['channels',source("lightingdashboard.channels_18e03")],['service',source("lightingdashboard.service_329cb")],['schedules',source("schedules.schedules_26d9d")],['weather',source("weather.weather_284af")],['sensors',source("sensors.sensors_711bf")]];
   const device=[['settings',source("app.settings_c7f73")],['clock',source("help-content.clock_04f6b")],['network',source("help.network_53ebc")],['lighting-tools',source("lightingtools.lightingTools_601b5")],['diagnostics',source("diagnostics.diagnostics_3af22")],['recovery',source("help.recovery_ea924")],['help',source("appshell.help_c47ae")]];
   const administration=$derived(device.some(([id])=>id===route));
-  function close(){ menuOpen=false; deviceOpen=false; }
+  function close(){ menuOpen=false; deviceOpen=false; themeOpen=false; }
   async function toggle(event:MouseEvent){
     opener=event.currentTarget as HTMLButtonElement;menuOpen=!menuOpen;
     if(menuOpen){
@@ -26,9 +28,10 @@ Third-party material retains its own terms.
       (links.find(link=>link.getAttribute('aria-current')==='page')??links[0])?.focus();
     }
   }
-  function escape(event:KeyboardEvent) { if(event.key==='Escape') {if(menuOpen){menuOpen=false;opener?.focus();} if(deviceOpen){deviceOpen=false;document.getElementById('device-menu-label')?.focus();}} }
+  function escape(event:KeyboardEvent) { if(event.key==='Escape') {if(menuOpen){menuOpen=false;opener?.focus();} if(deviceOpen){deviceOpen=false;document.getElementById('device-menu-label')?.focus();} if(themeOpen){themeOpen=false;document.getElementById('theme-menu-label')?.focus();}} }
 </script>
 <svelte:window onkeydown={escape} onresize={()=>{if(window.innerWidth>800)menuOpen=false;}}/>
+{#snippet themeChoice()}<div class="theme-choice" role="group" aria-label={$t('appshell.colourTheme')}>{#each themes as id}<button type="button" aria-pressed={$theme===id} onclick={()=>setTheme(id)}><span class="swatch swatch-{id}" aria-hidden="true"></span>{$renderText(themeLabels[id])}</button>{/each}</div>{/snippet}
 <div class="app-shell">
   <a class="skip" href="#main-content" onclick={(e)=>{e.preventDefault();close();document.getElementById('main-content')?.focus();}}>{$t("appshell.skipToContent_0a447")}</a>
   <header class="app-header">
@@ -38,11 +41,11 @@ Third-party material retains its own terms.
     </a>
     <!-- Phones: the bottom bar's Menu opens navigation; the header shows connection status instead. -->
     <p class="header-connection" class:stale>{connection}</p>
-    <nav id="main-navigation" aria-label={$t("appshell.mainNavigation_efd19")} class:open={menuOpen}><div class="language-choice" role="group" aria-label="Language / Sprache"><button type="button" lang="en" aria-label={$t('appshell.english')} aria-pressed={$language==='en'} disabled={busy&&!catalogueLoaded('en')} onclick={()=>onlanguage('en')}>EN</button><button type="button" lang="de" aria-label={$t('appshell.german')} aria-pressed={$language==='de'} disabled={busy&&!catalogueLoaded('de')} onclick={()=>onlanguage('de')}>DE</button></div>
+    <nav id="main-navigation" aria-label={$t("appshell.mainNavigation_efd19")} class:open={menuOpen}><div class="language-choice" role="group" aria-label="Language / Sprache"><button type="button" lang="en" aria-label={$t('appshell.english')} aria-pressed={$language==='en'} disabled={busy&&!catalogueLoaded('en')} onclick={()=>onlanguage('en')}>EN</button><button type="button" lang="de" aria-label={$t('appshell.german')} aria-pressed={$language==='de'} disabled={busy&&!catalogueLoaded('de')} onclick={()=>onlanguage('de')}>DE</button></div><details class="theme-menu" bind:open={themeOpen}><summary id="theme-menu-label" aria-label={$t('appshell.colourThemeCurrent',{v0:$renderText(themeLabels[$theme])})}><span class="swatch swatch-{$theme}" aria-hidden="true"></span></summary>{@render themeChoice()}</details><div class="mobile-theme"><p class="group-label">{$t('appshell.colourTheme')}</p>{@render themeChoice()}</div>
       <div class="lighting-links"><p class="group-label">{$t("appshell.lighting_6153d")}</p>{#each lighting as [id,label]}<a href={`#${id}`} aria-current={route===id?'page':undefined} onclick={close}>{$renderText(label)}</a>{/each}</div>
       <details class="device-menu" bind:open={deviceOpen}>
         <summary id="device-menu-label" class:selected={administration}>{$t("appshell.device_a5a74")}</summary>
-        <div class="device-links">{#each device as [id,label]}<a href={`#${id}`} aria-current={route===id?'page':undefined} onclick={close}>{$renderText(label)}</a>{/each}</div>
+        <div class="device-links">{#each device as [id,label]}<a href={`#${id}`} aria-current={route===id?'page':undefined} onclick={close}>{$renderText(label)}</a>{/each}<div class="device-theme"><p class="group-label">{$t('appshell.colourTheme')}</p>{@render themeChoice()}</div></div>
       </details>
       <div class="mobile-device"><p class="group-label">{$t("appshell.device_a5a74")}</p>{#each device as [id,label]}<a href={`#${id}`} aria-current={route===id?'page':undefined} onclick={close}>{$renderText(label)}</a>{/each}</div>
     </nav>
@@ -76,10 +79,25 @@ Third-party material retains its own terms.
   .language-choice button[aria-pressed=true]{color:var(--sr-accent);box-shadow:inset 0 -2px var(--sr-accent)}
   .language-choice button:hover:not(:disabled){background:var(--sr-soft);color:var(--sr-ink)}
   .language-choice button[aria-pressed=true]:hover{color:var(--sr-accent)}
+  /* Colour theme picker: a menu beside the language choice; inline in the phone menu. Swatches show each theme's canvas and accent. */
+  .theme-menu{position:relative;order:4;margin-left:4px;align-self:center}.theme-menu summary{display:flex;align-items:center;gap:0;padding:10px 12px}.theme-menu summary::after{margin-left:8px}
+  .theme-menu .theme-choice{position:absolute;z-index:10;top:52px;right:0;min-width:210px;padding:8px;background:var(--sr-surface);border:1px solid var(--sr-control-line);border-radius:var(--sr-radius);box-shadow:0 12px 24px #0003}
+  .theme-choice{display:grid;gap:2px}
+  .theme-choice button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 10px;border:0;border-radius:4px;background:transparent;color:var(--sr-ink);font:600 14px/1.3 var(--sr-font);text-align:left;transition:none}
+  .theme-choice button:hover:not(:disabled){background:var(--sr-soft);color:var(--sr-ink)}
+  .theme-choice button[aria-pressed=true]{color:var(--sr-accent);box-shadow:inset 3px 0 var(--sr-accent)}.theme-choice button[aria-pressed=true]:hover{color:var(--sr-accent)}
+  .swatch{display:block;flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:1px solid #ffffff66}
+  .swatch-aquascape{background:linear-gradient(135deg,#142f29 50%,#e4c497 50%)}.swatch-reef{background:linear-gradient(135deg,#0e2536 50%,#f4bfa0 50%)}.swatch-planted{background:linear-gradient(135deg,#0c2316 50%,#c6de8f 50%)}.swatch-sun{background:linear-gradient(135deg,#12100c 50%,#f3b23f 50%)}
   footer{font-size:12px;color:var(--sr-muted);padding:20px 0;margin-top:16px;border:0}footer span{margin:0 8px}
-  .header-connection,.mobile-dock,.mobile-device,.group-label{display:none}
+  .header-connection,.mobile-dock,.mobile-device,.mobile-theme,.device-theme,.group-label{display:none}
+  /* The header picker only uses spare width (measured in English and German); elsewhere the choice
+     sits in the Device menu so the header layout never changes. */
+  @media(min-width:801px) and (max-width:1000px),(min-width:1101px) and (max-width:1139px){.theme-menu{display:none}.device-theme{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--sr-line)}.device-theme .group-label{display:block;margin:0 10px 6px;color:var(--sr-muted);font-size:13px}}
   .skip{position:fixed;z-index:30;top:8px;left:8px;padding:12px 20px;background:var(--sr-surface);transform:translateY(-160%)}.skip:focus{transform:none}
   a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--sr-focus);outline-offset:3px}
+  /* Desktop: navigation fills the header and the language and theme choices sit at its right edge.
+     Padding keeps the previous 8 px minimum gap, so the header wraps at the same widths. */
+  @media(min-width:801px){#main-navigation{flex-grow:1}.language-choice{margin-left:auto;padding-left:8px}}
   @media(max-width:1100px){.app-header{gap:18px;padding:0 20px}nav a{padding:12px 10px}.device-menu{margin-left:8px}.wordmark{font-size:21px;gap:6px}}
   @media(max-width:800px){
     .app-header{justify-content:space-between;min-height:72px;padding:12px 16px}.wordmark{font-size:23px}
@@ -88,6 +106,7 @@ Third-party material retains its own terms.
     .mobile-dock button:hover:not(:disabled){background:var(--sr-soft);color:var(--sr-ink)}
     #main-navigation{display:none}#main-navigation.open{position:fixed;z-index:15;inset:72px 0 calc(55px + max(6px,env(safe-area-inset-bottom)));display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:16px;padding:20px 16px;overflow:auto;scroll-padding-block:8px;background:var(--sr-canvas)}
     .language-choice{order:-1;grid-column:1/-1;justify-self:start;margin:0}.lighting-links,.mobile-device{display:block;min-width:0}.group-label{display:block;margin:0 10px 12px;color:var(--sr-muted);font-size:13px}.lighting-links a,nav a{min-height:48px;border:0;border-radius:4px;padding:12px 10px}.lighting-links a[aria-current]{background:var(--sr-soft)}
+    .theme-menu{display:none}.mobile-theme{display:block;order:-1;grid-column:1/-1;min-width:0}.mobile-theme .theme-choice{grid-template-columns:1fr 1fr;gap:4px}
     .device-menu{display:none}.device-tabs{flex-wrap:wrap;padding:4px 12px;gap:0;justify-content:space-between}.device-tabs a{font-size:13px;padding:10px 8px}
     .workspace{padding:12px 16px 76px}.mobile-dock{display:grid;position:fixed;z-index:20;bottom:0;left:0;right:0;grid-template-columns:repeat(4,minmax(0,1fr));padding:6px 8px max(6px,env(safe-area-inset-bottom));background:var(--sr-surface);border-top:1px solid var(--sr-line)}
     .mobile-dock a,.mobile-dock button{justify-content:center;font:600 12px var(--sr-font);min-height:48px;padding:10px 4px;border:0;border-radius:4px;background:transparent;color:var(--sr-muted)}.mobile-dock a[aria-current],.mobile-dock button[aria-expanded=true]{color:var(--sr-accent);background:var(--sr-soft)}

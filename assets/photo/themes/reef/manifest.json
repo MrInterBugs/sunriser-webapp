@@ -1,0 +1,143 @@
+{
+  "theme": "reef",
+  "caption": "Reference reef aquarium",
+  "original": {
+    "title": "Vibrant Underwater Coral Close-up Image",
+    "author": "Жанна Алимкулова",
+    "author_page": "https://www.pexels.com/@2150381842/",
+    "source_page": "https://www.pexels.com/photo/vibrant-underwater-coral-close-up-image-34632405/",
+    "original_url": "https://images.pexels.com/photos/34632405/pexels-photo-34632405.jpeg",
+    "published": "2025-11-07",
+    "description": "Colorful coral formation in a marine aquarium with vivid lighting.",
+    "licence": "Pexels Licence",
+    "licence_url": "https://www.pexels.com/license/",
+    "width": 6000,
+    "height": 4000,
+    "bytes": 2187830,
+    "sha256": "c38b175bab58d0ad3cb9527e75acec85fe5d2c23602ff6d267ae8c57a961880b",
+    "downloaded_utc": "2026-11-09T10:29:57Z"
+  },
+  "rights": {
+    "commercial_use": true,
+    "crop_modify": true,
+    "convert_optimise": true,
+    "bundle_with_open_source_application": true,
+    "redistribute_with_SunRiser": true,
+    "additional_permission_required": false,
+    "conditions": "Pexels Licence (Pexels Terms of Service section 5, last updated 2026-10-20): irrevocable, worldwide, non-exclusive, royalty-free right to use, copy, modify or adapt. Prohibited: selling or distributing the photograph on a Standalone basis (as an image file, print, wallpaper, on a stock platform or merchandise; cropping/resizing alone remains Standalone), implying endorsement, trademark use, misleading use or claiming ownership. Bundled here only as the decorative Overview backdrop of the application, combined with its interface. Not licensed under GPL or any Creative Commons licence; the files are not offered for reuse on their own. Attribution is not required; credited as \"by [Contributor] via Pexels\".",
+    "provenance_uncertainty": "Pexels does not warrant third-party consents (section 5). The photograph shows aquarium animals only: no people, brands, logos or architecture were identified."
+  },
+  "modifications": {
+    "AVIF": {
+      "quality": 58,
+      "speed": 6,
+      "subsampling": "4:4:4"
+    },
+    "WebP": {
+      "quality": 84,
+      "method": 6
+    },
+    "resize": "Lanczos, native crop then downsample; no upscaling, sharpening or colour edits",
+    "encoder": "Pillow 13.0.0"
+  },
+  "assets": [
+    {
+      "file": "reef-1600-d2bb82ba.avif",
+      "variant": "desktop",
+      "width": 1600,
+      "height": 236,
+      "bytes": 34609,
+      "sha256": "d2bb82ba3cc0697e257faf60e639e58c08c32c55435a7bd66600dd9222921271",
+      "source_crop": [
+        0,
+        1200,
+        6000,
+        2085
+      ],
+      "path": "public/p/reef-1600-d2bb82ba.avif",
+      "licence": "Pexels Licence"
+    },
+    {
+      "file": "reef-1600-c5d26255.webp",
+      "variant": "desktop",
+      "width": 1600,
+      "height": 236,
+      "bytes": 52510,
+      "sha256": "c5d262559050b89935f5adfdea33e9051fb1214f76f913d9718d4edac120c2c4",
+      "source_crop": [
+        0,
+        1200,
+        6000,
+        2085
+      ],
+      "path": "public/p/reef-1600-c5d26255.webp",
+      "licence": "Pexels Licence"
+    },
+    {
+      "file": "reef-3040-ba210ec7.avif",
+      "variant": "retina",
+      "width": 3040,
+      "height": 448,
+      "bytes": 81738,
+      "sha256": "ba210ec7b69d9e852d747166badce1f5e98f0d02e18b283f366004d6c31a787d",
+      "source_crop": [
+        0,
+        1200,
+        6000,
+        2085
+      ],
+      "path": "public/p/reef-3040-ba210ec7.avif",
+      "licence": "Pexels Licence"
+    },
+    {
+      "file": "reef-3040-5e53bb57.webp",
+      "variant": "retina",
+      "width": 3040,
+      "height": 448,
+      "bytes": 120112,
+      "sha256": "5e53bb57bdd572a15ecc21e2e023347c3416bb46a9b977d81fda8b95f00e3018",
+      "source_crop": [
+        0,
+        1200,
+        6000,
+        2085
+      ],
+      "path": "public/p/reef-3040-5e53bb57.webp",
+      "licence": "Pexels Licence"
+    },
+    {
+      "file": "reef-800-b572c34f.avif",
+      "variant": "mobile",
+      "width": 800,
+      "height": 302,
+      "bytes": 34459,
+      "sha256": "b572c34f43832f0f2a22b0bb36a1a2453391e7453535adeccad296116e88a014",
+      "source_crop": [
+        0,
+        510,
+        6000,
+        2774
+      ],
+      "path": "public/p/reef-800-b572c34f.avif",
+      "licence": "Pexels Licence"
+    },
+    {
+      "file": "reef-800-6299d473.webp",
+      "variant": "mobile",
+      "width": 800,
+      "height": 302,
+      "bytes": 54400,
+      "sha256": "6299d47377886efdeab45125d4a0937b0c72c0f890e0b8f441c34db8d5174693",
+      "source_crop": [
+        0,
+        510,
+        6000,
+        2774
+      ],
+      "path": "public/p/reef-800-6299d473.webp",
+      "licence": "Pexels Licence"
+    }
+  ],
+  "credits": "ATTRIBUTION.txt",
+  "legal_code": "../PEXELS-LICENSE.txt"
+}

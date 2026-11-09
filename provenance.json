@@ -1,8 +1,8 @@
 {
-  "source_commit": "ae299b30e3afd0f64a0ceb6cf4e431c0485ec331",
+  "source_commit": "c960a4f8245fc30188bff7ff8ce029c5ccb871ba",
   "source_directory": "sunriser-webapp-modern",
-  "captured_files": 94,
-  "source_snapshot_sha256": "8685408cd43a62ed31a599d7fffc9f5545859b093a504ef52fdcafb08bfe89ef",
+  "captured_files": 122,
+  "source_snapshot_sha256": "85ee2dee6822ebc1d0544f3780f551fab7ba0e60a96676087153bdafe162ec4d",
   "snapshot_algorithm": "SHA-256 of sorted UTF-8 lines: <source-file SHA-256><two spaces><relative path><LF>. Scope: all src/ and public/ files, plus snapshot_extra_files. Hashes describe source inputs before standalone adaptations.",
   "snapshot_extra_files": [
     "LICENSE",
@@ -14,10 +14,18 @@
     "assets/photo/ATTRIBUTION.txt",
     "assets/photo/CC-BY-SA-3.0.txt",
     "assets/photo/manifest.json",
+    "assets/photo/themes/PEXELS-LICENSE.txt",
+    "assets/photo/themes/planted/ATTRIBUTION.txt",
+    "assets/photo/themes/planted/manifest.json",
+    "assets/photo/themes/reef/ATTRIBUTION.txt",
+    "assets/photo/themes/reef/manifest.json",
+    "assets/photo/themes/sun/ATTRIBUTION.txt",
+    "assets/photo/themes/sun/manifest.json",
     "index.html",
     "package-lock.json",
     "package.json",
     "scripts/check-i18n.mjs",
+    "scripts/fetch-theme-photos.py",
     "scripts/notices.py",
     "tsconfig.json",
     "vite.config.ts"
@@ -30,5 +38,23 @@
     "package.json": "Standalone name, scripts and packaging/test dependencies.",
     "package-lock.json": "Standalone root package metadata; dependency versions preserved."
   },
-  "note": "Synchronised shared frontend source from the stated commit. Standalone documentation, vendor input verification, packaging and regression tests are maintained separately. Later source edits are not automatically synchronised."
+  "note": "Synchronised shared frontend source from the stated commit. Standalone documentation, vendor input verification, packaging and regression tests are maintained separately. Later source edits are not automatically synchronised.",
+  "fetched_at_build": {
+    "script": "scripts/fetch-theme-photos.py",
+    "note": "Pexels-licensed photographs are not stored in this repository. The script downloads each original from Pexels, verifies its SHA-256 and rebuilds these files; the hashes are the reference build.",
+    "files": {
+      "public/p/reef-1600-c5d26255.webp": "c5d262559050b89935f5adfdea33e9051fb1214f76f913d9718d4edac120c2c4",
+      "public/p/reef-1600-d2bb82ba.avif": "d2bb82ba3cc0697e257faf60e639e58c08c32c55435a7bd66600dd9222921271",
+      "public/p/reef-3040-5e53bb57.webp": "5e53bb57bdd572a15ecc21e2e023347c3416bb46a9b977d81fda8b95f00e3018",
+      "public/p/reef-3040-ba210ec7.avif": "ba210ec7b69d9e852d747166badce1f5e98f0d02e18b283f366004d6c31a787d",
+      "public/p/reef-800-6299d473.webp": "6299d47377886efdeab45125d4a0937b0c72c0f890e0b8f441c34db8d5174693",
+      "public/p/reef-800-b572c34f.avif": "b572c34f43832f0f2a22b0bb36a1a2453391e7453535adeccad296116e88a014",
+      "public/p/sun-1600-413c656d.webp": "413c656da4ac17657a97c2d9dbafbe9d35068f1330a7eb955b6b455c63d98edc",
+      "public/p/sun-1600-fb7046c2.avif": "fb7046c25e4f02b9d62c4c71c3a2b490b4416456cf52bacfeb761a570d7444cb",
+      "public/p/sun-3040-99cb8aa9.webp": "99cb8aa9cf5e9194d8b8b3fbe0339894aa024a7f772d27d79b3b9b7b455cfb4e",
+      "public/p/sun-3040-afeaa6b7.avif": "afeaa6b745593267be6aa330f9b8e97fc65ef66b6dd30a91d7879982d5bab315",
+      "public/p/sun-800-993b88c7.avif": "993b88c722bd4d1b788fbd56e5ba77e06ec802196d2d5a90ae28746ba9c15657",
+      "public/p/sun-800-c575cb92.webp": "c575cb92ac0095266e5290d3f78aad8c2655952b3c0f6af0ffd21ca15fb9569d"
+    }
+  }
 }

@@ -5,10 +5,17 @@
 import {en} from './locales/en.js';
 import {de} from './locales/de.js';
 import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
 import type {Plugin} from 'vite';
 
 // Build-time only. The SR10 Wi-Fi server accepts one connection. A normal HTML
 // module + stylesheet pair lets the preload scanner race those critical reads.
+// Colour themes: palette values come from themes.css, so the startup panel matches the
+// stored theme before any stylesheet arrives. The default theme has no data-theme value.
+function themePalettes(){
+  const css=readFileSync(new URL('./ui/themes.css',import.meta.url),'utf8');
+  return [...css.matchAll(/:root\[data-theme="(\w+)"\] \{([^}]*)\}/g)].map(([,id,body])=>[id,Object.fromEntries([...body.matchAll(/--lv-([\w-]+): (#[0-9a-f]{6,8});/g)].map(m=>[m[1],m[2]]))] as [string,Record<string,string>]);
+}
 export function sequentialStartup(): Plugin {
   return {
     name: 'sunriser-sequential-startup', apply: 'build', enforce: 'post',
@@ -52,11 +59,16 @@ try {
       // Self-contained critical presentation: no font/image/style dependency and
       // no layout change when the full stylesheet arrives. Hide the mounted app
       // rather than exposing a second connection screen underneath this panel.
-      const css = '#startup{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:#142f29;color:#edf0e4;font:400 16px/1.5 system-ui,sans-serif}#startup,#startup *{box-sizing:border-box}#startup .startup-panel{width:min(100%,32rem);padding:32px;border:1px solid #41614f;border-radius:12px;background:#1b3a30}#startup h1{margin:0 0 16px;font:600 26px/1.25 system-ui,sans-serif;letter-spacing:-.5px}#startup p{min-height:6em;margin:0 0 16px;color:#bdcdbb;font:400 16px/1.5 system-ui,sans-serif}#startup a{display:inline-block;padding:12px 0;color:#e4c497;font:500 16px/1.5 system-ui,sans-serif}#startup a:focus-visible{outline:3px solid #ecd3a5;outline-offset:4px}#startup~#app{display:none}';
+      const palettes=themePalettes();
+      const css = '#startup{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:#142f29;color:#edf0e4;font:400 16px/1.5 system-ui,sans-serif}#startup,#startup *{box-sizing:border-box}#startup .startup-panel{width:min(100%,32rem);padding:32px;border:1px solid #41614f;border-radius:12px;background:#1b3a30}#startup h1{margin:0 0 16px;font:600 26px/1.25 system-ui,sans-serif;letter-spacing:-.5px}#startup p{min-height:6em;margin:0 0 16px;color:#bdcdbb;font:400 16px/1.5 system-ui,sans-serif}#startup a{display:inline-block;padding:12px 0;color:#e4c497;font:500 16px/1.5 system-ui,sans-serif}#startup a:focus-visible{outline:3px solid #ecd3a5;outline-offset:4px}#startup~#app{display:none}'
+        + palettes.map(([id,c])=>`[data-theme=${id}] #startup{background:${c.canvas};color:${c.ink}}[data-theme=${id}] #startup .startup-panel{border-color:${c.line};background:${c.surface}}[data-theme=${id}] #startup p{color:${c.muted}}[data-theme=${id}] #startup a{color:${c.accent}}[data-theme=${id}] #startup a:focus-visible{outline-color:${c.focus}}`).join('');
+      // Synchronous, so a stored theme applies before the panel's first paint.
+      const themeScript = `try{var t=localStorage.getItem('sunriser.theme');if(${JSON.stringify(palettes.map(([id])=>id))}.indexOf(t)>=0)document.documentElement.setAttribute('data-theme',t)}catch(e){}`;
+      const scriptHash = createHash('sha256').update(themeScript).digest('base64');
       const hash = createHash('sha256').update(css).digest('base64');
       html = html.replace(script[0],`<script type="module" src="./${name}"></script>`).replace(style[0],'')
-        .replace("style-src 'self';",`style-src 'self' 'sha256-${hash}';`)
-        .replace('</head>',`<style>${css}</style>\n</head>`)
+        .replace("script-src 'self';",`script-src 'self' 'sha256-${scriptHash}';`).replace("style-src 'self';",`style-src 'self' 'sha256-${hash}';`)
+        .replace('</head>',`<script>${themeScript}</script>\n<style>${css}</style>\n</head>`)
         .replace('<div id="app"></div>', '<section id="startup" aria-label="'+en['startup.label']+'"><div class="startup-panel"><h1>SunRiser</h1><p id="startup-status" role="status">'+en['startup.loading']+'</p><a href="">'+en['startup.reload']+'</a></div></section>\n<div id="app"></div>');
       page.source = html;
     }},
