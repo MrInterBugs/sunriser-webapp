@@ -90,7 +90,7 @@ are not tracked here. The build verifies this exact vendor SHA-256 and rejects o
 Step by step instead:
 
 ```sh
-npm run fetch          # vendor NEW.BEE and theme photographs, verified
+npm run fetch
 npm ci --ignore-scripts
 npm run check
 npm run build
